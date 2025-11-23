@@ -1,0 +1,63 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Build outputs
+dist/
+build/
+*.min.js
+*.min.css
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.code-workspace
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS files
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Test outputs (optional - uncomment if you don't want to track screenshots)
+# screenshots/
+# test-output.txt
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Memory and session files (optional - uncomment if you don't want to track these)
+# memory_*.md
+# bugs.md
+# predict.md
+# auditor.md
+# prompts.md
+

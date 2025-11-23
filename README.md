@@ -1,254 +1,226 @@
-# Star Sea - Top-Down Space Combat Game
+# Star Commander
 
-## Phase 1 Implementation - Complete! ✓
+A top-down space combat game featuring energy-based ship management, tactical combat, and dynamic environmental hazards.
 
-### Current Status
-The core engine and basic rendering are now functional. You can fly a Galaxy-class Heavy Cruiser around with basic movement controls.
+## 🚀 Features
 
-### How to Play (Current Build)
+### Core Systems
 
-1. **Start the Server** (already running):
-   - Server is running at: http://localhost:8000
-   - Open this URL in your web browser
+- **Energy Block System**: Ships use energy blocks (1-4 based on class) instead of traditional HP
+  - Destroyer (DD): 1 energy block
+  - Light Cruiser (CL): 2 energy blocks
+  - Heavy Cruiser (CA): 3 energy blocks
+  - Battle Cruiser (BB): 4 energy blocks
+  - Damage reduces block length (capacity), ship destroyed at 0 length
 
-2. **Controls**:
-   - **New Game Button**: Click to start and spawn your ship
-   - **W**: Forward thrust
-   - **S**: Backward thrust (reverse)
-   - **A**: Turn left
-   - **D**: Turn right
-   - **Left Ctrl**: Toggle between Newtonian and Non-Newtonian movement modes
-   - **ESC**: Pause/Unpause game
-   - **Mouse**: Move targeting reticle (weapons not yet implemented)
+- **Throttle Management**: 10% increment throttle system
+  - Throttle > 50%: Drains energy
+  - Throttle = 50%: Energy unaffected
+  - Throttle < 50%: Energy refills
+  - W/S keys adjust throttle in 10% increments
 
-3. **Movement Modes**:
-   - **NEWTONIAN**: Realistic space physics - unlimited speed, drift/momentum independent of facing
-   - **NON-NEWTONIAN**: Arcade mode - speed capped, ship always moves in facing direction
+- **Unified Shield System**: Single shield protecting entire ship
+  - Spacebar toggles shields up/down
+  - Drains energy while active
+  - Damage while shields are up drains energy
+  - Visual feedback: Faint ovoid that brightens on hit
 
-### What's Working
+### Combat Systems
 
-✓ **Core Engine**:
-- 60 FPS game loop with fixed timestep
-- Responsive canvas rendering (1920x1080 base, scales to window)
-- Player-centered camera (ship stays in center, world scrolls around it)
+- **Continuous Beam Weapons**: Hold LMB to fire continuously
+  - Drains energy while firing
+  - Maximum 5 seconds firing duration
+  - Cooldown equals fire duration (max 5 seconds)
+  - Beam banks don't change color (can fire continuously)
 
-✓ **Ship Systems**:
-- Galaxy-class Heavy Cruiser with vector graphics
-- Faction-specific ship designs (ready for AI enemies)
-- Dual movement modes (Newtonian/Non-Newtonian)
-- Smooth turning and acceleration
+- **Torpedoes**: Right-click to fire
+  - Limited ammunition (no energy drain)
+  - Homing on target under reticle
+  - Loses lock if target moves outside 90-degree forward arc
+  - Faster and less maneuverable than plasma torpedoes
 
-✓ **Visuals**:
-- Parallax starfield background
-- Vector-drawn ships with color-coded factions
-- HUD framework (tactical panel, minimap placeholder)
-- Menu system
+- **Mines**: E key to deploy
+  - Visible to player, invisible to enemies
+  - 2 torpedo hits worth of damage on collision
+  - Limited number per ship
 
-✓ **Input**:
-- Keyboard controls (WASD, Ctrl, ESC)
-- Mouse tracking for reticle
-- Event-driven input system
+- **Tractor Beam**: Q key to activate
+  - Pins ships with fewer energy blocks than your ship
+  - Moves target ship with you
+  - Drains energy constantly while active
 
-### What's Working (Updated - Phase 2 Complete!)
+### Special Maneuvers
 
-✓ **Physics System** (NEW!):
-- planck.js (Box2D) fully integrated
-- Realistic collisions with bounce and damage
-- Zero-gravity space physics
-- Custom gravity wells for black holes
+- **Double-tap W**: Burst acceleration (up to 2x max speed)
+  - Consumes chunk of energy
+  
+- **Double-tap S**: Instant stop
+  - Consumes chunk of energy
+  
+- **Double-tap A/D**: Quick rotation (3-4x faster)
+  - Consumes chunk of energy
 
-✓ **Asteroids** (NEW!):
-- Large, medium, and small asteroids
-- Irregular shapes with rotation
-- Breaking mechanics: large→medium→small→destroyed
-- Dynamic physics-based movement
-- Collision damage: 3 (large), 2 (medium), 1 (small)
+### Visual Damage Effects
 
-✓ **Environmental Hazards** (NEW!):
-- **Collapsar (Black Hole)**: Gravity well pulls ships in, instant death on contact
-- **Dust Clouds**: Particle effects (will block beams in Phase 3)
-- **Planets**: Large static bodies, collision damage
+- **75% energy block length**: Particle trails (smoke)
+- **50% energy block length**: Flames onboard + particle trails
+- **25% energy block length**: Flames + particle trails + random small explosions
 
-✓ **Combat Feedback** (NEW!):
-- Hull HP tracking (100 HP)
-- Damage from collisions
-- Critical event log showing damage
-- Game over on ship destruction
-- Visual HP indicators in HUD
+### Environmental Features
 
-### What to Test
+- **Asteroids**: Breakable obstacles with collision damage
+- **Planets/Moons**: Gravity fields attract ships/torpedoes, slingshot mechanics
+  - Massive damage and bounce on contact (if not destroyed)
+- **Nebulae**: Dusty clouds with lightning
+  - Shields do not work inside
+  - All weapons suffer reduced effectiveness
+- **Stars**: Gravity fields, damage to ships too close, instant destruction on contact
 
-1. **Fly around and hit asteroids** - They should bounce you back and break into smaller pieces
-2. **Approach the collapsar** (purple swirling particles) - Feel the gravity pull
-3. **Watch your HP** in the top-left HUD - Collisions cause damage
-4. **Let your ship get destroyed** - Game over triggers
-5. **Movement modes** - Try both Newtonian (drift) and Non-Newtonian (arcade) with Left Ctrl
+### Sensor System
 
-### What's Working (Updated - Phase 3 Complete!)
+- Long-range sensors show all other ships on minimap as green dots
+- Detailed ship info displayed when within X distance
 
-✓ **Beam Weapons** (NEW!):
-- **Left-click** to fire all beams in arc
-- 3-shot burst (1 per second)
-- Recharges 1/3 per 2 seconds after 2-sec delay
-- 270° forward and aft arcs
-- Very fast red laser bolts
-- Charge bars show in HUD
+## 🎮 Controls
 
-✓ **Torpedoes** (NEW!):
-- **Right-click** to fire all torpedoes in arc
-- 4 loaded, 20 stored per launcher
-- **Lock-on system**: Hold reticle on target for 4 seconds
-  - Reticle spins yellow while locking
-  - Reticle turns red when locked
-  - Fire-and-forget homing
-  - Terminal homing at halfway point
-- Reload: 1 torpedo per 4 seconds after 4-sec delay
-- Yellow projectiles with trails
-- Can be shot down with beams (hard!)
+| Key | Action |
+|-----|--------|
+| **W** | Increase throttle (10% increments) |
+| **S** | Decrease throttle (10% increments) |
+| **A** | Turn left |
+| **D** | Turn right |
+| **W (double-tap)** | Burst acceleration |
+| **S (double-tap)** | Instant stop |
+| **A/D (double-tap)** | Fast rotation |
+| **Left Mouse Button** | Fire continuous beams (hold) |
+| **Right Mouse Button** | Fire torpedoes |
+| **Spacebar** | Toggle shields |
+| **E** | Deploy mine |
+| **Q** | Toggle tractor beam |
+| **ESC** | Pause/Unpause |
 
-✓ **Decoys & Mines** (NEW!):
-- **Spacebar tap** = Deploy decoy (cyan pulsing circle)
-  - 6 decoys, 10-second lifetime
-  - Confuses torpedoes
-  - Blocks beam weapons
-- **Spacebar long-press** = Deploy mine (orange blinking diamond)
-  - 6 mines, infinite lifetime
-  - 10 damage on contact
-  - Invisible to enemies
-- 6-second cooldown between deployments
+## 🛠️ Setup & Installation
 
-✓ **Combat Features**:
-- Weapons only fire if target in arc
-- Live HUD updates (charge bars, torp counts, decoy/mine counts)
-- Projectile collision detection
-- Damage feedback
-- Torpedoes home in on locked targets
-- Can destroy asteroids with weapons
+### Prerequisites
 
-### What to Test (Updated!)
+- Node.js (for testing with Playwright)
+- A modern web browser (Chrome, Firefox, Edge, Safari)
 
-1. **Fire beams** (left-click) - Watch the 3-shot burst and recharge
-2. **Fire torpedoes** (right-click) - Try both locked and unlocked
-3. **Lock-on an asteroid** - Hold mouse over it for 4 seconds, watch reticle spin
-4. **Deploy decoys** (spacebar tap) - See them pulse, try to confuse a torpedo
-5. **Deploy mines** (spacebar hold) - Watch them blink, run an asteroid into one
-6. **Destroy asteroids with weapons** - Beams and torps both work!
-7. **Watch torpedo homing** - Lock an asteroid, fire, watch it chase
+### Running the Game
 
-### What's Working (Updated - Phase 4 Complete!)
+1. **Using a local server** (recommended):
+   ```bash
+   # Python 3
+   python -m http.server 8000
+   
+   # Or Node.js
+   npx http-server . -p 8000
+   ```
 
-✓ **Shield System** (NEW!):
-- Four independent shield quadrants (fore/aft/port/starboard)
-- Each quadrant recovers independently after 5 seconds without being hit
-- Shield strength based on generator HP
-- Visual shield arcs when hit (blue glow effect)
-- Shield damage shows in HUD with live status bars
+2. **Open in browser**:
+   - Navigate to `http://localhost:8000`
+   - Click "New Game" to start
 
-✓ **Internal Systems** (NEW!):
-- **Impulse Engines** - Damage reduces ship speed and turn rate
-- **Warp Nacelles** - Charge warp drive (future feature for mission exit)
-- **Sensor Array** - Damage reduces detection range and targeting accuracy
-- **Command & Control** - Damage causes random control glitches
-- **Weapons Bay** - Damage reduces torpedo reload rate, destruction prevents countermeasures
-- **Main Power** - Damage reduces all system efficiency, destruction causes core breach (ship destroyed)
+### Testing
 
-✓ **Enhanced Damage Model** (NEW!):
-- Damage flows through shields first
-- Overflow damage hits nearest internal system based on impact location
-- System damage causes specific failures (speed loss, sensor degradation, etc.)
-- Remaining damage goes to hull HP
-- Critical event log shows all damage with system names and efficiency
+Automated testing with Playwright:
 
-### What to Test (Updated for Phase 4!)
+```bash
+# Install Playwright (first time only)
+npm install
+npx playwright install chromium
 
-1. **Shields** - Ram asteroids and watch shield quadrants light up blue, then recover after 5 seconds
-2. **System Damage** - Watch HUD system status as different areas get hit
-3. **Impulse Damage** - Get hit in the aft section, notice speed reduction
-4. **Sensor Damage** - Get hit in the fore section, targeting may be affected
-5. **Power System** - If Main Power is destroyed, ship explodes (core breach)
-6. **Control Glitches** - If C&C is damaged, random control malfunctions may occur
-7. **Shield Recovery** - After taking hits, shields slowly recover (watch HUD bars)
-
-### What's Next (Phase 5)
-
-**Phase 5: AI & Enemy Behavior**:
-- Enemy ships that fight back
-- Faction-specific weapons (Disruptors, Plasma Torpedoes)
-- AI combat tactics
-- Patrol and combat behaviors
-
-### Development Progress
-
-**Completed**:
-- Phase 1 - Core Engine & Rendering ✓
-- Phase 2 - Physics & Movement Systems ✓
-- Phase 3 - Combat & Weapons Systems ✓
-- Phase 4 - Ship Systems & Damage Model ✓
-
-**Current**: Phase 4 Complete, Ready for Phase 5
-**Next**: AI & Enemy Behavior
-
-### File Structure
+# Run tests
+node test-game.js
 ```
-star-sea/
-├── index.html              # Main game page
+
+Tests will generate screenshots in the `screenshots/` directory.
+
+## 📁 Project Structure
+
+```
+star-commander/
+├── index.html              # Main game file
 ├── css/                    # Stylesheets
 │   ├── main.css
 │   ├── hud.css
 │   ├── menus.css
 │   └── ui.css
 ├── js/
-│   ├── config.js           # Game constants
+│   ├── config.js           # Game configuration
 │   ├── main.js             # Entry point
 │   ├── core/               # Core engine
-│   ├── entities/           # Game objects
+│   │   ├── Engine.js
+│   │   ├── InputManager.js
+│   │   └── Camera.js
+│   ├── entities/           # Game entities
+│   │   ├── Ship.js
+│   │   └── Projectile.js
 │   ├── components/         # Entity components
+│   │   ├── EnergySystem.js
+│   │   ├── Shield.js
+│   │   └── weapons/
 │   ├── rendering/          # Renderers
+│   │   ├── ShipRenderer.js
+│   │   └── ParticleSystem.js
 │   ├── ui/                 # UI managers
-│   └── utils/              # Utilities
-├── CLAUDE.md               # Project instructions
-├── IMPLEMENTATION_PLAN.md  # Full development plan
-└── memory_*.md             # Session memory
+│   │   └── HUD.js
+│   └── systems/            # Game systems
+├── screenshots/            # Test screenshots
+├── test-game.js           # Playwright test suite
+└── package.json           # Node.js dependencies
 ```
 
-### Debug Mode
+## 🎯 Gameplay Mechanics
 
-Debug mode is enabled by default (`CONFIG.DEBUG_MODE = true`). This shows:
-- FPS counter
-- Entity count
-- Player position
-- Player rotation
-- Velocity magnitude
-- Current movement mode
+### Energy Management
 
-Access the game engine in console: `window.game`
+Energy is the core resource in Star Commander. All actions consume energy:
+- High throttle (>50%) drains energy
+- Beam weapons drain energy while firing
+- Shields drain energy while active
+- Special maneuvers consume chunks of energy
+- Tractor beam drains energy constantly
 
-### Known Limitations (Phase 1)
+Manage your energy carefully - a ship with 0 energy is helpless, and a ship with 0 energy block length is destroyed.
 
-- No physics collisions yet (planck.js integration in Phase 2)
-- No weapons yet (Phase 3)
-- No damage model yet (Phase 4)
-- No AI enemies yet (Phase 5)
-- No missions yet (Phase 6)
-- No audio yet (Phase 7)
+### Ship Classes
 
-### Testing Checklist
+- **Destroyer (DD)**: Fast, agile, 1 energy block
+- **Light Cruiser (CL)**: Balanced, 2 energy blocks
+- **Heavy Cruiser (CA)**: Powerful, 3 energy blocks
+- **Battle Cruiser (BB)**: Most powerful, 4 energy blocks
 
-- [x] Main menu displays
-- [ ] "New Game" button spawns player ship
-- [ ] Ship renders in center of screen
-- [ ] Starfield scrolls when ship moves
-- [ ] WASD controls move ship
-- [ ] Movement mode toggle works (Left Ctrl)
-- [ ] ESC pauses game
-- [ ] Minimap shows player ship
-- [ ] Debug info displays (FPS, position, etc.)
+### Combat Strategy
 
-### Browser Compatibility
+1. **Energy Management**: Keep throttle at 50% when not maneuvering to maintain energy
+2. **Shield Timing**: Raise shields only when needed - they drain energy constantly
+3. **Beam Duration**: Continuous beams are powerful but drain energy quickly
+4. **Torpedo Conservation**: Limited ammunition - use wisely
+5. **Special Maneuvers**: Powerful but expensive - use strategically
 
-Tested on:
-- Chrome/Edge (recommended)
-- Firefox
-- Safari (may have minor rendering differences)
+## 🔧 Development
 
-Requires ES6+ support.
+### Tech Stack
+
+- **HTML5 Canvas 2D** - Rendering
+- **Vanilla JavaScript (ES6+)** - Game logic
+- **planck.js** - Physics simulation
+- **Playwright** - Automated testing
+
+### Code Style
+
+- Four-space indentation
+- Semicolons required
+- `const`/`let` instead of `var`
+- Classes use PascalCase
+- Functions use camelCase
+- CSS selectors use kebab-case
+
+## 📝 License
+
+ISC License
+
+## 🙏 Acknowledgments
+
+Built as a rewrite of the Star Sea project with major gameplay improvements focusing on energy-based ship management and tactical combat.
