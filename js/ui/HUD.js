@@ -59,8 +59,6 @@ class HUD {
         // Update throttle display
         this.updateThrottle(playerShip);
 
-        // Update systems (DEPRECATED - kept for compatibility)
-        this.updateSystems(playerShip);
 
         // Update countermeasures
         this.updateCountermeasures(playerShip);
@@ -193,77 +191,6 @@ class HUD {
         }
     }
 
-    // REMOVED: updateWeapons() - now integrated into updateSystems()
-
-    updateSystems(ship) {
-        // Update hull HP (now from hull system)
-        const hpElement = document.getElementById('ship-hp');
-        if (hpElement && ship && ship.systems && ship.systems.hull) {
-            hpElement.textContent = `${Math.round(ship.systems.hull.hp)}/${ship.systems.hull.maxHp}`;
-
-            const hullItem = hpElement.closest('.system-item');
-            if (hullItem) {
-                if (ship.systems.hull.hp === 0) {
-                    hullItem.classList.add('damaged');
-                    hullItem.classList.remove('warning');
-                } else if (ship.systems.hull.hp <= ship.systems.hull.maxHp * 0.3) {
-                    hullItem.classList.add('warning');
-                    hullItem.classList.remove('damaged');
-                } else {
-                    hullItem.classList.remove('damaged', 'warning');
-                }
-            }
-        }
-
-        // Update internal systems
-        if (!ship || !ship.systems) {
-            this.updateSystemHP('impulse', 0, 16);
-            this.updateSystemHP('warp', 0, 20);
-            this.updateSystemHP('sensors', 0, 6);
-            this.updateSystemHP('cnc', 0, 6);
-            this.updateSystemHP('bay', 0, 6);
-            this.updateSystemHP('power', 0, 12);
-            this.updateSystemHP('beam-forward', 0, 1);
-            this.updateSystemHP('beam-aft', 0, 1);
-            this.updateSystemHP('torpedo', 0, 1);
-            return;
-        }
-
-        this.updateSystemHP('impulse', ship.systems.impulse.hp, ship.systems.impulse.maxHp);
-        this.updateSystemHP('warp', ship.systems.warp.hp, ship.systems.warp.maxHp);
-        this.updateSystemHP('sensors', ship.systems.sensors.hp, ship.systems.sensors.maxHp);
-        this.updateSystemHP('cnc', ship.systems.cnc.hp, ship.systems.cnc.maxHp);
-        this.updateSystemHP('bay', ship.systems.bay.hp, ship.systems.bay.maxHp);
-        this.updateSystemHP('power', ship.systems.power.hp, ship.systems.power.maxHp);
-
-        // Update weapon systems (now integrated with other systems)
-        if (ship.weapons) {
-            const beamWeapons = ship.getBeamWeapons();
-            const torpedoLaunchers = ship.getTorpedoLaunchers();
-
-            // Forward beam
-            const forwardBeam = beamWeapons.find(w => w.arcCenter === 0);
-            this.updateSystemHP('beam-forward', forwardBeam ? forwardBeam.hp : 0, forwardBeam ? forwardBeam.maxHp : 1);
-
-            // Aft beam
-            const aftBeam = beamWeapons.find(w => w.arcCenter === 180);
-            this.updateSystemHP('beam-aft', aftBeam ? aftBeam.hp : 0, aftBeam ? aftBeam.maxHp : 1);
-
-            // Torpedo launcher
-            const torpedoLauncher = torpedoLaunchers[0];
-            this.updateSystemHP('torpedo', torpedoLauncher ? torpedoLauncher.hp : 0, torpedoLauncher ? torpedoLauncher.maxHp : 1);
-
-            // Update torpedo storage count in inventory section
-            const storageElement = document.getElementById('torpedo-storage');
-            if (storageElement && torpedoLauncher) {
-                storageElement.textContent = torpedoLauncher.getStoredCount();
-            }
-        } else {
-            this.updateSystemHP('beam-forward', 0, 1);
-            this.updateSystemHP('beam-aft', 0, 1);
-            this.updateSystemHP('torpedo', 0, 1);
-        }
-    }
 
     updateCountermeasures(ship) {
         if (!ship) return;

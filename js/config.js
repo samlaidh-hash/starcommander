@@ -2,8 +2,6 @@
 
 const CONFIG = {
     // Canvas and loop
-    CANVAS_WIDTH: 1920,  // DEPRECATED - Canvas now uses window.innerWidth
-    CANVAS_HEIGHT: 1080, // DEPRECATED - Canvas now uses window.innerHeight
     TARGET_FPS: 30,
     VELOCITY_ITERATIONS: 1,  // Reduced from 4 for performance (90ms→<20ms)
     POSITION_ITERATIONS: 1,  // Reduced from 2 for performance
@@ -36,11 +34,6 @@ const CONFIG = {
     SHIP_LENGTH_CA: 70,
     SHIP_LENGTH_BC: 80,  // Used for BB (Battle Cruiser)
 
-    // Ship HP (hull) - DEPRECATED: Now using energy blocks
-    SHIP_HP_DD: 80,
-    SHIP_HP_CL: 100,
-    SHIP_HP_CA: 120,
-    SHIP_HP_BC: 140,  // Used for BB
 
     // Movement - Only DD, CL, CA, BB
     MAX_SPEED_DD: 390,
@@ -64,12 +57,6 @@ const CONFIG = {
     // Shields
     SYSTEM_HP_SHIELD_GEN: 8, // generator HP baseline
 
-    // Shield configs - DEPRECATED: Now using unified shield system
-    // Kept for compatibility
-    SHIELD_STRENGTH_FORE_CA: 20,
-    SHIELD_STRENGTH_AFT_CA: 18,
-    SHIELD_STRENGTH_PORT_CA: 16,
-    SHIELD_STRENGTH_STARBOARD_CA: 16,
 
     SHIELD_RECOVERY_DELAY: 10.0, // seconds without hits (increased from 5.0)
     SHIELD_RECOVERY_RATE: 1.0,   // points per second (reduced from 2.0)

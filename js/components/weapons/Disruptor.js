@@ -9,18 +9,6 @@
  * - Lock-On: No lock-on capability
  */
 
-// COMMENTED OUT: Old burst-fire implementation - Replaced by spec-compliant continuous fire
-// class Disruptor extends Weapon {
-//     constructor(config) {
-//         super(config);
-//         this.shotsRemaining = config.maxShots || 4;
-//         this.maxShots = config.maxShots || 4;
-//         this.rechargeDelay = config.rechargeDelay || 1.5; // ❌ Wrong: Should be 2s continuous cooldown
-//         this.rechargeRate = config.rechargeRate || 0.5;
-//         ...
-//     }
-// }
-
 class Disruptor extends Weapon {
     constructor(config) {
         super(config);

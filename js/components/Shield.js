@@ -90,25 +90,4 @@ class ShieldSystem {
         return this.maxStrength > 0 ? this.currentStrength / this.maxStrength : 0;
     }
 
-    /**
-     * Get all quadrants (for compatibility with old code)
-     * Returns single shield as all quadrants
-     */
-    getAllQuadrants() {
-        const strength = this.currentStrength / 4; // Divide among quadrants for compatibility
-        return {
-            fore: { current: strength, max: this.maxStrength / 4, getPercentage: () => this.getPercentage() },
-            aft: { current: strength, max: this.maxStrength / 4, getPercentage: () => this.getPercentage() },
-            port: { current: strength, max: this.maxStrength / 4, getPercentage: () => this.getPercentage() },
-            starboard: { current: strength, max: this.maxStrength / 4, getPercentage: () => this.getPercentage() }
-        };
-    }
-
-    /**
-     * Legacy method for compatibility (angle-based damage)
-     */
-    applyDamageLegacy(shipRotation, impactAngle, damage, currentTime, ship = null) {
-        // Unified shield doesn't care about angle - use unified applyDamage
-        return this.applyDamage(damage, currentTime, ship);
-    }
 }

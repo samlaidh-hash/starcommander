@@ -307,10 +307,6 @@ class Ship extends Entity {
             this.createPhysicsBody();
         }
 
-        // Health - NOW HANDLED BY HULL SYSTEM
-        // this.maxHp = this.getShipHp();  // DEPRECATED - Use this.systems.hull.maxHp
-        // this.hp = this.maxHp;           // DEPRECATED - Use this.systems.hull.hp
-
         // Countermeasures
         this.decoys = CONFIG.DECOY_COUNT;
         this.mines = CONFIG.MINE_COUNT;
@@ -360,17 +356,8 @@ class Ship extends Entity {
         // Shields
         this.shields = this.createShields();
 
-        // Internal Systems (DEPRECATED - kept for compatibility during transition)
-        // TODO: Remove once all systems migrated to energy blocks
-        this.systems = this.createSystems();
-
-        // Weapons (created after systems so we can link them)
+        // Weapons
         this.weapons = this.createWeapons();
-
-        // Link weapons to systems for damage tracking (DEPRECATED)
-        if (this.systems) {
-            this.systems.setWeapons(this.weapons);
-        }
 
         // Crew Skills System - affects ship performance
         this.crewSkills = new CrewSkillSystem(this);
@@ -420,68 +407,11 @@ class Ship extends Entity {
             case 'BB': maxStrength = 70; break;
         }
         
-        return new ShieldSystem({
+            return new ShieldSystem({
             maxStrength: maxStrength
         });
     }
 
-    createSystems() {
-        // Get hull HP based on ship class
-        const hullHP = this.getHullHPForClass(this.shipClass);
-
-        // Player Heavy Cruiser system configuration
-        if (this.shipClass === 'CA' && (this.faction === 'PLAYER' || this.faction === 'FEDERATION')) {
-            return new SystemManager({
-                impulseHP: CONFIG.SYSTEM_HP_IMPULSE,
-                warpHP: CONFIG.SYSTEM_HP_WARP,
-                sensorsHP: CONFIG.SYSTEM_HP_SENSORS,
-                cncHP: CONFIG.SYSTEM_HP_CNC,
-                bayHP: CONFIG.SYSTEM_HP_BAY,
-                powerHP: CONFIG.SYSTEM_HP_MAIN_POWER,
-                hullHP: hullHP,
-                hasCloak: false
-            });
-        }
-
-        // Scintilian ships - with Cloaking Device
-        if (this.faction === 'SCINTILIAN') {
-            return new SystemManager({
-                impulseHP: 16,
-                warpHP: 20,
-                sensorsHP: 6,
-                cncHP: 6,
-                bayHP: 6,
-                powerHP: 12,
-                hullHP: hullHP,
-                hasCloak: true,
-                cloakHP: CONFIG.SYSTEM_HP_SENSORS // Same HP as sensors
-            });
-        }
-
-        // Default systems for other ship types
-        return new SystemManager({
-            impulseHP: 16,
-            warpHP: 20,
-            sensorsHP: 6,
-            cncHP: 6,
-            bayHP: 6,
-            powerHP: 12,
-            hullHP: hullHP,
-            hasCloak: false
-        });
-    }
-
-    getHullHPForClass(shipClass) {
-        // DEPRECATED: Hull HP now handled by energy blocks
-        // Kept for compatibility with old systems
-        switch(shipClass) {
-            case 'DD': return CONFIG.SHIP_HP_DD || 80;
-            case 'CL': return CONFIG.SHIP_HP_CL || 100;
-            case 'CA': return CONFIG.SHIP_HP_CA || 120;
-            case 'BB': return CONFIG.SHIP_HP_BC || 140;
-            default: return 100;
-        }
-    }
 
     createPhysicsBody() {
         const size = this.getShipSize();
@@ -1195,24 +1125,6 @@ class Ship extends Entity {
             this.shields.update(deltaTime, currentTime, this);
         }
 
-        // Update systems (now includes weapons auto-repair)
-        if (this.systems) {
-            const systemEvent = this.systems.update(deltaTime, currentTime, this);
-            if (systemEvent) {
-                if (systemEvent.type === 'core-breach') {
-                    // Core breach destroys hull
-                    this.systems.hull.hp = 0;
-                    this.systems.hull.updateStatus();
-                    this.destroy();
-                } else if (systemEvent.type === 'control-glitch' && this.isPlayer) {
-                    eventBus.emit('control-glitch');
-                }
-            }
-
-            // Apply system effects to ship stats
-            this.maxSpeed = this.getMaxSpeed() * this.systems.getSpeedMultiplier();
-            this.turnRate = this.getTurnRate() * this.systems.getTurnRateMultiplier();
-        }
     }
 
     /**
@@ -1751,10 +1663,6 @@ class Ship extends Entity {
             this.destroy();
         }
         
-        // DEPRECATED: Old system damage check (kept for compatibility)
-        if (this.systems && this.systems.hull && this.systems.hull.destroyed) {
-            this.destroy();
-        }
     }
 
     destroy() {
