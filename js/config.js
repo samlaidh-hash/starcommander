@@ -30,43 +30,33 @@ const CONFIG = {
     COLOR_SCINTILIAN: '#00ff88',
     COLOR_PIRATE: '#ff8800',
 
-    // Ship lengths (render scale baseline)
-    SHIP_LENGTH_FG: 40,
+    // Ship lengths (render scale baseline) - Only DD, CL, CA, BB
     SHIP_LENGTH_DD: 50,
     SHIP_LENGTH_CL: 60,
-    SHIP_LENGTH_CS: 65,  // Strike Cruiser (between CL and CA)
     SHIP_LENGTH_CA: 70,
-    SHIP_LENGTH_BC: 80,
+    SHIP_LENGTH_BC: 80,  // Used for BB (Battle Cruiser)
 
-    // Ship HP (hull)
-    SHIP_HP_FG: 60,
+    // Ship HP (hull) - DEPRECATED: Now using energy blocks
     SHIP_HP_DD: 80,
     SHIP_HP_CL: 100,
-    SHIP_HP_CS: 110,     // Strike Cruiser (between CL and CA)
     SHIP_HP_CA: 120,
-    SHIP_HP_BC: 140,
+    SHIP_HP_BC: 140,  // Used for BB
 
-    // Movement
-    MAX_SPEED_FG: 420,    // Increased 3x (was 140)
-    MAX_SPEED_DD: 390,    // Increased 3x (was 130)
-    MAX_SPEED_CL: 360,    // Increased 3x (was 120)
-    MAX_SPEED_CS: 346,    // Increased 3x (was 115) - Strike Cruiser
-    MAX_SPEED_CA: 330,    // Increased 3x (was 110)
-    MAX_SPEED_BC: 300,    // Increased 3x (was 100)
+    // Movement - Only DD, CL, CA, BB
+    MAX_SPEED_DD: 390,
+    MAX_SPEED_CL: 360,
+    MAX_SPEED_CA: 330,
+    MAX_SPEED_BC: 300,  // Used for BB
 
-    ACCELERATION_FG: 45,  // Decreased 0.25x (was 180)
-    ACCELERATION_DD: 42.5,  // Decreased 0.25x (was 170)
-    ACCELERATION_CL: 40,  // Decreased 0.25x (was 160)
-    ACCELERATION_CS: 39,  // Decreased 0.25x (was 155) - Strike Cruiser
-    ACCELERATION_CA: 37.5,  // Decreased 0.25x (was 150)
-    ACCELERATION_BC: 35,  // Decreased 0.25x (was 140)
+    ACCELERATION_DD: 42.5,
+    ACCELERATION_CL: 40,
+    ACCELERATION_CA: 37.5,
+    ACCELERATION_BC: 35,  // Used for BB
 
-    TURN_RATE_FG: 90,   // degrees per second
-    TURN_RATE_DD: 80,
+    TURN_RATE_DD: 80,   // degrees per second
     TURN_RATE_CL: 70,
-    TURN_RATE_CS: 65,   // Strike Cruiser (between CL and CA)
     TURN_RATE_CA: 60,
-    TURN_RATE_BC: 50,
+    TURN_RATE_BC: 50,   // Used for BB
 
     MAX_SPEED_TRIGON_MULTIPLIER: 1.1,
     TURN_RATE_TRIGON_MULTIPLIER: 1.2,
@@ -74,16 +64,12 @@ const CONFIG = {
     // Shields
     SYSTEM_HP_SHIELD_GEN: 8, // generator HP baseline
 
+    // Shield configs - DEPRECATED: Now using unified shield system
+    // Kept for compatibility
     SHIELD_STRENGTH_FORE_CA: 20,
     SHIELD_STRENGTH_AFT_CA: 18,
     SHIELD_STRENGTH_PORT_CA: 16,
     SHIELD_STRENGTH_STARBOARD_CA: 16,
-
-    // Strike Cruiser shields (between CL and CA)
-    SHIELD_STRENGTH_FORE_CS: 19,
-    SHIELD_STRENGTH_AFT_CS: 17,
-    SHIELD_STRENGTH_PORT_CS: 15,
-    SHIELD_STRENGTH_STARBOARD_CS: 15,
 
     SHIELD_RECOVERY_DELAY: 10.0, // seconds without hits (increased from 5.0)
     SHIELD_RECOVERY_RATE: 1.0,   // points per second (reduced from 2.0)
@@ -131,12 +117,12 @@ const CONFIG = {
     PLASMA_DP_DECAY_PER_SECOND: 1, // DP lost per second
     COLOR_PLASMA: '#00ff88',      // green
 
-    // Plasma charge (damage per second by class)
+    // Plasma charge (damage per second by class) - Only DD, CL, CA, BB
     PLASMA_MAX_CHARGE_TIME: 5, // seconds
-    PLASMA_CHARGE_RATE_FG: 6,
+    PLASMA_CHARGE_RATE_DD: 6,  // Use CL rate for DD
     PLASMA_CHARGE_RATE_CL: 7,
     PLASMA_CHARGE_RATE_CA: 8,
-    PLASMA_CHARGE_RATE_BC: 9,
+    PLASMA_CHARGE_RATE_BC: 9,  // Used for BB
 
     // Auto-repair
     AUTO_REPAIR_RATE: 0.03, // HP per second
@@ -154,12 +140,11 @@ const CONFIG = {
     // Targeting
     LOCK_ON_DRIFT_TOLERANCE: 50, // pixels
 
-    // Detection radius (pixels by class) - MULTIPLIED BY 10
-    DETECTION_RADIUS_FG_PIXELS: 8000,
+    // Detection radius (pixels by class) - Only DD, CL, CA, BB
     DETECTION_RADIUS_DD_PIXELS: 9000,
     DETECTION_RADIUS_CL_PIXELS: 10000,
     DETECTION_RADIUS_CA_PIXELS: 11000,
-    DETECTION_RADIUS_BC_PIXELS: 12000,
+    DETECTION_RADIUS_BC_PIXELS: 12000,  // Used for BB
 
     // Particles
     PARTICLE_COUNT_COLLAPSAR: 120,

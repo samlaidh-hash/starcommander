@@ -19,31 +19,35 @@
         <div id="tactical-panel">
             <div class="panel-header" id="player-ship-panel-title">Player Ship</div>
 
-            <!-- Shields -->
+            <!-- Shields (Unified) -->
             <div class="system-group">
                 <div class="system-label">Shields</div>
                 <div class="shield-display">
                     <div class="shield-bar" id="shield-fore">
-                        <span class="shield-label">FWD</span>
+                        <span class="shield-label">SHIELD</span>
                         <div class="bar-fill" data-quadrant="fore"></div>
                     </div>
-                    <div class="shield-bar" id="shield-port">
-                        <span class="shield-label">PRT</span>
-                        <div class="bar-fill" data-quadrant="port"></div>
-                    </div>
-                    <div class="shield-bar" id="shield-starboard">
-                        <span class="shield-label">STB</span>
-                        <div class="bar-fill" data-quadrant="starboard"></div>
-                    </div>
-                    <div class="shield-bar" id="shield-aft">
-                        <span class="shield-label">AFT</span>
-                        <div class="bar-fill" data-quadrant="aft"></div>
-                    </div>
+                    <div id="shield-status" style="color: #0f0; font-size: 9px; margin-top: 2px;">UP</div>
                 </div>
             </div>
 
-            <!-- Hull Integrity -->
+            <!-- Energy Blocks -->
+            <div class="system-group" id="energy-blocks-group">
+                <div class="system-label">Energy Blocks</div>
+                <div id="energy-blocks-container"></div>
+            </div>
+
+            <!-- Throttle -->
             <div class="system-group">
+                <div class="system-label">Throttle</div>
+                <div id="throttle-display">0%</div>
+                <div class="throttle-bar">
+                    <div class="throttle-bar-fill" id="throttle-bar-fill"></div>
+                </div>
+            </div>
+
+            <!-- Hull Integrity (DEPRECATED - kept for compatibility) -->
+            <div class="system-group" style="display: none;">
                 <div class="system-label">Hull Integrity</div>
                 <div id="hull-status">
                     <div class="system-item" data-system="hull">HP: <span class="hp" id="ship-hp">100/100</span></div>

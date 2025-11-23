@@ -41,10 +41,6 @@ const WEAPON_POSITIONS = {
 
 const SHIP_WEAPON_LOADOUTS = {
     FEDERATION: {
-        FG: [
-            { type: 'continuousBeam', name: 'Forward Beam Battery', arc: 270, arcCenter: 0, positionKey: 'forwardCenter' },
-            { type: 'dualTorpedo', name: 'Dual Torpedo Launcher (FG)', arc: 90, arcCenter: 0, arcCenters: [0, 180], positionKey: 'dualTorpCenter', hp: 4, loaded: 2, maxLoaded: 2 }
-        ],
         DD: [
             { type: 'continuousBeam', name: 'Forward Beam Battery', arc: 270, arcCenter: 0, positionKey: 'forwardCenter' },
             { type: 'dualTorpedo', name: 'Dual Torpedo Launcher (DD)', arc: 90, arcCenter: 0, arcCenters: [0, 180], positionKey: 'dualTorpCenter', hp: 6, loaded: 3, maxLoaded: 3 }
@@ -53,45 +49,19 @@ const SHIP_WEAPON_LOADOUTS = {
             { type: 'continuousBeam', name: 'Forward Beam Battery', arc: 270, arcCenter: 0, positionKey: 'forwardCenter' },
             { type: 'dualTorpedo', name: 'Dual Torpedo Launcher (CL)', arc: 90, arcCenter: 0, arcCenters: [0, 180], positionKey: 'dualTorpCenter', hp: 8, loaded: 4, maxLoaded: 4 }
         ],
-        CS: [
-            { type: 'streakBeam', name: 'Port Streak Beam', arc: 270, arcCenter: 270, positionKey: 'forwardPort' },
-            { type: 'streakBeam', name: 'Starboard Streak Beam', arc: 270, arcCenter: 90, positionKey: 'forwardStarboard' },
-            { type: 'dualTorpedo', name: 'Dual Torpedo Launcher (CS)', arc: 90, arcCenter: 0, arcCenters: [0, 180], positionKey: 'dualTorpCenter', hp: 8, loaded: 4, maxLoaded: 4 }
-        ],
         CA: [
             { type: 'continuousBeam', name: 'Forward Beam Battery', arc: 270, arcCenter: 0, positionKey: 'forwardCenter' },
             { type: 'continuousBeam', name: 'Aft Beam Battery', arc: 270, arcCenter: 180, positionKey: 'aftCenter' },
             { type: 'dualTorpedo', name: 'Dual Torpedo Launcher (CA)', arc: 90, arcCenter: 0, arcCenters: [0, 180], positionKey: 'dualTorpCenter', hp: 10, loaded: 5, maxLoaded: 5 }
-        ],
-        BC: [
-            { type: 'continuousBeam', name: 'Port Forward Beam Array', arc: 270, arcCenter: 0, positionKey: 'forwardPort' },
-            { type: 'continuousBeam', name: 'Starboard Forward Beam Array', arc: 270, arcCenter: 0, positionKey: 'forwardStarboard' },
-            { type: 'continuousBeam', name: 'Aft Beam Array', arc: 270, arcCenter: 180, positionKey: 'aftCenter' },
-            { type: 'dualTorpedo', name: 'Dual Torpedo Launcher (BC)', arc: 90, arcCenter: 0, arcCenters: [0, 180], positionKey: 'dualTorpCenter', hp: 12, loaded: 6, maxLoaded: 6 }
         ],
         BB: [
             { type: 'continuousBeam', name: 'Port Forward Beam Array', arc: 270, arcCenter: 0, positionKey: 'forwardPort' },
             { type: 'continuousBeam', name: 'Starboard Forward Beam Array', arc: 270, arcCenter: 0, positionKey: 'forwardStarboard' },
             { type: 'continuousBeam', name: 'Aft Beam Array', arc: 270, arcCenter: 180, positionKey: 'aftCenter' },
             { type: 'dualTorpedo', name: 'Dual Torpedo Launcher (BB)', arc: 90, arcCenter: 0, arcCenters: [0, 180], positionKey: 'dualTorpCenter', hp: 14, loaded: 7, maxLoaded: 7 }
-        ],
-        DN: [
-            { type: 'continuousBeam', name: 'Port Forward Beam Array', arc: 270, arcCenter: 0, positionKey: 'forwardPort' },
-            { type: 'continuousBeam', name: 'Starboard Forward Beam Array', arc: 270, arcCenter: 0, positionKey: 'forwardStarboard' },
-            { type: 'continuousBeam', name: 'Aft Beam Array', arc: 270, arcCenter: 180, positionKey: 'aftCenter' },
-            { type: 'dualTorpedo', name: 'Dual Torpedo Launcher (DN)', arc: 90, arcCenter: 0, arcCenters: [0, 180], positionKey: 'dualTorpCenter', hp: 16, loaded: 8, maxLoaded: 8 }
-        ],
-        SD: [
-            { type: 'continuousBeam', name: 'Port Forward Beam Array', arc: 270, arcCenter: 0, positionKey: 'forwardPort' },
-            { type: 'continuousBeam', name: 'Starboard Forward Beam Array', arc: 270, arcCenter: 0, positionKey: 'forwardStarboard' },
-            { type: 'continuousBeam', name: 'Aft Beam Array', arc: 270, arcCenter: 180, positionKey: 'aftCenter' },
-            { type: 'dualTorpedo', name: 'Dual Torpedo Launcher (SD)', arc: 90, arcCenter: 0, arcCenters: [0, 180], positionKey: 'dualTorpCenter', hp: 18, loaded: 9, maxLoaded: 9 }
         ]
     },
     TRIGON: {
-        FG: [
-            { type: 'disruptor', name: 'Nose Disruptor Cannon', arc: 120, arcCenter: 0, positionKey: 'trigonNose' }
-        ],
         DD: [
             { type: 'disruptor', name: 'Port Wing Disruptor', arc: 120, arcCenter: 0, positionKey: 'trigonWingPortFwd' },
             { type: 'disruptor', name: 'Starboard Wing Disruptor', arc: 120, arcCenter: 0, positionKey: 'trigonWingStarboardFwd' }
@@ -105,40 +75,15 @@ const SHIP_WEAPON_LOADOUTS = {
             { type: 'disruptor', name: 'Port Wing Disruptor', arc: 120, arcCenter: 0, positionKey: 'trigonWingPortFwd' },
             { type: 'disruptor', name: 'Starboard Wing Disruptor', arc: 120, arcCenter: 0, positionKey: 'trigonWingStarboardFwd' }
         ],
-        BC: [
-            { type: 'disruptor', name: 'Nose Disruptor Cannon', arc: 120, arcCenter: 0, positionKey: 'trigonNose' },
-            { type: 'disruptor', name: 'Port Wing Fwd Disruptor', arc: 120, arcCenter: 0, positionKey: 'trigonWingPortFwd' },
-            { type: 'disruptor', name: 'Starboard Wing Fwd Disruptor', arc: 120, arcCenter: 0, positionKey: 'trigonWingStarboardFwd' },
-            { type: 'disruptor', name: 'Center Aft Disruptor', arc: 120, arcCenter: 180, positionKey: 'trigonCenterAft' }
-        ],
         BB: [
             { type: 'disruptor', name: 'Nose Disruptor Cannon', arc: 120, arcCenter: 0, positionKey: 'trigonNose' },
             { type: 'disruptor', name: 'Port Wing Fwd Disruptor', arc: 120, arcCenter: 0, positionKey: 'trigonWingPortFwd' },
             { type: 'disruptor', name: 'Starboard Wing Fwd Disruptor', arc: 120, arcCenter: 0, positionKey: 'trigonWingStarboardFwd' },
             { type: 'disruptor', name: 'Port Wing Aft Disruptor', arc: 120, arcCenter: 180, positionKey: 'trigonWingPortAft' },
             { type: 'disruptor', name: 'Starboard Wing Aft Disruptor', arc: 120, arcCenter: 180, positionKey: 'trigonWingStarboardAft' }
-        ],
-        DN: [
-            { type: 'disruptor', name: 'Nose Disruptor Cannon', arc: 120, arcCenter: 0, positionKey: 'trigonNose' },
-            { type: 'disruptor', name: 'Port Wing Fwd Disruptor', arc: 120, arcCenter: 0, positionKey: 'trigonWingPortFwd' },
-            { type: 'disruptor', name: 'Starboard Wing Fwd Disruptor', arc: 120, arcCenter: 0, positionKey: 'trigonWingStarboardFwd' },
-            { type: 'disruptor', name: 'Port Wing Aft Disruptor', arc: 120, arcCenter: 180, positionKey: 'trigonWingPortAft' },
-            { type: 'disruptor', name: 'Starboard Wing Aft Disruptor', arc: 120, arcCenter: 180, positionKey: 'trigonWingStarboardAft' },
-            { type: 'disruptor', name: 'Center Aft Disruptor', arc: 120, arcCenter: 180, positionKey: 'trigonCenterAft' }
-        ],
-        SD: [
-            { type: 'disruptor', name: 'Nose Disruptor Cannon', arc: 120, arcCenter: 0, positionKey: 'trigonNose' },
-            { type: 'disruptor', name: 'Port Wing Fwd Disruptor', arc: 120, arcCenter: 0, positionKey: 'trigonWingPortFwd' },
-            { type: 'disruptor', name: 'Starboard Wing Fwd Disruptor', arc: 120, arcCenter: 0, positionKey: 'trigonWingStarboardFwd' },
-            { type: 'disruptor', name: 'Port Wing Aft Disruptor', arc: 120, arcCenter: 180, positionKey: 'trigonWingPortAft' },
-            { type: 'disruptor', name: 'Starboard Wing Aft Disruptor', arc: 120, arcCenter: 180, positionKey: 'trigonWingStarboardAft' },
-            { type: 'disruptor', name: 'Center Aft Disruptor', arc: 120, arcCenter: 180, positionKey: 'trigonCenterAft' }
         ]
     },
     SCINTILIAN: {
-        FG: [
-            { type: 'pulseBeam', name: 'Head Pulse Beam', arc: 270, arcCenter: 0, positionKey: 'scintilianHead', cooldown: 0.5, damage: 0.5 }
-        ],
         DD: [
             { type: 'pulseBeam', name: 'Head Pulse Beam', arc: 270, arcCenter: 0, positionKey: 'scintilianHead', cooldown: 0.5, damage: 0.5 },
             { type: 'plasma', name: 'Neck Plasma Launcher', arc: 90, arcCenter: 0, positionKey: 'scintilianNeck' }
@@ -155,34 +100,7 @@ const SHIP_WEAPON_LOADOUTS = {
             { type: 'plasma', name: 'Neck Plasma Launcher', arc: 90, arcCenter: 0, positionKey: 'scintilianNeck' },
             { type: 'plasma', name: 'Aft Plasma Launcher', arc: 90, arcCenter: 180, positionKey: 'scintilianCenterAft' }
         ],
-        BC: [
-            { type: 'pulseBeam', name: 'Head Pulse Beam', arc: 270, arcCenter: 0, positionKey: 'scintilianHead', cooldown: 0.5, damage: 0.5 },
-            { type: 'pulseBeam', name: 'Port Wing Inner Pulse Beam', arc: 270, arcCenter: 180, positionKey: 'scintilianWingPortInner', cooldown: 0.5, damage: 0.5 },
-            { type: 'pulseBeam', name: 'Starboard Wing Inner Pulse Beam', arc: 270, arcCenter: 180, positionKey: 'scintilianWingStarboardInner', cooldown: 0.5, damage: 0.5 },
-            { type: 'pulseBeam', name: 'Port Wing Outer Pulse Beam', arc: 270, arcCenter: 180, positionKey: 'scintilianWingPortOuter', cooldown: 0.5, damage: 0.5 },
-            { type: 'pulseBeam', name: 'Starboard Wing Outer Pulse Beam', arc: 270, arcCenter: 180, positionKey: 'scintilianWingStarboardOuter', cooldown: 0.5, damage: 0.5 },
-            { type: 'plasma', name: 'Neck Plasma Launcher', arc: 90, arcCenter: 0, positionKey: 'scintilianNeck' },
-            { type: 'plasma', name: 'Aft Plasma Launcher', arc: 90, arcCenter: 180, positionKey: 'scintilianCenterAft' }
-        ],
         BB: [
-            { type: 'pulseBeam', name: 'Head Pulse Beam', arc: 270, arcCenter: 0, positionKey: 'scintilianHead', cooldown: 0.5, damage: 0.5 },
-            { type: 'pulseBeam', name: 'Port Wing Inner Pulse Beam', arc: 270, arcCenter: 180, positionKey: 'scintilianWingPortInner', cooldown: 0.5, damage: 0.5 },
-            { type: 'pulseBeam', name: 'Starboard Wing Inner Pulse Beam', arc: 270, arcCenter: 180, positionKey: 'scintilianWingStarboardInner', cooldown: 0.5, damage: 0.5 },
-            { type: 'pulseBeam', name: 'Port Wing Outer Pulse Beam', arc: 270, arcCenter: 180, positionKey: 'scintilianWingPortOuter', cooldown: 0.5, damage: 0.5 },
-            { type: 'pulseBeam', name: 'Starboard Wing Outer Pulse Beam', arc: 270, arcCenter: 180, positionKey: 'scintilianWingStarboardOuter', cooldown: 0.5, damage: 0.5 },
-            { type: 'plasma', name: 'Neck Plasma Launcher', arc: 90, arcCenter: 0, positionKey: 'scintilianNeck' },
-            { type: 'plasma', name: 'Aft Plasma Launcher', arc: 90, arcCenter: 180, positionKey: 'scintilianCenterAft' }
-        ],
-        DN: [
-            { type: 'pulseBeam', name: 'Head Pulse Beam', arc: 270, arcCenter: 0, positionKey: 'scintilianHead', cooldown: 0.5, damage: 0.5 },
-            { type: 'pulseBeam', name: 'Port Wing Inner Pulse Beam', arc: 270, arcCenter: 180, positionKey: 'scintilianWingPortInner', cooldown: 0.5, damage: 0.5 },
-            { type: 'pulseBeam', name: 'Starboard Wing Inner Pulse Beam', arc: 270, arcCenter: 180, positionKey: 'scintilianWingStarboardInner', cooldown: 0.5, damage: 0.5 },
-            { type: 'pulseBeam', name: 'Port Wing Outer Pulse Beam', arc: 270, arcCenter: 180, positionKey: 'scintilianWingPortOuter', cooldown: 0.5, damage: 0.5 },
-            { type: 'pulseBeam', name: 'Starboard Wing Outer Pulse Beam', arc: 270, arcCenter: 180, positionKey: 'scintilianWingStarboardOuter', cooldown: 0.5, damage: 0.5 },
-            { type: 'plasma', name: 'Neck Plasma Launcher', arc: 90, arcCenter: 0, positionKey: 'scintilianNeck' },
-            { type: 'plasma', name: 'Aft Plasma Launcher', arc: 90, arcCenter: 180, positionKey: 'scintilianCenterAft' }
-        ],
-        SD: [
             { type: 'pulseBeam', name: 'Head Pulse Beam', arc: 270, arcCenter: 0, positionKey: 'scintilianHead', cooldown: 0.5, damage: 0.5 },
             { type: 'pulseBeam', name: 'Port Wing Inner Pulse Beam', arc: 270, arcCenter: 180, positionKey: 'scintilianWingPortInner', cooldown: 0.5, damage: 0.5 },
             { type: 'pulseBeam', name: 'Starboard Wing Inner Pulse Beam', arc: 270, arcCenter: 180, positionKey: 'scintilianWingStarboardInner', cooldown: 0.5, damage: 0.5 },
@@ -194,9 +112,6 @@ const SHIP_WEAPON_LOADOUTS = {
     },
     // PIRATE loadouts removed - now generated randomly per-ship for variety
     DEFAULT: {
-        FG: [
-            { type: 'continuousBeam', name: 'Forward Beam Battery', arc: 270, arcCenter: 0, positionKey: 'forwardCenter' }
-        ],
         DD: [
             { type: 'continuousBeam', name: 'Forward Beam Battery', arc: 270, arcCenter: 0, positionKey: 'forwardCenter' },
             { type: 'torpedo', name: 'Forward Torpedo Launcher', arc: 90, arcCenter: 0, positionKey: 'forwardTorpPort' }
@@ -208,7 +123,7 @@ const SHIP_WEAPON_LOADOUTS = {
             { type: 'continuousBeam', name: 'Forward Beam Battery', arc: 270, arcCenter: 0, positionKey: 'forwardCenter' },
             { type: 'torpedo', name: 'Forward Torpedo Launcher', arc: 90, arcCenter: 0, positionKey: 'forwardTorpPort' }
         ],
-        BC: [
+        BB: [
             { type: 'continuousBeam', name: 'Forward Beam Battery', arc: 270, arcCenter: 0, positionKey: 'forwardCenter' },
             { type: 'torpedo', name: 'Forward Torpedo Launcher', arc: 90, arcCenter: 0, positionKey: 'forwardTorpPort' }
         ]
@@ -419,7 +334,7 @@ class Ship extends Entity {
         this.boostDirection = null; // 'w', 'a', 's', 'd'
 
         // Throttle system (NEW - replaces hold-to-accelerate)
-        this.throttle = 0;  // 0.0 to 1.0 (0% to 100% max speed)
+        this.throttle = 0;  // 0.0 to 1.0 (0% to 100% max speed, in 10% increments)
         this.targetSpeed = 0;  // Speed ship is trying to reach based on throttle
         this.throttleBoost = {
             active: false,
@@ -428,17 +343,31 @@ class Ship extends Entity {
             amount: 50,   // +50 speed units
             rechargeDuration: 10  // 10 seconds
         };
+        
+        // Fast rotation system (double-tap A/D)
+        this.fastRotateActive = false;
+        this.fastRotateMultiplier = 1.0;
+        this.fastRotateEndTime = 0;
+
+        // Energy System (replaces Internal Systems)
+        // Only support DD, CL, CA, BB classes
+        if (!['DD', 'CL', 'CA', 'BB'].includes(this.shipClass)) {
+            console.warn(`Invalid ship class ${this.shipClass}, defaulting to DD`);
+            this.shipClass = 'DD';
+        }
+        this.energy = new EnergySystem(this.shipClass);
 
         // Shields
         this.shields = this.createShields();
 
-        // Internal Systems (create before weapons so we can link them)
+        // Internal Systems (DEPRECATED - kept for compatibility during transition)
+        // TODO: Remove once all systems migrated to energy blocks
         this.systems = this.createSystems();
 
         // Weapons (created after systems so we can link them)
         this.weapons = this.createWeapons();
 
-        // Link weapons to systems for damage tracking
+        // Link weapons to systems for damage tracking (DEPRECATED)
         if (this.systems) {
             this.systems.setWeapons(this.weapons);
         }
@@ -481,56 +410,18 @@ class Ship extends Entity {
     }
 
     createShields() {
-        // Strike Cruiser shield configuration
-        if (this.shipClass === 'CS' && (this.faction === 'PLAYER' || this.faction === 'FEDERATION')) {
-            return new ShieldSystem({
-                fore: {
-                    strength: CONFIG.SHIELD_STRENGTH_FORE_CS,
-                    generatorHP: CONFIG.SYSTEM_HP_SHIELD_GEN
-                },
-                aft: {
-                    strength: CONFIG.SHIELD_STRENGTH_AFT_CS,
-                    generatorHP: CONFIG.SYSTEM_HP_SHIELD_GEN
-                },
-                port: {
-                    strength: CONFIG.SHIELD_STRENGTH_PORT_CS,
-                    generatorHP: CONFIG.SYSTEM_HP_SHIELD_GEN
-                },
-                starboard: {
-                    strength: CONFIG.SHIELD_STRENGTH_STARBOARD_CS,
-                    generatorHP: CONFIG.SYSTEM_HP_SHIELD_GEN
-                }
-            });
+        // Unified shield system - single shield for whole ship
+        // Shield strength varies by ship class
+        let maxStrength = 30; // Default
+        switch (this.shipClass) {
+            case 'DD': maxStrength = 25; break;
+            case 'CL': maxStrength = 35; break;
+            case 'CA': maxStrength = 50; break;
+            case 'BB': maxStrength = 70; break;
         }
-
-        // Heavy Cruiser shield configuration
-        if (this.shipClass === 'CA' && (this.faction === 'PLAYER' || this.faction === 'FEDERATION')) {
-            return new ShieldSystem({
-                fore: {
-                    strength: CONFIG.SHIELD_STRENGTH_FORE_CA,
-                    generatorHP: CONFIG.SYSTEM_HP_SHIELD_GEN
-                },
-                aft: {
-                    strength: CONFIG.SHIELD_STRENGTH_AFT_CA,
-                    generatorHP: CONFIG.SYSTEM_HP_SHIELD_GEN
-                },
-                port: {
-                    strength: CONFIG.SHIELD_STRENGTH_PORT_CA,
-                    generatorHP: CONFIG.SYSTEM_HP_SHIELD_GEN
-                },
-                starboard: {
-                    strength: CONFIG.SHIELD_STRENGTH_STARBOARD_CA,
-                    generatorHP: CONFIG.SYSTEM_HP_SHIELD_GEN
-                }
-            });
-        }
-
-        // Default shields for other ship types
+        
         return new ShieldSystem({
-            fore: { strength: 10, generatorHP: 8 },
-            aft: { strength: 10, generatorHP: 8 },
-            port: { strength: 10, generatorHP: 8 },
-            starboard: { strength: 10, generatorHP: 8 }
+            maxStrength: maxStrength
         });
     }
 
@@ -581,17 +472,13 @@ class Ship extends Entity {
     }
 
     getHullHPForClass(shipClass) {
-        // Hull HP scaled similar to old ship HP values
+        // DEPRECATED: Hull HP now handled by energy blocks
+        // Kept for compatibility with old systems
         switch(shipClass) {
-            case 'FG': return CONFIG.SHIP_HP_FG || 60;
             case 'DD': return CONFIG.SHIP_HP_DD || 80;
             case 'CL': return CONFIG.SHIP_HP_CL || 100;
-            case 'CS': return CONFIG.SHIP_HP_CS || 110;
             case 'CA': return CONFIG.SHIP_HP_CA || 120;
-            case 'BC': return CONFIG.SHIP_HP_BC || 140;
-            case 'BB': return 160;
-            case 'DN': return 180;
-            case 'SD': return 200;
+            case 'BB': return CONFIG.SHIP_HP_BC || 140;
             default: return 100;
         }
     }
@@ -628,12 +515,10 @@ class Ship extends Entity {
     getMaxSpeed() {
         let speed;
         switch (this.shipClass) {
-            case 'FG': speed = CONFIG.MAX_SPEED_FG; break;
             case 'DD': speed = CONFIG.MAX_SPEED_DD; break;
             case 'CL': speed = CONFIG.MAX_SPEED_CL; break;
-            case 'CS': speed = CONFIG.MAX_SPEED_CS; break;
             case 'CA': speed = CONFIG.MAX_SPEED_CA; break;
-            case 'BC': speed = CONFIG.MAX_SPEED_BC; break;
+            case 'BB': speed = CONFIG.MAX_SPEED_BC || CONFIG.MAX_SPEED_CA; break; // Use BC config for BB
             default: speed = CONFIG.MAX_SPEED_CA;
         }
 
@@ -646,12 +531,10 @@ class Ship extends Entity {
 
     getAcceleration() {
         switch (this.shipClass) {
-            case 'FG': return CONFIG.ACCELERATION_FG;
             case 'DD': return CONFIG.ACCELERATION_DD;
             case 'CL': return CONFIG.ACCELERATION_CL;
-            case 'CS': return CONFIG.ACCELERATION_CS;
             case 'CA': return CONFIG.ACCELERATION_CA;
-            case 'BC': return CONFIG.ACCELERATION_BC;
+            case 'BB': return CONFIG.ACCELERATION_BC || CONFIG.ACCELERATION_CA; // Use BC config for BB
             default: return CONFIG.ACCELERATION_CA;
         }
     }
@@ -659,12 +542,10 @@ class Ship extends Entity {
     getTurnRate() {
         let rate;
         switch (this.shipClass) {
-            case 'FG': rate = CONFIG.TURN_RATE_FG; break;
             case 'DD': rate = CONFIG.TURN_RATE_DD; break;
             case 'CL': rate = CONFIG.TURN_RATE_CL; break;
-            case 'CS': rate = CONFIG.TURN_RATE_CS; break;
             case 'CA': rate = CONFIG.TURN_RATE_CA; break;
-            case 'BC': rate = CONFIG.TURN_RATE_BC; break;
+            case 'BB': rate = CONFIG.TURN_RATE_BC || CONFIG.TURN_RATE_CA; break; // Use BC config for BB
             default: rate = CONFIG.TURN_RATE_CA;
         }
 
@@ -726,12 +607,10 @@ class Ship extends Entity {
 
     getShipSize() {
         switch (this.shipClass) {
-            case 'FG': return CONFIG.SHIP_LENGTH_FG;
             case 'DD': return CONFIG.SHIP_LENGTH_DD;
             case 'CL': return CONFIG.SHIP_LENGTH_CL;
-            case 'CS': return CONFIG.SHIP_LENGTH_CS;
             case 'CA': return CONFIG.SHIP_LENGTH_CA;
-            case 'BC': return CONFIG.SHIP_LENGTH_BC;
+            case 'BB': return CONFIG.SHIP_LENGTH_BC || CONFIG.SHIP_LENGTH_CA; // Use BC config for BB
             default: return CONFIG.SHIP_LENGTH_CA;
         }
     }
@@ -1030,22 +909,8 @@ class Ship extends Entity {
         };
 
         if (this.faction === 'PLAYER' || this.faction === 'FEDERATION') {
-            // Strike Cruiser (CS) has port/starboard streak beams instead of forward beam band
-            if (this.shipClass === 'CS') {
-                // Port beam (left side)
-                points.portBeamPoint = {
-                    type: 'point',
-                    x: -40,
-                    y: 33
-                };
-
-                // Starboard beam (right side)
-                points.starboardBeamPoint = {
-                    type: 'point',
-                    x: 40,
-                    y: 33
-                };
-            } else {
+            // Federation ships use forward beam band
+            {
                 // Other Federation ships (CA, BC, etc.) use forward/aft beam configuration
                 const saucerRadius = size * 0.5; // Smaller radius to fit inside saucer
                 const saucerCenterY = -size * 0.30; // Centered in saucer, moved down to match WEAPON_POSITIONS forwardCenter
@@ -1146,7 +1011,18 @@ class Ship extends Entity {
 
     turn(direction, deltaTime) {
         // direction: 1 = right, -1 = left
-        const degreesturned = this.turnRate * deltaTime * direction;
+        // Apply fast rotation multiplier if active
+        let effectiveTurnRate = this.turnRate;
+        const currentTime = performance.now() / 1000;
+        
+        if (this.fastRotateActive && currentTime < this.fastRotateEndTime) {
+            effectiveTurnRate *= this.fastRotateMultiplier;
+        } else if (this.fastRotateActive) {
+            // Fast rotation expired
+            this.fastRotateActive = false;
+        }
+        
+        const degreesturned = effectiveTurnRate * deltaTime * direction;
 
         // Calculate speed reduction: 10% per 30 degrees
         const speedReduction = (Math.abs(degreesturned) / 30) * 0.10;
@@ -1160,8 +1036,8 @@ class Ship extends Entity {
         if (wasNegative && this.currentSpeed > 0) this.currentSpeed = 0;
 
         if (this.physicsComponent && !CONFIG.DISABLE_PHYSICS) {
-            // Apply torque via physics
-            const torque = this.turnRate * direction * 10; // Scale for physics
+            // Apply torque via physics (use effective turn rate)
+            const torque = effectiveTurnRate * direction * 10; // Scale for physics
             this.physicsComponent.body.applyTorque(torque);
 
             // Also directly set rotation for responsive feel
@@ -1192,7 +1068,7 @@ class Ship extends Entity {
      * Called every frame from update()
      */
     updateThrottle(deltaTime) {
-        // Calculate target speed from throttle (0.0 to 1.0)
+        // Calculate target speed from throttle (0.0 to 1.0, in 10% increments)
         this.targetSpeed = this.maxSpeed * this.throttle;
 
         // Add boost if active
@@ -1201,6 +1077,18 @@ class Ship extends Entity {
             this.targetSpeed += this.throttleBoost.amount;
         } else if (this.throttleBoost.active) {
             this.throttleBoost.active = false; // Boost expired
+        }
+
+        // Energy drain/refill based on throttle
+        if (this.energy) {
+            if (this.throttle > 0.5) {
+                // Throttle > 50%: Drain energy
+                this.energy.drainEnergy(0, deltaTime);
+            } else if (this.throttle < 0.5) {
+                // Throttle < 50%: Refill energy
+                this.energy.refillEnergy(0, deltaTime);
+            }
+            // Throttle = 50%: No energy change
         }
 
         // Accelerate/decelerate toward target speed
@@ -1272,6 +1160,20 @@ class Ship extends Entity {
 
         const currentTime = performance.now() / 1000;
 
+        // Update energy system
+        if (this.energy) {
+            this.energy.update(deltaTime);
+        }
+        
+        // Update visual damage effects (particle trails, flames, explosions)
+        this.updateDamageEffects(deltaTime);
+        
+        // Update fast rotation expiration
+        const currentTime = performance.now() / 1000;
+        if (this.fastRotateActive && currentTime >= this.fastRotateEndTime) {
+            this.fastRotateActive = false;
+        }
+
         // Update throttle system (NEW - maintains speed automatically)
         this.updateThrottle(deltaTime);
 
@@ -1290,7 +1192,7 @@ class Ship extends Entity {
 
         // Update shields
         if (this.shields) {
-            this.shields.update(deltaTime, currentTime);
+            this.shields.update(deltaTime, currentTime, this);
         }
 
         // Update systems (now includes weapons auto-repair)
@@ -1813,9 +1715,9 @@ class Ship extends Entity {
 
         // Calculate impact angle if contact point provided
         // NO SHIELDS while cloaked or in nebula!
-        if (contactPoint && this.shields && !this.isCloaked() && !this.inNebula) {
-            const impactAngle = MathUtils.angleBetween(this.x, this.y, contactPoint.x, contactPoint.y);
-            remainingDamage = this.shields.applyDamage(this.rotation, impactAngle, remainingDamage, currentTime);
+        if (contactPoint && this.shields && this.shields.isUp() && !this.isCloaked() && !this.inNebula) {
+            // Unified shield - doesn't care about angle
+            remainingDamage = this.shields.applyDamage(remainingDamage, currentTime, this);
 
             if (this.isPlayer && remainingDamage < damage) {
                 const shieldDamage = damage - remainingDamage;
@@ -1827,9 +1729,9 @@ class Ship extends Entity {
             }
         }
 
-        // Apply remaining damage to hull (collisions don't damage systems)
-        if (remainingDamage > 0 && this.systems && this.systems.hull) {
-            this.systems.hull.takeDamage(remainingDamage);
+        // Apply remaining damage to energy blocks (reduces block length/capacity)
+        if (remainingDamage > 0 && this.energy) {
+            this.energy.takeDamage(remainingDamage);
 
             // Add damage flash effect for ALL ships (not just player)
             this.damageFlashAlpha = 0.8;
@@ -1837,13 +1739,19 @@ class Ship extends Entity {
             if (this.isPlayer) {
                 eventBus.emit('player-damage', {
                     damage: remainingDamage,
-                    hp: this.systems.hull.hp,
+                    energyPercent: this.energy.getEnergyPercent(),
+                    capacity: this.energy.getTotalCapacity(),
                     point: contactPoint
                 });
             }
         }
 
-        // Check if hull destroyed
+        // Check if destroyed (0 energy block length)
+        if (this.energy && this.energy.isDestroyed()) {
+            this.destroy();
+        }
+        
+        // DEPRECATED: Old system damage check (kept for compatibility)
         if (this.systems && this.systems.hull && this.systems.hull.destroyed) {
             this.destroy();
         }
@@ -1864,6 +1772,84 @@ class Ship extends Entity {
                 faction: this.faction,
                 shipClass: this.shipClass
             });
+        }
+    }
+
+    /**
+     * Update visual damage effects based on energy block state
+     * 75%: Particle trails (smoke)
+     * 50%: Flames onboard + particle trails
+     * 25%: Flames + particle trails + random small explosions
+     */
+    updateDamageEffects(deltaTime) {
+        if (!this.energy) return;
+        
+        const damageState = this.energy.getDamageState();
+        const size = this.getShipSize();
+        
+        // Get particle system from global game instance
+        const particleSystem = window.game ? window.game.particleSystem : null;
+        if (!particleSystem) return;
+        
+        // Calculate ship rear position for particle trails
+        const rearOffset = size * 0.6;
+        const trailX = this.x + Math.cos(MathUtils.toRadians(this.rotation + 180)) * rearOffset;
+        const trailY = this.y + Math.sin(MathUtils.toRadians(this.rotation + 180)) * rearOffset;
+        
+        // 75% or less: Particle trails (smoke)
+        if (damageState <= 0.75) {
+            const smokeIntensity = 1.0 - (damageState / 0.75); // More smoke as damage increases
+            if (Math.random() < smokeIntensity * 0.3) { // 30% chance per frame at 0% capacity
+                particleSystem.createEngineTrail(trailX, trailY, MathUtils.toRadians(this.rotation + 180), {
+                    color: '#666666', // Gray smoke
+                    size: 1.5,
+                    intensity: smokeIntensity
+                });
+            }
+        }
+        
+        // 50% or less: Flames onboard + particle trails
+        if (damageState <= 0.50) {
+            // Create flames on ship (small fire particles)
+            const flameIntensity = (0.50 - damageState) / 0.50; // 0 to 1
+            const flameCount = Math.floor(flameIntensity * 3);
+            
+            for (let i = 0; i < flameCount; i++) {
+                const offsetX = (Math.random() - 0.5) * size * 0.8;
+                const offsetY = (Math.random() - 0.5) * size * 0.6;
+                const flameX = this.x + Math.cos(MathUtils.toRadians(this.rotation)) * offsetX - Math.sin(MathUtils.toRadians(this.rotation)) * offsetY;
+                const flameY = this.y + Math.sin(MathUtils.toRadians(this.rotation)) * offsetX + Math.cos(MathUtils.toRadians(this.rotation)) * offsetY;
+                
+                if (Math.random() < 0.15) { // 15% chance per flame per frame
+                    particleSystem.addParticle(new Particle({
+                        x: flameX,
+                        y: flameY,
+                        vx: (Math.random() - 0.5) * 20,
+                        vy: (Math.random() - 0.5) * 20,
+                        size: 2 + Math.random() * 3,
+                        color: Math.random() > 0.5 ? '#ff6600' : '#ff3300',
+                        life: 0.3 + Math.random() * 0.2,
+                        decay: 2 + Math.random(),
+                        glow: true,
+                        type: 'circle'
+                    }));
+                }
+            }
+        }
+        
+        // 25% or less: Flames + particle trails + random small explosions
+        if (damageState <= 0.25) {
+            // Random small explosions
+            if (Math.random() < 0.01) { // 1% chance per frame
+                const explosionX = this.x + (Math.random() - 0.5) * size;
+                const explosionY = this.y + (Math.random() - 0.5) * size;
+                particleSystem.createExplosion(explosionX, explosionY, {
+                    particleCount: 10,
+                    size: 0.5,
+                    color: '#ff3300',
+                    speed: 50
+                });
+            }
         }
     }
 }

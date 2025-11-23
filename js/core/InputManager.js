@@ -65,7 +65,7 @@ class InputManager {
             this.spacebarReleased = false;
         }
 
-        // Double-tap detection for boost (W, A, S, D keys)
+        // Double-tap detection for special maneuvers (W, A, S, D keys)
         if (key === 'w' || key === 'a' || key === 's' || key === 'd') {
             const currentTime = performance.now();
             const lastPressTime = this.lastKeyPressTimes.get(key) || 0;
@@ -73,8 +73,13 @@ class InputManager {
 
             if (timeSinceLastPress < this.doubleTapThreshold) {
                 // Double-tap detected!
-                eventBus.emit('boost-activated', { direction: key });
-                console.log(`Boost activated (double-tap ${key.toUpperCase()})`);
+                if (key === 'w') {
+                    eventBus.emit('burst-acceleration', { direction: key });
+                } else if (key === 's') {
+                    eventBus.emit('instant-stop', { direction: key });
+                } else if (key === 'a' || key === 'd') {
+                    eventBus.emit('fast-rotate', { direction: key });
+                }
                 this.lastKeyPressTimes.set(key, 0); // Reset to prevent triple-tap
             } else {
                 this.lastKeyPressTimes.set(key, currentTime);
@@ -100,16 +105,11 @@ class InputManager {
 
         this.keys.set(key, false);
 
-        // Handle spacebar release for decoy vs mine
+        // Handle spacebar - now used for shield toggle (single press)
+        // Decoys moved to C key, mines to E key
         if (e.key === ' ') {
-            const pressDuration = performance.now() - this.spacebarPressTime;
             this.spacebarReleased = true;
-
-            if (pressDuration < 500) {
-                eventBus.emit('deploy-decoy');
-            } else {
-                eventBus.emit('deploy-mine', { mineType: 'standard' });
-            }
+            // Shield toggle handled in Engine.js keydown listener
         }
 
         // C key for decoy deployment

@@ -79,13 +79,20 @@ class TorpedoProjectile extends Projectile {
                 this.terminalHoming = true;
             }
 
-            // Home in on target if locked or in terminal phase
-            if (this.lockOnTarget || this.terminalHoming) {
-                const targetAngle = MathUtils.angleBetween(this.x, this.y, this.lockOnTarget.x, this.lockOnTarget.y);
+            // Check if target is within 90° forward arc
+            const targetAngle = MathUtils.angleBetween(this.x, this.y, this.lockOnTarget.x, this.lockOnTarget.y);
+            const angleDiff = Math.abs(MathUtils.normalizeAngle(targetAngle - this.rotation));
+            const inArc = angleDiff <= 45 || angleDiff >= 315; // 90° forward arc (45° each side)
+
+            // Home in on target if locked and in arc (or in terminal phase)
+            if ((this.lockOnTarget && inArc) || this.terminalHoming) {
                 const vec = MathUtils.vectorFromAngle(targetAngle, this.speed);
                 this.vx = vec.x;
                 this.vy = vec.y;
                 this.rotation = targetAngle;
+            } else if (this.lockOnTarget && !inArc && !this.terminalHoming) {
+                // Lose lock if outside arc (unless in terminal phase)
+                this.lockOnTarget = null;
             }
         }
 

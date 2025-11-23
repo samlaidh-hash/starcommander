@@ -29,6 +29,9 @@ class ShipRenderer {
         // Draw ship hull
         this.drawHull(ship);
 
+        // Draw visual damage effects (particle trails, flames, explosions)
+        this.drawDamageEffects(ship);
+
         // Draw weapon firing points and indicators (if player ship)
         if (ship.isPlayer && ship.weaponPoints) {
             this.drawWeaponPoints(ship);
@@ -459,36 +462,42 @@ class ShipRenderer {
     }
 
     drawShields(ship) {
-        if (!ship.shields) return;
+        if (!ship.shields || !ship.shields.isUp()) return;
 
         const size = ship.getShipSize();
-        const shieldRadius = size * 1.2; // Shield bubble slightly larger than ship
-        const visualEffects = ship.shields.visualEffects;
+        const shieldRadiusX = size * 1.3; // Horizontal radius (wider)
+        const shieldRadiusY = size * 1.1; // Vertical radius (taller)
+        
+        // Base alpha (faint when not hit)
+        let alpha = 0.15;
+        
+        // Brighten momentarily on hit
+        if (ship.shields.hitFlashAlpha && ship.shields.hitFlashAlpha > 0) {
+            alpha = 0.6 + (ship.shields.hitFlashAlpha * 0.4); // Bright flash on hit
+        }
 
-        // Draw shield arcs for each quadrant that was recently hit
-        const quadrants = ['fore', 'aft', 'port', 'starboard'];
-        for (const quadrant of quadrants) {
-            const effect = visualEffects[quadrant];
-            if (effect.alpha > 0) {
-                this.ctx.save();
-
-                // Determine arc angles for each quadrant
-                let startAngle, endAngle;
-                switch (quadrant) {
-                    case 'fore':
-                        startAngle = -135; // -45° rotated by -90° (ship reference)
-                        endAngle = -45;
-                        break;
-                    case 'starboard':
-                        startAngle = -45;
-                        endAngle = 45;
-                        break;
-                    case 'aft':
-                        startAngle = 45;
-                        endAngle = 135;
-                        break;
-                    case 'port':
-                        startAngle = 135;
+        this.ctx.save();
+        this.ctx.globalAlpha = alpha;
+        
+        // Draw faint ovoid shield
+        this.ctx.strokeStyle = '#00ffff'; // Cyan
+        this.ctx.lineWidth = 2;
+        this.ctx.shadowBlur = 5;
+        this.ctx.shadowColor = '#00ffff';
+        
+        this.ctx.beginPath();
+        this.ctx.ellipse(0, 0, shieldRadiusX, shieldRadiusY, 0, 0, Math.PI * 2);
+        this.ctx.stroke();
+        
+        // Draw inner glow
+        this.ctx.globalAlpha = alpha * 0.3;
+        this.ctx.strokeStyle = '#00aaff';
+        this.ctx.lineWidth = 1;
+        this.ctx.beginPath();
+        this.ctx.ellipse(0, 0, shieldRadiusX * 0.9, shieldRadiusY * 0.9, 0, 0, Math.PI * 2);
+        this.ctx.stroke();
+        
+        this.ctx.restore();
                         endAngle = 225;
                         break;
                 }
@@ -713,6 +722,39 @@ class ShipRenderer {
             this.ctx.arc(dotX, dotY, dotRadius, 0, Math.PI * 2);
             this.ctx.fill();
             this.ctx.stroke();
+        }
+    }
+
+    /**
+     * Draw visual damage effects based on energy block state
+     * This method is called during rendering to draw visual indicators
+     * Actual particle creation happens in Ship.update()
+     */
+    drawDamageEffects(ship) {
+        if (!ship.energy) return;
+        
+        const damageState = ship.energy.getDamageState();
+        const size = ship.getShipSize();
+        
+        // 50% or less: Draw flame indicators on ship
+        if (damageState <= 0.50) {
+            const flameIntensity = (0.50 - damageState) / 0.50; // 0 to 1
+            const flameCount = Math.floor(flameIntensity * 5);
+            
+            for (let i = 0; i < flameCount; i++) {
+                const offsetX = (Math.random() - 0.5) * size * 0.6;
+                const offsetY = (Math.random() - 0.5) * size * 0.4;
+                
+                this.ctx.save();
+                this.ctx.globalAlpha = 0.6 + Math.random() * 0.4;
+                this.ctx.fillStyle = Math.random() > 0.5 ? '#ff6600' : '#ff3300';
+                this.ctx.shadowBlur = 5;
+                this.ctx.shadowColor = '#ff3300';
+                this.ctx.beginPath();
+                this.ctx.arc(offsetX, offsetY, 2 + Math.random() * 2, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.restore();
+            }
         }
     }
 }

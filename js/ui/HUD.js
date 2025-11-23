@@ -53,7 +53,13 @@ class HUD {
         // Update shields
         this.updateShields(playerShip);
 
-        // Update systems (now includes weapons)
+        // Update energy blocks (replaces system damage display)
+        this.updateEnergyBlocks(playerShip);
+        
+        // Update throttle display
+        this.updateThrottle(playerShip);
+
+        // Update systems (DEPRECATED - kept for compatibility)
         this.updateSystems(playerShip);
 
         // Update countermeasures
@@ -95,7 +101,9 @@ class HUD {
         this.shipHeaderElement.textContent = `${shipName} - ${factionLabel} ${classLabel}`;
     }
     updateShields(ship) {
+        // Unified shield system - single shield indicator
         if (!ship || !ship.shields) {
+            // Update all quadrant bars to 0 for compatibility
             this.updateBar('shield-fore', 0);
             this.updateBar('shield-port', 0);
             this.updateBar('shield-starboard', 0);
@@ -103,22 +111,86 @@ class HUD {
             return;
         }
 
-        const quadrants = ship.shields.getAllQuadrants();
-
-        // Debug logging to diagnose shield bar issues
-        if (CONFIG.DEBUG_MODE) {
-            console.log('Shield values:', {
-                fore: {current: quadrants.fore.current, max: quadrants.fore.max, pct: quadrants.fore.getPercentage()},
-                aft: {current: quadrants.aft.current, max: quadrants.aft.max, pct: quadrants.aft.getPercentage()},
-                port: {current: quadrants.port.current, max: quadrants.port.max, pct: quadrants.port.getPercentage()},
-                starboard: {current: quadrants.starboard.current, max: quadrants.starboard.max, pct: quadrants.starboard.getPercentage()}
-            });
+        // Unified shield - show same value on all quadrants for compatibility
+        const shieldPercent = ship.shields.getPercentage();
+        const isUp = ship.shields.isUp();
+        
+        this.updateBar('shield-fore', shieldPercent);
+        this.updateBar('shield-port', shieldPercent);
+        this.updateBar('shield-starboard', shieldPercent);
+        this.updateBar('shield-aft', shieldPercent);
+        
+        // Update shield status indicator (if exists)
+        const shieldStatusElement = document.getElementById('shield-status');
+        if (shieldStatusElement) {
+            shieldStatusElement.textContent = isUp ? 'UP' : 'DOWN';
+            shieldStatusElement.style.color = isUp ? '#0f0' : '#f00';
         }
-
-        this.updateBar('shield-fore', quadrants.fore.getPercentage());
-        this.updateBar('shield-port', quadrants.port.getPercentage());
-        this.updateBar('shield-starboard', quadrants.starboard.getPercentage());
-        this.updateBar('shield-aft', quadrants.aft.getPercentage());
+    }
+    
+    updateEnergyBlocks(ship) {
+        if (!ship || !ship.energy) return;
+        
+        const blockData = ship.energy.getBlockData();
+        const container = document.getElementById('energy-blocks-container');
+        
+        if (!container) {
+            // Create container if it doesn't exist
+            const energyGroup = document.createElement('div');
+            energyGroup.className = 'system-group';
+            energyGroup.id = 'energy-blocks-group';
+            energyGroup.innerHTML = `
+                <div class="system-label">Energy Blocks</div>
+                <div id="energy-blocks-container"></div>
+            `;
+            // Insert after shields, before hull
+            const shieldsGroup = document.querySelector('.system-group');
+            if (shieldsGroup && shieldsGroup.nextSibling) {
+                shieldsGroup.parentNode.insertBefore(energyGroup, shieldsGroup.nextSibling);
+            }
+            return;
+        }
+        
+        // Clear and rebuild energy blocks display
+        container.innerHTML = '';
+        
+        for (let i = 0; i < blockData.length; i++) {
+            const block = blockData[i];
+            const blockElement = document.createElement('div');
+            blockElement.className = 'energy-block';
+            blockElement.innerHTML = `
+                <div class="energy-block-label">Block ${i + 1}</div>
+                <div class="energy-block-bar">
+                    <div class="energy-block-fill" style="width: ${block.energyPercent * 100}%"></div>
+                    <div class="energy-block-capacity" style="width: ${(block.currentLength / block.maxLength) * 100}%"></div>
+                </div>
+                <div class="energy-block-info">${Math.round(block.energy)}/${Math.round(block.currentLength)}</div>
+            `;
+            container.appendChild(blockElement);
+        }
+    }
+    
+    updateThrottle(ship) {
+        if (!ship) return;
+        
+        const throttleElement = document.getElementById('throttle-display');
+        const throttleBar = document.getElementById('throttle-bar-fill');
+        
+        if (throttleElement) {
+            throttleElement.textContent = `${Math.round(ship.throttle * 100)}%`;
+        }
+        
+        if (throttleBar) {
+            throttleBar.style.width = `${ship.throttle * 100}%`;
+            // Color based on throttle level
+            if (ship.throttle > 0.5) {
+                throttleBar.style.background = '#f00'; // Red when draining energy
+            } else if (ship.throttle < 0.5) {
+                throttleBar.style.background = '#0f0'; // Green when refilling
+            } else {
+                throttleBar.style.background = '#ff0'; // Yellow at 50%
+            }
+        }
     }
 
     // REMOVED: updateWeapons() - now integrated into updateSystems()

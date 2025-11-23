@@ -43,7 +43,7 @@
     font-size: 9px;
 }
 
-/* Shield Display */
+/* Shield Display (Unified) */
 .shield-display {
     display: flex;
     flex-direction: column;
@@ -57,7 +57,7 @@
 }
 
 .shield-label {
-    width: 20px;
+    width: 40px;
     font-size: 8px;
 }
 
@@ -72,6 +72,83 @@
 
 .shield-bar .bar-fill {
     background: linear-gradient(90deg, #0ff, #0af) !important;
+}
+
+/* Energy Blocks Display */
+#energy-blocks-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.energy-block {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.energy-block-label {
+    font-size: 8px;
+    color: #0ff;
+}
+
+.energy-block-bar {
+    width: 100%;
+    height: 12px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #0f0;
+    position: relative;
+    overflow: hidden;
+}
+
+.energy-block-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: linear-gradient(90deg, #0f0, #0af);
+    transition: width 0.1s;
+    z-index: 2;
+}
+
+.energy-block-capacity {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    background: rgba(255, 0, 0, 0.3);
+    border-left: 1px solid #f00;
+    z-index: 1;
+}
+
+.energy-block-info {
+    font-size: 7px;
+    color: #0f0;
+}
+
+/* Throttle Display */
+#throttle-display {
+    font-size: 10px;
+    color: #0f0;
+    margin-bottom: 3px;
+}
+
+.throttle-bar {
+    width: 100%;
+    height: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #0f0;
+    position: relative;
+    overflow: hidden;
+}
+
+.throttle-bar-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: #0f0;
+    transition: width 0.1s, background 0.1s;
 }
 
 /* Weapon Status */

@@ -1,10 +1,8 @@
 const SHIP_CLASS_LABELS = {
-    FG: "Frigate",
     DD: "Destroyer",
     CL: "Light Cruiser",
-    CS: "Strike Cruiser",
     CA: "Heavy Cruiser",
-    BC: "Battlecruiser"
+    BB: "Battle Cruiser"
 };
 
 const FACTION_DISPLAY_NAMES = {
@@ -16,16 +14,6 @@ const FACTION_DISPLAY_NAMES = {
 };
 
 const PLAYER_SHIP_BASE_OPTIONS = [
-    {
-        id: "FED_FG",
-        faction: "PLAYER",
-        shipClass: "FG",
-        name: "USS Sabre",
-        label: "Federation Frigate (FG)",
-        description: "Fast escort with dual torpedo arcs.",
-        torpedo: { loaded: 2, stored: 20, hp: 4, summary: "Dual forward and aft 90-degree arcs" },
-        special: "Agile glass cannon built for quick strikes."
-    },
     {
         id: "FED_DD",
         faction: "PLAYER",
@@ -47,16 +35,6 @@ const PLAYER_SHIP_BASE_OPTIONS = [
         special: "Dual 90-degree torpedo arcs with cruiser endurance."
     },
     {
-        id: "FED_CS",
-        faction: "PLAYER",
-        shipClass: "CS",
-        name: "USS Akira",
-        label: "Federation Strike Cruiser (CS)",
-        description: "Fast attack cruiser with dual streak beams and heavy torpedo load.",
-        torpedo: { loaded: 4, stored: 40, hp: 8, summary: "Dual forward and aft 90-degree arcs" },
-        special: "Port and starboard streak beams (2-shot burst) with dual torpedo arcs."
-    },
-    {
         id: "FED_CA",
         faction: "PLAYER",
         shipClass: "CA",
@@ -67,24 +45,14 @@ const PLAYER_SHIP_BASE_OPTIONS = [
         special: "Dual 90-degree torpedo arcs and flagship-grade systems."
     },
     {
-        id: "FED_BC",
+        id: "FED_BB",
         faction: "PLAYER",
-        shipClass: "BC",
+        shipClass: "BB",
         name: "USS Odyssey",
-        label: "Federation Battlecruiser (BC)",
+        label: "Federation Battle Cruiser (BB)",
         description: "Heavy hitter with the largest torpedo magazine.",
-        torpedo: { loaded: 6, stored: 60, hp: 12, summary: "Dual forward and aft 90-degree arcs" },
+        torpedo: { loaded: 7, stored: 70, hp: 14, summary: "Dual forward and aft 90-degree arcs" },
         special: "Maximum-capacity dual torpedo arcs."
-    },
-    {
-        id: "TRI_FG",
-        faction: "TRIGON",
-        shipClass: "FG",
-        name: "IKS Kravok",
-        label: "Trigon Frigate (FG)",
-        description: "Swift raider armed with disruptor cannons.",
-        torpedo: { summary: "No torpedoes; disruptor cannons only" },
-        special: "120-degree forward disruptors and +20% turn rate."
     },
     {
         id: "TRI_DD",
@@ -117,24 +85,14 @@ const PLAYER_SHIP_BASE_OPTIONS = [
         special: "Heavy disruptor banks and +20% turn rate."
     },
     {
-        id: "TRI_BC",
+        id: "TRI_BB",
         faction: "TRIGON",
-        shipClass: "BC",
+        shipClass: "BB",
         name: "IKS Vengeance",
-        label: "Trigon Battlecruiser (BC)",
+        label: "Trigon Battle Cruiser (BB)",
         description: "Battlecruiser with disruptor coverage fore and aft.",
         torpedo: { summary: "No torpedoes; disruptor cannons only" },
         special: "Forward and aft disruptors with +20% turn rate."
-    },
-    {
-        id: "SCI_FG",
-        faction: "SCINTILIAN",
-        shipClass: "FG",
-        name: "IRW Talon",
-        label: "Scintilian Frigate (FG)",
-        description: "Cloak-capable frigate using pulse beams.",
-        torpedo: { summary: "No torpedoes; pulse beam only" },
-        special: "Cloaking device with rapid pulse beams."
     },
     {
         id: "SCI_DD",
@@ -167,24 +125,14 @@ const PLAYER_SHIP_BASE_OPTIONS = [
         special: "Cloaking device with heavy plasma salvos."
     },
     {
-        id: "SCI_BC",
+        id: "SCI_BB",
         faction: "SCINTILIAN",
-        shipClass: "BC",
+        shipClass: "BB",
         name: "IRW Praetor",
-        label: "Scintilian Battlecruiser (BC)",
+        label: "Scintilian Battle Cruiser (BB)",
         description: "Flagship battlecruiser that rains plasma under cloak.",
         torpedo: { loaded: 1, stored: 0, hp: 4, summary: "Plasma torpedoes fore and aft (90-degree arcs)" },
         special: "Cloaking device with dual plasma bombardment."
-    },
-    {
-        id: "PIR_FG",
-        faction: "PIRATE",
-        shipClass: "FG",
-        name: "ITS Marauder",
-        label: "Pirate Frigate (FG)",
-        description: "Raider with stolen Federation beam and torpedo trap.",
-        torpedo: { loaded: 4, stored: 20, hp: 4, summary: "Forward 90-degree arc (standard torpedo)" },
-        special: "Unpredictable pirate tech mixing beam and torpedo."
     },
     {
         id: "PIR_DD",
@@ -217,11 +165,11 @@ const PLAYER_SHIP_BASE_OPTIONS = [
         special: "Hybrid Federation beam with black-market plasma."
     },
     {
-        id: "PIR_BC",
+        id: "PIR_BB",
         faction: "PIRATE",
-        shipClass: "BC",
+        shipClass: "BB",
         name: "ITS Tyrant",
-        label: "Pirate Battlecruiser (BC)",
+        label: "Pirate Battle Cruiser (BB)",
         description: "Heaviest pirate hull wielding disruptor and plasma tech.",
         torpedo: { loaded: 1, stored: 0, hp: 4, summary: "Plasma torpedo launcher (aft 90-degree arc)" },
         special: "Disruptor cannon paired with stolen plasma warheads."
@@ -355,25 +303,46 @@ class Engine {
             if (data.key === 'tab' && this.playerShip && this.stateManager.isPlaying()) {
                 this.cycleTarget();
             }
+            
+            // Space bar: Toggle shields
+            if (data.key === ' ' && this.playerShip && this.stateManager.isPlaying()) {
+                if (this.playerShip.shields) {
+                    const shieldState = this.playerShip.shields.toggle();
+                    console.log(`Shields ${shieldState ? 'RAISED' : 'LOWERED'}`);
+                    this.audioManager.playSound(shieldState ? 'shield-up' : 'shield-down');
+                }
+            }
+            
+            // E key: Drop mine
+            if (data.key === 'e' || data.key === 'E') {
+                if (this.playerShip && this.stateManager.isPlaying()) {
+                    const mine = this.playerShip.deployMine('standard');
+                    if (mine) {
+                        this.entities.push(mine);
+                        this.audioManager.playSound('mine-deploy');
+                    }
+                }
+            }
 
-            // NEW THROTTLE SYSTEM - W/S adjust throttle, X emergency stop
+            // NEW THROTTLE SYSTEM - W/S adjust throttle in 10% increments (single press only)
             if (this.playerShip && this.stateManager.isPlaying()) {
-                // W key - increase throttle by 10%
-                if (data.key === 'w') {
+                const inputManager = this.inputManager;
+                
+                // W key - increase throttle by 10% (only on single press, not hold)
+                if (data.key === 'w' && inputManager.keysPressed.get('w')) {
                     this.playerShip.throttle = Math.min(1.0, this.playerShip.throttle + 0.1);
                     console.log(`Throttle increased to ${(this.playerShip.throttle * 100).toFixed(0)}%`);
                 }
 
-                // S key - decrease throttle by 10%
-                if (data.key === 's') {
+                // S key - decrease throttle by 10% (only on single press, not hold)
+                if (data.key === 's' && inputManager.keysPressed.get('s')) {
                     this.playerShip.throttle = Math.max(0.0, this.playerShip.throttle - 0.1);
                     console.log(`Throttle decreased to ${(this.playerShip.throttle * 100).toFixed(0)}%`);
                 }
 
-                // X key - emergency stop + shield boost
-                if (data.key === 'x') {
-                    this.playerShip.emergencyStop();
-                    console.log('Emergency stop activated!');
+                // A/D keys - turn left/right (no energy cost for normal turns)
+                if ((data.key === 'a' || data.key === 'd') && inputManager.keysPressed.get(data.key)) {
+                    // Normal turning handled in update loop, no special action needed here
                 }
             }
 
@@ -558,32 +527,74 @@ class Engine {
             }
         });
 
-        // Throttle boost system (double-tap W/S for speed boost)
-        eventBus.on('boost-activated', (data) => {
-            if (!this.stateManager.isPlaying() || !this.playerShip) return;
-
-            const currentTime = performance.now() / 1000;
-
-            // Check if boost is available (not already active, not on cooldown)
-            const lastBoostTime = this.playerShip.throttleBoost.endTime || 0;
-            const cooldownRemaining = this.playerShip.throttleBoost.rechargeDuration - (currentTime - lastBoostTime);
-
-            if (this.playerShip.throttleBoost.active) {
-                console.log('Boost already active');
+        // Double-tap W: Burst acceleration (2x max speed, then slow to normal, instant energy cost)
+        eventBus.on('burst-acceleration', (data) => {
+            if (!this.stateManager.isPlaying() || !this.playerShip || !this.playerShip.energy) return;
+            
+            // Check if ship has energy
+            if (this.playerShip.energy.getTotalEnergy() <= 0) {
+                console.log('Burst acceleration failed: No energy');
                 return;
             }
-
-            if (cooldownRemaining > 0) {
-                console.log(`Boost on cooldown: ${cooldownRemaining.toFixed(1)}s remaining`);
+            
+            // Instant energy cost (drain a chunk)
+            const energyCost = 20; // Adjust as needed for balance
+            this.playerShip.energy.drainEnergy(energyCost);
+            
+            // Set burst speed (2x max speed)
+            const burstSpeed = this.playerShip.maxSpeed * 2;
+            this.playerShip.currentSpeed = burstSpeed;
+            
+            // Ship will slow back to normal via throttle system
+            console.log(`Burst acceleration activated! Speed: ${burstSpeed.toFixed(0)}`);
+            this.audioManager.playSound('boost');
+        });
+        
+        // Double-tap S: Instant stop (instant energy cost)
+        eventBus.on('instant-stop', (data) => {
+            if (!this.stateManager.isPlaying() || !this.playerShip || !this.playerShip.energy) return;
+            
+            // Check if ship has energy
+            if (this.playerShip.energy.getTotalEnergy() <= 0) {
+                console.log('Instant stop failed: No energy');
                 return;
             }
-
-            // Activate throttle boost
-            this.playerShip.throttleBoost.active = true;
-            this.playerShip.throttleBoost.endTime = currentTime + this.playerShip.throttleBoost.duration;
-
-            this.audioManager.playSound('boost'); // Boost sound effect
-            console.log(`Throttle boost activated! (+${this.playerShip.throttleBoost.amount} speed for ${this.playerShip.throttleBoost.duration}s)`);
+            
+            // Instant energy cost
+            const energyCost = 15; // Adjust as needed for balance
+            this.playerShip.energy.drainEnergy(energyCost);
+            
+            // Instant stop
+            this.playerShip.currentSpeed = 0;
+            this.playerShip.throttle = 0;
+            this.playerShip.targetSpeed = 0;
+            
+            console.log('Instant stop activated!');
+            this.audioManager.playSound('boost');
+        });
+        
+        // Double-tap A/D: Fast rotation (3-4x normal turn rate, instant energy cost)
+        eventBus.on('fast-rotate', (data) => {
+            if (!this.stateManager.isPlaying() || !this.playerShip || !this.playerShip.energy) return;
+            
+            // Check if ship has energy
+            if (this.playerShip.energy.getTotalEnergy() <= 0) {
+                console.log('Fast rotate failed: No energy');
+                return;
+            }
+            
+            // Instant energy cost
+            const energyCost = 10; // Adjust as needed for balance
+            this.playerShip.energy.drainEnergy(energyCost);
+            
+            // Activate fast rotation (3-4x normal)
+            const fastRotateMultiplier = 3.5;
+            this.playerShip.fastRotateActive = true;
+            this.playerShip.fastRotateMultiplier = fastRotateMultiplier;
+            this.playerShip.fastRotateEndTime = performance.now() / 1000 + 1.0; // 1 second duration
+            
+            console.log(`Fast rotation activated! (${fastRotateMultiplier}x turn rate)`);
+            this.audioManager.playSound('boost');
         });
 
         // Lock-on events for reticle visuals
@@ -1630,6 +1641,27 @@ class Engine {
             const worldPos = this.camera.screenToWorld(mousePos.x, mousePos.y);
             const currentTime = performance.now() / 1000;
 
+            // Drain energy while firing beams
+            if (this.playerShip.energy) {
+                const energyDrainRate = 8; // Energy per second per beam weapon
+                const activeBeams = this.playerShip.weapons.filter(w => 
+                    w instanceof ContinuousBeam && w.isFiring
+                ).length;
+                const totalDrain = energyDrainRate * activeBeams * deltaTime;
+                this.playerShip.energy.drainEnergy(totalDrain);
+                
+                // Stop firing if out of energy
+                if (this.playerShip.energy.getTotalEnergy() <= 0) {
+                    this.beamFiring = false;
+                    // Stop all beam weapons
+                    for (const weapon of this.playerShip.weapons) {
+                        if (weapon instanceof ContinuousBeam) {
+                            weapon.stopFiring(currentTime);
+                        }
+                    }
+                }
+            }
+
             const projectiles = this.playerShip.fireContinuousBeams(worldPos.x, worldPos.y, currentTime);
             if (projectiles && projectiles.length > 0) {
                 this.projectiles.push(...projectiles);
@@ -1699,9 +1731,9 @@ class Engine {
 
             // Get charge rate based on ship class
             let chargeRate = CONFIG.PLASMA_CHARGE_RATE_CA; // Default
-            if (this.playerShip.shipClass === 'FG') chargeRate = CONFIG.PLASMA_CHARGE_RATE_FG;
+            if (this.playerShip.shipClass === 'DD') chargeRate = CONFIG.PLASMA_CHARGE_RATE_DD || CONFIG.PLASMA_CHARGE_RATE_CL;
             else if (this.playerShip.shipClass === 'CL') chargeRate = CONFIG.PLASMA_CHARGE_RATE_CL;
-            else if (this.playerShip.shipClass === 'BC') chargeRate = CONFIG.PLASMA_CHARGE_RATE_BC;
+            else if (this.playerShip.shipClass === 'BB') chargeRate = CONFIG.PLASMA_CHARGE_RATE_BC;
 
             // Calculate damage: damage/second * time, max 5 seconds
             const cappedTime = Math.min(chargeTime, CONFIG.PLASMA_MAX_CHARGE_TIME);
@@ -2254,15 +2286,15 @@ class Engine {
         const advStart = Date.now();
         const currentTime = performance.now() / 1000;
 
-        // Tractor Beam (G key) - hold to pull target
-        if (this.inputManager.isKeyDown('g')) {
+        // Tractor Beam (Q key) - hold to pin target with fewer energy blocks
+        if (this.inputManager.isKeyDown('q')) {
             if (this.playerShip && this.playerShip.tractorBeam) {
                 if (!this.playerShip.tractorBeam.isActive) {
                     this.playerShip.tractorBeam.activate(this.entities, currentTime);
                 }
             }
         } else {
-            // Release G key deactivates tractor beam
+            // Release Q key deactivates tractor beam
             if (this.playerShip && this.playerShip.tractorBeam && this.playerShip.tractorBeam.isActive) {
                 this.playerShip.tractorBeam.deactivate();
             }

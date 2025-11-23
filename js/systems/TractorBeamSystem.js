@@ -57,16 +57,25 @@ class TractorBeamSystem {
 
     /**
      * Find nearest valid target within range
+     * Target must have fewer energy blocks (empty or full) than player ship
      */
     findNearestTarget(entities) {
         let nearest = null;
         let nearestDist = Infinity;
+        
+        // Get player ship energy block count
+        const playerBlockCount = this.ship.energy ? this.ship.energy.blockCount : 0;
 
         for (const entity of entities) {
             if (!entity.active) continue;
             if (entity === this.ship) continue;
             if (entity.type !== 'ship') continue;
             if (entity.faction === this.ship.faction) continue; // Don't tractor allies
+            if (!entity.energy) continue; // Must have energy system
+
+            // Check if target has fewer energy blocks
+            const targetBlockCount = entity.energy.blockCount;
+            if (targetBlockCount >= playerBlockCount) continue; // Can only pin weaker ships
 
             const dx = entity.x - this.ship.x;
             const dy = entity.y - this.ship.y;
@@ -83,9 +92,21 @@ class TractorBeamSystem {
 
     /**
      * Update tractor beam system
+     * Drains energy constantly while active
      */
     update(deltaTime, entities, currentTime) {
         if (!this.isActive || !this.currentTarget) return;
+
+        // Drain energy constantly while active
+        if (this.ship.energy) {
+            const energyDrainRate = 5; // Energy per second
+            const energyDrained = this.ship.energy.drainEnergy(0, deltaTime * energyDrainRate);
+            // If out of energy, tractor beam deactivates
+            if (this.ship.energy.getTotalEnergy() <= 0) {
+                this.deactivate();
+                return;
+            }
+        }
 
         // Check if target is still valid
         if (!this.currentTarget.active) {
@@ -104,11 +125,16 @@ class TractorBeamSystem {
             return;
         }
 
-        // Pull target toward player using direct velocity manipulation
-        // NO PHYSICS ENGINE - Direct velocity adjustment
-        const pullForce = this.pullStrength;
+        // Pin target - move it with player ship (strong pull)
+        const pullForce = this.pullStrength * 2; // Stronger pull to pin target
         this.currentTarget.vx += (dx / dist) * pullForce * dist * deltaTime;
         this.currentTarget.vy += (dy / dist) * pullForce * dist * deltaTime;
+        
+        // Also match player ship velocity to keep target pinned
+        if (this.ship.vx !== undefined && this.ship.vy !== undefined) {
+            this.currentTarget.vx = this.ship.vx * 0.8; // Follow player movement
+            this.currentTarget.vy = this.ship.vy * 0.8;
+        }
 
         // Update visual effects
         this.beamAlpha += deltaTime * 3;

@@ -14,14 +14,15 @@
 class ContinuousBeam extends BeamWeapon {
     constructor(config) {
         super(config);
-        this.maxFiringDuration = 3; // seconds
+        this.maxFiringDuration = 5; // seconds (increased from 3)
         this.damagePerSecond = 2; // 2 DPS (1 damage per 0.5s)
         this.damage = config.damage || CONFIG.BEAM_DAMAGE; // 1 damage per beam hit
         this.isFiring = false;
         this.firingStartTime = 0;
-        this.firingDuration = 0; // Track how long we fired (DYNAMIC COOLDOWN)
+        this.firingDuration = 0; // Track how long we fired (DYNAMIC COOLDOWN = fire duration, max 5s)
         this.lastStopTime = 0;
         this.fixedStartPoint = null; // FIXED START POINT - calculated once when firing starts
+        this.energyDrainRate = 8; // Energy per second while firing
     }
 
     canFire(currentTime, ship = null) {
@@ -86,8 +87,17 @@ class ContinuousBeam extends BeamWeapon {
         });
     }
 
-    update(deltaTime, currentTime) {
+    update(deltaTime, currentTime, ship = null) {
         super.update(deltaTime, currentTime);
+
+        // Drain energy while firing
+        if (this.isFiring && ship && ship.energy) {
+            const energyDrained = ship.energy.drainEnergy(0, deltaTime * this.energyDrainRate);
+            // Stop firing if out of energy
+            if (ship.energy.getTotalEnergy() <= 0) {
+                this.stopFiring(currentTime);
+            }
+        }
 
         // Auto-stop firing after max duration
         if (this.isFiring) {
