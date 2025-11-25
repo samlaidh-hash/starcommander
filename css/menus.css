@@ -209,10 +209,10 @@
 .briefing-mission-frame {
     display: flex;
     flex-direction: column;
-    background: rgba(0, 30, 0, 0.5);
-    border: 1px solid #0a0;
+    background: rgba(0, 30, 0, 0.6);
+    border: 2px solid #0a0;
     padding: 20px;
-    gap: 20px;
+    gap: 0;
     flex: 1;
     min-height: 0;
     overflow-y: auto;
@@ -238,14 +238,15 @@
     background: rgba(0, 255, 0, 0.5);
 }
 
-.briefing-officer {
+.briefing-mission-frame .briefing-officer {
     display: flex;
     align-items: center;
     gap: 20px;
-    padding: 15px;
-    background: rgba(0, 50, 0, 0.3);
+    padding: 15px 0;
+    background: transparent;
     border-left: 4px solid #0a0;
     flex-shrink: 0;
+    margin: 0 0 15px 0;
 }
 
 .officer-portrait {
@@ -262,15 +263,18 @@
     letter-spacing: 2px;
 }
 
-.briefing-text,
+.briefing-mission-frame .briefing-text,
 .debriefing-text {
-    padding: 15px;
-    background: rgba(0, 40, 0, 0.3);
-    border: 1px solid #0a0;
+    padding: 15px 0;
+    background: transparent;
+    border: none;
+    border-top: 1px solid rgba(0, 170, 0, 0.3);
+    border-bottom: 1px solid rgba(0, 170, 0, 0.3);
     flex-shrink: 1;
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
+    margin: 0;
 }
 
 /* Custom scrollbar for briefing text */
@@ -317,11 +321,12 @@
     hyphens: auto;
 }
 
-.briefing-objectives,
+.briefing-mission-frame .briefing-objectives,
 .debriefing-objectives {
-    padding: 15px;
-    background: rgba(0, 40, 0, 0.3);
-    border: 1px solid #0a0;
+    padding: 15px 0;
+    background: transparent;
+    border: none;
+    border-top: 1px solid rgba(0, 170, 0, 0.3);
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -329,6 +334,7 @@
     overflow-y: auto;
     overflow-x: hidden;
     flex-shrink: 1;
+    margin: 0;
 }
 
 .briefing-objectives h3,
