@@ -883,6 +883,8 @@
     background: rgba(0, 20, 40, 0.8);
     border: 1px solid #0ff;
     border-radius: 5px;
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
 #loadout-selection h3 {
