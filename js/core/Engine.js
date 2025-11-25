@@ -2021,7 +2021,7 @@ class Engine {
             }
         } catch (error) {
             console.error('Error updating entities:', error);
-            console.error('Failed entity:', entity);
+            // Note: entity variable is not accessible in catch block scope
         }
         perf.entities = Date.now() - entitiesStart;
 
