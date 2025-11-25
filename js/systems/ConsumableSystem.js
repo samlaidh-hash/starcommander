@@ -20,11 +20,11 @@ class ConsumableSystem {
             extraTorpedoes: 0,    // Hotkey: 1
             extraDecoys: 0,       // Hotkey: 2
             extraMines: 0,        // Hotkey: 3
-            shieldBoost: 0,       // Hotkey: 4
-            hullRepairKit: 0,     // Hotkey: 5
-            energyCells: 0,       // Hotkey: 6
-            extraShuttles: 0,     // Hotkey: 7
-            extraFighters: 0,     // Hotkey: 8
+            hullRepairKit: 0,     // Hotkey: 4
+            energyCells: 0,       // Hotkey: 5
+            extraShuttles: 0,     // Hotkey: 6
+            extraFighters: 0,     // Hotkey: 7
+            extraBombers: 0,      // Hotkey: 8
             extraDrones: 0,       // Hotkey: 9
             extraProbes: 0        // Hotkey: 0
         };
@@ -32,15 +32,8 @@ class ConsumableSystem {
         // Load default consumables for ship class
         this.loadDefaultConsumables();
 
-        // Active effects (time-based consumables)
-        this.activeEffects = {
-            energyCells: {
-                active: false,
-                endTime: 0,
-                damageMult: 1.2,
-                duration: 60 // 60 seconds
-            }
-        };
+        // Active effects (removed - energy cells are now instant)
+        this.activeEffects = {};
 
         // Consumable definitions for display
         this.definitions = {
@@ -62,23 +55,17 @@ class ConsumableSystem {
                 hotkey: '3',
                 instant: true
             },
-            shieldBoost: {
-                name: 'Shield Boost',
-                description: '+20% All Shields',
-                hotkey: '4',
-                instant: true
-            },
             hullRepairKit: {
                 name: 'Hull Repair Kit',
                 description: '+50 HP Instant',
-                hotkey: '5',
+                hotkey: '4',
                 instant: true
             },
             energyCells: {
                 name: 'Energy Cells',
-                description: '+20% Damage (60s)',
-                hotkey: '6',
-                instant: false
+                description: '+1 Full Energy Block (Instant)',
+                hotkey: '5',
+                instant: true
             },
             extraShuttles: {
                 name: 'Extra Shuttles',
@@ -152,7 +139,6 @@ class ConsumableSystem {
                 extraTorpedoes: 20,   // Frigate (Tier 1): 1 × 20
                 extraDecoys: 6,       // Tier 1: 1 × 6
                 extraMines: 1,
-                shieldBoost: 0,
                 hullRepairKit: 1,
                 energyCells: 0,
                 extraShuttles: 1,     // Tier 1: 1 × 1
@@ -301,16 +287,12 @@ class ConsumableSystem {
                 console.log(' +3 Mines');
                 break;
 
-            case 'shieldBoost':
-                this.applyShieldBoost();
-                break;
-
             case 'hullRepairKit':
                 this.applyHullRepair();
                 break;
 
             case 'energyCells':
-                this.activateEnergyCells();
+                this.applyEnergyCellBoost();
                 break;
 
             case 'extraShuttles':
@@ -359,22 +341,6 @@ class ConsumableSystem {
         } else {
             console.warn('No torpedo launcher found');
         }
-    }
-
-    /**
-     * Apply shield boost (+20% to all quadrants)
-     */
-    applyShieldBoost() {
-        if (!this.ship.shields) return;
-
-        const quadrants = this.ship.shields.getAllQuadrants();
-        for (const quadrantName of ['fore', 'aft', 'port', 'starboard']) {
-            const quadrant = quadrants[quadrantName];
-            quadrant.max *= 1.2;
-            quadrant.current = Math.min(quadrant.current * 1.2, quadrant.max);
-        }
-
-        console.log(' Shield Boost: +20% all shields');
     }
 
     /**
@@ -457,18 +423,12 @@ class ConsumableSystem {
                 count: this.inventory.extraMines,
                 ...this.definitions.extraMines
             },
-            shieldBoost: {
-                count: this.inventory.shieldBoost,
-                ...this.definitions.shieldBoost
-            },
             hullRepairKit: {
                 count: this.inventory.hullRepairKit,
                 ...this.definitions.hullRepairKit
             },
             energyCells: {
                 count: this.inventory.energyCells,
-                active: this.activeEffects.energyCells.active,
-                timeRemaining: this.getEnergyCellsTimeRemaining(performance.now() / 1000),
                 ...this.definitions.energyCells
             },
             extraShuttles: {

@@ -926,6 +926,38 @@
     flex-shrink: 0;
 }
 
+.default-loadout {
+    margin-bottom: 15px;
+    padding: 10px;
+    background: rgba(0, 60, 0, 0.4);
+    border: 1px solid #0a0;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.default-loadout h4 {
+    margin: 0 0 8px 0;
+    color: #0f0;
+    font-size: 0.9em;
+    text-transform: uppercase;
+}
+
+.default-items {
+    display: flex;
+    gap: 15px;
+    font-size: 0.85em;
+    color: #0c0;
+}
+
+.default-items span {
+    color: #0ff;
+}
+
+.default-items span span {
+    color: #ff0;
+    font-weight: bold;
+}
+
 #bay-capacity span {
     color: #ff0;
 }

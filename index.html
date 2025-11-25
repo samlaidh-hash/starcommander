@@ -114,18 +114,13 @@
                         <span class="consumable-name">[F3] Mines</span>
                         <span class="consumable-count" id="consumable-mines">0</span>
                     </div>
-                    <div class="consumable-item" data-consumable="shieldBoost">
-                        <span class="consumable-name">[F4] Shield+</span>
-                        <span class="consumable-count" id="consumable-shield-boost">0</span>
-                    </div>
                     <div class="consumable-item" data-consumable="hullRepairKit">
-                        <span class="consumable-name">[F5] Repair</span>
+                        <span class="consumable-name">[F4] Repair</span>
                         <span class="consumable-count" id="consumable-repair">0</span>
                     </div>
                     <div class="consumable-item" data-consumable="energyCells">
-                        <span class="consumable-name">[F6] Energy</span>
+                        <span class="consumable-name">[F5] Energy</span>
                         <span class="consumable-count" id="consumable-energy">0</span>
-                        <span class="consumable-active" id="consumable-energy-active" style="display: none;">[ACTIVE]</span>
                     </div>
                 </div>
             </div>
@@ -433,6 +428,15 @@
                             <div id="bay-capacity">
                                 Bay Capacity: <span id="bay-used">0</span> / <span id="bay-max">10</span>
                             </div>
+                            
+                            <div class="default-loadout">
+                                <h4>Default Equipment (Always Included):</h4>
+                                <div class="default-items">
+                                    <span>Shuttles: <span id="default-shuttles">2</span></span>
+                                    <span>Fighters: <span id="default-fighters">0</span></span>
+                                    <span>Mines: <span id="default-mines">1</span></span>
+                                </div>
+                            </div>
 
                             <div class="consumables-grid">
                     <div class="consumable-item" data-type="hullRepairKit">
@@ -477,16 +481,6 @@
 
                     <div class="consumable-item" data-type="extraMines">
                         <span class="consumable-name">Extra Mines</span>
-                        <div class="consumable-controls">
-                            <button class="btn-minus">−</button>
-                            <span class="consumable-count">0</span>
-                            <button class="btn-plus">+</button>
-                        </div>
-                        <span class="consumable-cost">1 bay</span>
-                    </div>
-
-                    <div class="consumable-item" data-type="shieldBoost">
-                        <span class="consumable-name">Shield Boost</span>
                         <div class="consumable-controls">
                             <button class="btn-minus">−</button>
                             <span class="consumable-count">0</span>

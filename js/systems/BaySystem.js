@@ -14,6 +14,10 @@ class BaySystem {
         this.launchedDrones = [];
         this.launchedProbes = [];
         this.defaultLoadouts = this.initializeDefaultLoadouts();
+        
+        // Launch cooldown system (4 seconds per bay)
+        this.launchCooldowns = []; // Array of {bayIndex, endTime} for each bay
+        this.launchCooldownDuration = 4.0; // 4 seconds cooldown per bay
     }
 
     init(playerShip) {
@@ -24,20 +28,20 @@ class BaySystem {
     }
 
     calculateMaxBaySpace() {
-        // Bay space based on ship class (from Design Document Part 3)
-        // "Check Bay sizes are being used correctly, FG 2 DD 3 CL 4 CA 5 BC 6 BB 7 DN 8 SD 9"
+        // Bay space based on ship class
+        // Updated: BC 10, CA 8, CL 6, DD 4
         const shipClass = this.playerShip.shipClass;
         switch (shipClass) {
             case 'FG': return 2; // Frigate - 2 bay spaces
-            case 'DD': return 3; // Destroyer - 3 bay spaces
-            case 'CL': return 4; // Light Cruiser - 4 bay spaces
-            case 'CS': return 5; // Strike Cruiser - 5 bay spaces (same as CA)
-            case 'CA': return 5; // Heavy Cruiser - 5 bay spaces
-            case 'BC': return 6; // Battlecruiser - 6 bay spaces
-            case 'BB': return 7; // Battleship - 7 bay spaces
-            case 'DN': return 8; // Dreadnought - 8 bay spaces
-            case 'SD': return 9; // Super Dreadnought - 9 bay spaces
-            default: return 2;
+            case 'DD': return 4; // Destroyer - 4 bay spaces
+            case 'CL': return 6; // Light Cruiser - 6 bay spaces
+            case 'CS': return 8; // Strike Cruiser - 8 bay spaces (same as CA)
+            case 'CA': return 8; // Heavy Cruiser - 8 bay spaces
+            case 'BC': return 10; // Battlecruiser - 10 bay spaces
+            case 'BB': return 12; // Battleship - 12 bay spaces
+            case 'DN': return 14; // Dreadnought - 14 bay spaces
+            case 'SD': return 16; // Super Dreadnought - 16 bay spaces
+            default: return 4;
         }
     }
 
@@ -118,21 +122,56 @@ class BaySystem {
         return (loadout.shuttles || 0) + (loadout.fighters || 0) + (loadout.bombers || 0);
     }
 
-    canLaunchShuttle(missionType) {
-        return this.baySpace >= 1;
+    /**
+     * Get number of available bays (bays not on cooldown)
+     */
+    getAvailableBays(currentTime) {
+        const totalBays = this.maxBaySpace;
+        const onCooldown = this.launchCooldowns.filter(cd => currentTime < cd.endTime).length;
+        return Math.max(0, totalBays - onCooldown);
     }
 
-    canLaunchFighter() {
-        return this.baySpace >= 1;
+    /**
+     * Check if any bay is available for launch
+     */
+    hasAvailableBay(currentTime) {
+        return this.getAvailableBays(currentTime) > 0;
     }
 
-    canLaunchBomber() {
-        return this.baySpace >= 2; // Bombers take 2 bay spaces
+    canLaunchShuttle(missionType, currentTime = null) {
+        if (!this.baySpace >= 1) return false;
+        if (currentTime === null) currentTime = performance.now() / 1000;
+        return this.hasAvailableBay(currentTime);
+    }
+
+    canLaunchFighter(currentTime = null) {
+        if (!this.baySpace >= 1) return false;
+        if (currentTime === null) currentTime = performance.now() / 1000;
+        return this.hasAvailableBay(currentTime);
+    }
+
+    canLaunchBomber(currentTime = null) {
+        if (!this.baySpace >= 2) return false; // Bombers take 2 bay spaces
+        if (currentTime === null) currentTime = performance.now() / 1000;
+        // Bombers need 2 available bays
+        return this.getAvailableBays(currentTime) >= 2;
     }
 
     launchShuttle(missionType, target = null) {
-        if (!this.canLaunchShuttle(missionType)) {
-            console.log('Not enough bay space to launch shuttle');
+        const currentTime = performance.now() / 1000;
+        if (!this.canLaunchShuttle(missionType, currentTime)) {
+            if (!this.hasAvailableBay(currentTime)) {
+                console.log('All bays on cooldown (4s per bay)');
+            } else {
+                console.log('Not enough bay space to launch shuttle');
+            }
+            return null;
+        }
+
+        // Find an available bay and set cooldown
+        const availableBay = this.findAvailableBay(currentTime);
+        if (availableBay === -1) {
+            console.log('No available bay for launch');
             return null;
         }
 
@@ -163,13 +202,63 @@ class BaySystem {
         this.launchedShuttles.push(shuttle);
         this.baySpace -= 1;
 
+        // Set cooldown for this bay (4 seconds)
+        this.setBayCooldown(availableBay, currentTime);
+
         eventBus.emit('shuttle-launched', { shuttle: shuttle, missionType: missionType });
         return shuttle;
     }
 
+    /**
+     * Find an available bay index (not on cooldown)
+     */
+    findAvailableBay(currentTime) {
+        // Find first bay not on cooldown
+        for (let i = 0; i < this.maxBaySpace; i++) {
+            const onCooldown = this.launchCooldowns.some(cd => cd.bayIndex === i && currentTime < cd.endTime);
+            if (!onCooldown) {
+                return i;
+            }
+        }
+        return -1; // No available bay
+    }
+
+    /**
+     * Set cooldown for a specific bay
+     */
+    setBayCooldown(bayIndex, currentTime) {
+        // Remove existing cooldown for this bay
+        this.launchCooldowns = this.launchCooldowns.filter(cd => cd.bayIndex !== bayIndex);
+        // Add new cooldown
+        this.launchCooldowns.push({
+            bayIndex: bayIndex,
+            endTime: currentTime + this.launchCooldownDuration
+        });
+    }
+
+    /**
+     * Update launch cooldowns (call each frame)
+     */
+    updateCooldowns(currentTime) {
+        // Remove expired cooldowns
+        this.launchCooldowns = this.launchCooldowns.filter(cd => currentTime < cd.endTime);
+    }
+
     launchFighter() {
-        if (!this.canLaunchFighter()) {
-            console.log('Not enough bay space to launch fighter');
+        const currentTime = performance.now() / 1000;
+        if (!this.canLaunchFighter(currentTime)) {
+            if (!this.hasAvailableBay(currentTime)) {
+                console.log('All bays on cooldown (4s per bay)');
+            } else {
+                console.log('Not enough bay space to launch fighter');
+            }
+            return null;
+        }
+
+        // Find an available bay and set cooldown
+        const availableBay = this.findAvailableBay(currentTime);
+        if (availableBay === -1) {
+            console.log('No available bay for launch');
             return null;
         }
 
@@ -208,13 +297,43 @@ class BaySystem {
         this.launchedFighters.push(fighter);
         this.baySpace -= 1;
 
+        // Set cooldown for this bay (4 seconds)
+        this.setBayCooldown(availableBay, currentTime);
+
         eventBus.emit('fighter-launched', { fighter: fighter });
         return fighter;
     }
 
     launchBomber() {
-        if (!this.canLaunchBomber()) {
-            console.log('Not enough bay space to launch bomber');
+        const currentTime = performance.now() / 1000;
+        if (!this.canLaunchBomber(currentTime)) {
+            if (this.getAvailableBays(currentTime) < 2) {
+                console.log('Not enough available bays (need 2, 4s cooldown per bay)');
+            } else {
+                console.log('Not enough bay space to launch bomber');
+            }
+            return null;
+        }
+
+        // Find two available bays and set cooldowns
+        const bay1 = this.findAvailableBay(currentTime);
+        if (bay1 === -1) {
+            console.log('No available bay for bomber launch');
+            return null;
+        }
+        let bay2 = -1;
+        // Find a second available bay (different from bay1)
+        for (let i = 0; i < this.maxBaySpace; i++) {
+            if (i !== bay1) {
+                const onCooldown = this.launchCooldowns.some(cd => cd.bayIndex === i && currentTime < cd.endTime);
+                if (!onCooldown) {
+                    bay2 = i;
+                    break;
+                }
+            }
+        }
+        if (bay2 === -1) {
+            console.log('Not enough available bays for bomber (need 2)');
             return null;
         }
 
@@ -252,6 +371,10 @@ class BaySystem {
 
         this.launchedBombers.push(bomber);
         this.baySpace -= 2; // Bombers take 2 bay spaces
+
+        // Set cooldown for both bays (4 seconds each)
+        this.setBayCooldown(bay1, currentTime);
+        this.setBayCooldown(bay2, currentTime);
 
         eventBus.emit('bomber-launched', { bomber: bomber });
         return bomber;
@@ -341,6 +464,9 @@ class BaySystem {
     }
 
     update(deltaTime, currentTime, allEntities) {
+        // Update launch cooldowns
+        this.updateCooldowns(currentTime);
+
         // Update launched shuttles
         for (let i = this.launchedShuttles.length - 1; i >= 0; i--) {
             const shuttle = this.launchedShuttles[i];

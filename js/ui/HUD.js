@@ -268,10 +268,8 @@ class HUD {
         const torpedoesElement = document.getElementById('consumable-torpedoes');
         const decoysElement = document.getElementById('consumable-decoys');
         const minesElement = document.getElementById('consumable-mines');
-        const shieldBoostElement = document.getElementById('consumable-shield-boost');
         const repairElement = document.getElementById('consumable-repair');
         const energyElement = document.getElementById('consumable-energy');
-        const energyActiveElement = document.getElementById('consumable-energy-active');
 
         if (torpedoesElement) {
             torpedoesElement.textContent = consumables.extraTorpedoes || 0;
@@ -285,10 +283,6 @@ class HUD {
             minesElement.textContent = consumables.extraMines || 0;
             minesElement.classList.toggle('depleted', (consumables.extraMines || 0) === 0);
         }
-        if (shieldBoostElement) {
-            shieldBoostElement.textContent = consumables.shieldBoost || 0;
-            shieldBoostElement.classList.toggle('depleted', (consumables.shieldBoost || 0) === 0);
-        }
         if (repairElement) {
             repairElement.textContent = consumables.hullRepairKit || 0;
             repairElement.classList.toggle('depleted', (consumables.hullRepairKit || 0) === 0);
@@ -296,12 +290,6 @@ class HUD {
         if (energyElement) {
             energyElement.textContent = consumables.energyCells || 0;
             energyElement.classList.toggle('depleted', (consumables.energyCells || 0) === 0);
-        }
-
-        // Show/hide energy cells active indicator
-        if (energyActiveElement) {
-            const isActive = activeEffects.energyCells && activeEffects.energyCells.active;
-            energyActiveElement.style.display = isActive ? 'inline' : 'none';
         }
     }
 

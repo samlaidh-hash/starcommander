@@ -477,7 +477,6 @@ class Engine {
                 'f1': 'extraTorpedoes',
                 'f2': 'extraDecoys',
                 'f3': 'extraMines',
-                'f4': 'shieldBoost',
                 'f5': 'hullRepairKit',
                 'f6': 'energyCells'
             };

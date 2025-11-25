@@ -10,19 +10,25 @@ class MissionUI {
         this.currentMission = null;
         this.playerShip = null;
 
-        // Loadout system for consumables (all 11 types)
+        // Loadout system for consumables (shield boost removed)
+        // Player-selected items (defaults are separate)
         this.loadout = {
             hullRepairKit: 0,
             energyCells: 0,
             extraTorpedoes: 0,
             extraDecoys: 0,
             extraMines: 0,
-            shieldBoost: 0,
             extraShuttles: 0,
             extraFighters: 0,
             extraBombers: 0,
             extraDrones: 0,
             extraProbes: 0
+        };
+        // Default loadout (always included, not counted in player selection)
+        this.defaultLoadout = {
+            shuttles: 2,  // 2 shuttles for all ships (except Trigons)
+            fighters: 0,  // 1 fighter for Trigons only
+            mines: 1      // 1 mine for all ships
         };
         this.bayMax = 10; // Default, will be updated from ship class
 
@@ -227,10 +233,22 @@ class MissionUI {
     onAcceptMission() {
         console.log('MissionUI: Accept mission clicked for:', this.currentMission?.id);
 
-        // Apply loadout to player ship
+        // Apply default loadout to bay system
+        if (window.game && window.game.baySystem && this.playerShip) {
+            // Default shuttles and fighters are already in bay system default loadouts
+            // Just ensure they're loaded
+            window.game.baySystem.loadDefaultLoadout();
+        }
+
+        // Apply consumable loadout to player ship
         if (this.playerShip && this.playerShip.consumables) {
-            this.playerShip.consumables.loadFromMissionBriefing(this.loadout);
-            console.log('MissionUI: Loaded consumables:', this.loadout);
+            // Merge default mine with player selections
+            const fullLoadout = { ...this.loadout };
+            if (this.defaultLoadout.mines > 0) {
+                fullLoadout.extraMines = (fullLoadout.extraMines || 0) + this.defaultLoadout.mines;
+            }
+            this.playerShip.consumables.loadFromMissionBriefing(fullLoadout);
+            console.log('MissionUI: Loaded consumables:', fullLoadout);
         } else {
             console.warn('MissionUI: No consumables system on player ship');
         }
@@ -282,22 +300,25 @@ class MissionUI {
         if (window.game && window.game.baySystem) {
             this.bayMax = window.game.baySystem.maxBaySpace;
         } else if (this.playerShip && this.playerShip.shipClass) {
-            // Get bay size from ship class (FG=2, DD=3, CL=4, CA=5, BC=6, BB=7, DN=8, SD=9)
+            // Get bay size from ship class (Updated: BC 10, CA 8, CL 6, DD 4)
             const bayByClass = {
                 'FG': 2,
-                'DD': 3,
-                'CL': 4,
-                'CS': 5, // Strike Cruiser same as CA
-                'CA': 5,
-                'BC': 6,
-                'BB': 7,
-                'DN': 8,
-                'SD': 9
+                'DD': 4,
+                'CL': 6,
+                'CS': 8, // Strike Cruiser same as CA
+                'CA': 8,
+                'BC': 10,
+                'BB': 12,
+                'DN': 14,
+                'SD': 16
             };
-            this.bayMax = bayByClass[this.playerShip.shipClass] || 5;
+            this.bayMax = bayByClass[this.playerShip.shipClass] || 8;
         } else {
-            this.bayMax = 5; // Default bay capacity
+            this.bayMax = 8; // Default bay capacity
         }
+
+        // Set default loadout based on faction
+        this.setDefaultLoadout();
 
         // Load saved loadout from localStorage
         this.loadLoadout();
@@ -325,8 +346,9 @@ class MissionUI {
      * Increment consumable count
      */
     incrementConsumable(type) {
-        const total = this.getTotalBayUsage();
-        if (total < this.bayMax) {
+        const playerUsage = Object.values(this.loadout).reduce((sum, count) => sum + count, 0);
+        const available = this.getAvailableBaySpace();
+        if (playerUsage < available) {
             this.loadout[type]++;
             this.updateLoadoutDisplay();
             this.saveLoadout();
@@ -345,10 +367,46 @@ class MissionUI {
     }
 
     /**
-     * Get total bay usage
+     * Set default loadout based on faction
+     */
+    setDefaultLoadout() {
+        if (this.playerShip && this.playerShip.faction) {
+            if (this.playerShip.faction === 'TRIGON') {
+                // Trigons get 1 Shuttle and 1 Fighter
+                this.defaultLoadout.shuttles = 1;
+                this.defaultLoadout.fighters = 1;
+            } else {
+                // All other factions get 2 Shuttles
+                this.defaultLoadout.shuttles = 2;
+                this.defaultLoadout.fighters = 0;
+            }
+            // All ships get 1 Mine
+            this.defaultLoadout.mines = 1;
+        }
+    }
+
+    /**
+     * Get default loadout bay usage
+     */
+    getDefaultBayUsage() {
+        return (this.defaultLoadout.shuttles || 0) + 
+               (this.defaultLoadout.fighters || 0) + 
+               (this.defaultLoadout.mines || 0);
+    }
+
+    /**
+     * Get total bay usage (defaults + player selections)
      */
     getTotalBayUsage() {
-        return Object.values(this.loadout).reduce((sum, count) => sum + count, 0);
+        const playerUsage = Object.values(this.loadout).reduce((sum, count) => sum + count, 0);
+        return this.getDefaultBayUsage() + playerUsage;
+    }
+
+    /**
+     * Get available bay space for player selections
+     */
+    getAvailableBaySpace() {
+        return this.bayMax - this.getDefaultBayUsage();
     }
 
     /**
@@ -361,7 +419,6 @@ class MissionUI {
             extraTorpedoes: 'Extra Torpedoes',
             extraDecoys: 'Extra Decoys',
             extraMines: 'Extra Mines',
-            shieldBoost: 'Shield Boost',
             extraShuttles: 'Extra Shuttles',
             extraFighters: 'Extra Fighters',
             extraBombers: 'Extra Bombers',
@@ -372,10 +429,23 @@ class MissionUI {
     }
 
     /**
-     * Generate loadout summary text
+     * Generate loadout summary text (includes defaults)
      */
     generateLoadoutSummary() {
         const items = [];
+        
+        // Add defaults
+        if (this.defaultLoadout.shuttles > 0) {
+            items.push(`${this.defaultLoadout.shuttles}x Shuttles (default)`);
+        }
+        if (this.defaultLoadout.fighters > 0) {
+            items.push(`${this.defaultLoadout.fighters}x Fighters (default)`);
+        }
+        if (this.defaultLoadout.mines > 0) {
+            items.push(`${this.defaultLoadout.mines}x Mines (default)`);
+        }
+        
+        // Add player selections
         for (const [type, count] of Object.entries(this.loadout)) {
             if (count > 0) {
                 const name = this.getConsumableDisplayName(type);
@@ -384,7 +454,7 @@ class MissionUI {
         }
         
         if (items.length === 0) {
-            return 'None selected';
+            return 'Defaults only';
         }
         return items.join(', ');
     }
@@ -401,13 +471,16 @@ class MissionUI {
         if (bayUsedElement) bayUsedElement.textContent = bayUsed;
         if (bayMaxElement) bayMaxElement.textContent = this.bayMax;
 
-        // Update loadout summary
+        // Update loadout summary (includes defaults)
         const summaryTextElement = document.getElementById('loadout-summary-text');
         if (summaryTextElement) {
             summaryTextElement.textContent = this.generateLoadoutSummary();
         }
 
-        // Update each consumable count display
+        // Update default loadout display
+        this.updateDefaultLoadoutDisplay();
+
+        // Update each consumable count display (player selections only)
         document.querySelectorAll('.consumable-item').forEach(item => {
             const type = item.dataset.type;
             const countElement = item.querySelector('.consumable-count');
@@ -416,11 +489,27 @@ class MissionUI {
             }
         });
 
-        // Disable + buttons if bay full
-        const isFull = bayUsed >= this.bayMax;
+        // Disable + buttons if bay full (check available space for player selections)
+        const playerUsage = Object.values(this.loadout).reduce((sum, count) => sum + count, 0);
+        const available = this.getAvailableBaySpace();
+        const isFull = playerUsage >= available;
         document.querySelectorAll('.btn-plus').forEach(btn => {
             btn.disabled = isFull;
         });
+    }
+
+    /**
+     * Update default loadout display
+     */
+    updateDefaultLoadoutDisplay() {
+        // Update default items display if elements exist
+        const defaultShuttlesEl = document.getElementById('default-shuttles');
+        const defaultFightersEl = document.getElementById('default-fighters');
+        const defaultMinesEl = document.getElementById('default-mines');
+        
+        if (defaultShuttlesEl) defaultShuttlesEl.textContent = this.defaultLoadout.shuttles;
+        if (defaultFightersEl) defaultFightersEl.textContent = this.defaultLoadout.fighters;
+        if (defaultMinesEl) defaultMinesEl.textContent = this.defaultLoadout.mines;
     }
 
     /**
