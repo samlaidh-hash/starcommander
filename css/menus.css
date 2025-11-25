@@ -139,7 +139,7 @@
     width: 90%;
     max-width: 1200px;
     height: 90%;
-    max-height: 800px;
+    max-height: 85vh;
     background: rgba(0, 20, 0, 0.95);
     border: 3px solid #0f0;
     box-shadow: 0 0 30px rgba(0, 255, 0, 0.5);
@@ -147,6 +147,8 @@
     flex-direction: column;
     padding: 30px;
     gap: 20px;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 .briefing-header,

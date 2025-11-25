@@ -541,6 +541,12 @@ class Engine {
         // Weapon firing - new hold-to-fire system
         eventBus.on('beam-fire-start', (data) => {
             console.log('🔫 Beam fire START event received');
+            // Check if briefing screen is visible
+            const briefingScreen = document.getElementById('briefing-screen');
+            if (briefingScreen && !briefingScreen.classList.contains('hidden')) {
+                console.log('⚠️ Cannot fire: briefing screen is visible');
+                return;
+            }
             if (!this.stateManager.isPlaying() || !this.playerShip) {
                 console.log('⚠️ Cannot fire: playing=' + this.stateManager.isPlaying() + ', hasShip=' + !!this.playerShip);
                 return;

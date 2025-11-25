@@ -908,7 +908,9 @@
     gap: 10px;
     max-height: 300px;
     overflow-y: auto;
+    overflow-x: hidden;
     padding-right: 5px;
+    box-sizing: border-box;
 }
 
 .consumable-item {
