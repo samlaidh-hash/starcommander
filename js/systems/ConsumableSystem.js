@@ -370,6 +370,11 @@ class ConsumableSystem {
      * Update active effects (call each frame)
      */
     update(currentTime) {
+        // Energy cells are now instant boost only, no active effects to track
+        // Safety check: if activeEffects.energyCells doesn't exist, return early
+        if (!this.activeEffects || !this.activeEffects.energyCells) {
+            return;
+        }
         // Check if energy cells expired
         if (this.activeEffects.energyCells.active) {
             if (currentTime > this.activeEffects.energyCells.endTime) {
