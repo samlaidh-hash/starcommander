@@ -25,6 +25,7 @@ class DhojanShip extends Ship {
                 range: 300,
                 cooldown: 30.0, // 30 second cooldown
                 lastUse: 0,
+                lastUseTime: 0, // Track time for visual effects
                 active: true
             },
             // Energy shield that absorbs and redirects damage
@@ -117,6 +118,7 @@ class DhojanShip extends Ship {
         }
 
         this.advancedSystems.quantumDrive.lastUse = this.advancedSystems.quantumDrive.cooldown;
+        this.advancedSystems.quantumDrive.lastUseTime = performance.now() / 1000; // Track time for visual effects
         
         eventBus.emit('quantum-drive-used', { ship: this, newLocation: { x: targetX, y: targetY } });
         console.log('Quantum drive activated');

@@ -20,6 +20,13 @@ class InputManager {
         this.lastKeyPressTimes = new Map(); // Track last press time for each key
         this.doubleTapThreshold = 300; // 300ms threshold for double-tap
 
+        // Tactical warp state tracking
+        this.tacticalWarpActive = false;
+        this.tacticalWarpStartTime = 0;
+        this.tacticalWarpCooldownEnd = 0;
+        this.wKeyDoubleTapped = false; // Track if W was double-tapped
+        this.wKeyHeld = false; // Track if W is currently held
+
         this.init();
     }
 
@@ -74,7 +81,10 @@ class InputManager {
             if (timeSinceLastPress < this.doubleTapThreshold) {
                 // Double-tap detected!
                 if (key === 'w') {
-                    eventBus.emit('burst-acceleration', { direction: key });
+                    // For W key: Mark as double-tapped, will activate tactical warp if held
+                    this.wKeyDoubleTapped = true;
+                    this.wKeyHeld = true;
+                    // Don't emit burst-acceleration - tactical warp takes priority
                 } else if (key === 's') {
                     eventBus.emit('instant-stop', { direction: key });
                 } else if (key === 'a' || key === 'd') {
@@ -83,7 +93,21 @@ class InputManager {
                 this.lastKeyPressTimes.set(key, 0); // Reset to prevent triple-tap
             } else {
                 this.lastKeyPressTimes.set(key, currentTime);
+                // If W key is pressed but not double-tapped, track it
+                if (key === 'w') {
+                    this.wKeyHeld = true;
+                    this.wKeyDoubleTapped = false;
+                }
             }
+        }
+
+        // Check for tactical warp activation (double-tap-and-hold W)
+        // This fires on keydown when W is double-tapped and being held
+        if (key === 'w' && this.wKeyDoubleTapped && this.wKeyHeld && !this.tacticalWarpActive) {
+            // Double-tap detected and W is being held - start tactical warp
+            this.tacticalWarpActive = true;
+            this.tacticalWarpStartTime = performance.now();
+            eventBus.emit('tactical-warp-start', { time: this.tacticalWarpStartTime });
         }
 
         eventBus.emit('keydown', { key: key, event: e });
@@ -104,6 +128,23 @@ class InputManager {
         }
 
         this.keys.set(key, false);
+
+        // Handle W key release for tactical warp
+        if (key === 'w') {
+            this.wKeyHeld = false;
+            if (this.tacticalWarpActive) {
+                // End tactical warp
+                const warpDuration = (performance.now() - this.tacticalWarpStartTime) / 1000; // Duration in seconds
+                this.tacticalWarpActive = false;
+                this.wKeyDoubleTapped = false;
+                eventBus.emit('tactical-warp-end', { duration: warpDuration });
+            } else if (this.wKeyDoubleTapped) {
+                // W was double-tapped but released before tactical warp activated
+                // Fall back to burst acceleration
+                this.wKeyDoubleTapped = false;
+                eventBus.emit('burst-acceleration', { direction: 'w' });
+            }
+        }
 
         // Handle spacebar - now used for shield toggle (single press)
         // Decoys moved to C key, mines to E key

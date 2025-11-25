@@ -72,6 +72,12 @@ class HUD {
         // Update boost status
         this.updateBoostStatus(playerShip);
 
+        // Update tactical warp status
+        this.updateTacticalWarpStatus(playerShip);
+
+        // Update special ability status (quantum drive, cloak, phase shift, shields)
+        this.updateSpecialAbilitiesStatus(playerShip);
+
         // Update ping status
         this.updatePingStatus();
 
@@ -344,6 +350,311 @@ class HUD {
             } else {
                 // Boost ready - hide indicator
                 boostGroup.style.display = 'none';
+            }
+        }
+    }
+
+    updateTacticalWarpStatus(ship) {
+        if (!ship) return;
+
+        // Check if ship has tactical warp capability (Federation, Scintilian, Trigon, Pirate)
+        const allowedFactions = ['FEDERATION', 'SCINTILIAN', 'TRIGON', 'PIRATE', 'PLAYER'];
+        if (!allowedFactions.includes(ship.faction)) return;
+
+        // Try to find or create tactical warp status group
+        let warpGroup = document.getElementById('tactical-warp-status-group');
+        if (!warpGroup) {
+            // Create the group if it doesn't exist
+            const tacticalPanel = document.getElementById('tactical-panel');
+            if (tacticalPanel) {
+                warpGroup = document.createElement('div');
+                warpGroup.id = 'tactical-warp-status-group';
+                warpGroup.className = 'system-group';
+                warpGroup.style.display = 'none';
+                warpGroup.innerHTML = `
+                    <div class="system-label" id="tactical-warp-label">TACTICAL WARP</div>
+                    <div id="tactical-warp-bar">
+                        <div id="tactical-warp-fill"></div>
+                    </div>
+                `;
+                // Insert after boost status group if it exists, otherwise after warp charge
+                const boostGroup = document.getElementById('boost-status-group');
+                const warpChargeGroup = document.querySelector('.system-group:has(#warp-charge-bar)');
+                if (boostGroup && boostGroup.parentNode) {
+                    boostGroup.parentNode.insertBefore(warpGroup, boostGroup.nextSibling);
+                } else if (warpChargeGroup && warpChargeGroup.parentNode) {
+                    warpChargeGroup.parentNode.insertBefore(warpGroup, warpChargeGroup.nextSibling);
+                } else {
+                    tacticalPanel.appendChild(warpGroup);
+                }
+            }
+        }
+
+        if (!warpGroup) return;
+
+        const warpLabel = document.getElementById('tactical-warp-label');
+        const warpFill = document.getElementById('tactical-warp-fill');
+
+        if (!warpLabel || !warpFill) return;
+
+        const currentTime = performance.now() / 1000;
+
+        if (ship.tacticalWarpActive) {
+            // Tactical warp is active
+            warpGroup.style.display = 'block';
+            warpLabel.textContent = 'TACTICAL WARP';
+            warpLabel.style.color = '#00ffff'; // Cyan when active
+
+            // Show energy percentage
+            if (ship.energy) {
+                const energyPercent = ship.energy.getTotalEnergy() / ship.energy.getMaxEnergy();
+                warpFill.style.width = `${Math.max(0, energyPercent * 100)}%`;
+                
+                if (energyPercent < 0.2) {
+                    warpFill.style.background = 'linear-gradient(90deg, #f00, #f88)'; // Red when low
+                    warpLabel.style.color = '#f00';
+                } else {
+                    warpFill.style.background = 'linear-gradient(90deg, #00ffff, #0088ff)'; // Cyan gradient
+                }
+            } else {
+                warpFill.style.width = '100%';
+                warpFill.style.background = 'linear-gradient(90deg, #00ffff, #0088ff)';
+            }
+        } else {
+            // Check cooldown
+            const cooldownRemaining = ship.tacticalWarpCooldownEnd - currentTime;
+
+            if (cooldownRemaining > 0) {
+                // Show cooldown
+                warpGroup.style.display = 'block';
+                const cooldownPercentage = ((ship.tacticalWarpLastDuration * 5 - cooldownRemaining) / (ship.tacticalWarpLastDuration * 5)) * 100;
+
+                warpLabel.textContent = `WARP CD ${Math.ceil(cooldownRemaining)}s`;
+                warpLabel.style.color = '#888'; // Gray when on cooldown
+                warpFill.style.width = `${Math.max(0, cooldownPercentage)}%`;
+                warpFill.style.background = 'linear-gradient(90deg, #444, #666)';
+            } else {
+                // Tactical warp ready - hide indicator
+                warpGroup.style.display = 'none';
+            }
+        }
+    }
+
+    updateSpecialAbilitiesStatus(ship) {
+        if (!ship) return;
+
+        const currentTime = performance.now() / 1000;
+
+        // Dhojan: Quantum Drive status
+        if (ship.faction === 'DHOJAN' && ship.advancedSystems && ship.advancedSystems.quantumDrive) {
+            const qd = ship.advancedSystems.quantumDrive;
+            const cooldownRemaining = qd.lastUse > 0 ? qd.lastUse : 0;
+            
+            // Find or create quantum drive status element
+            let qdGroup = document.getElementById('quantum-drive-status-group');
+            if (!qdGroup) {
+                const tacticalPanel = document.getElementById('tactical-panel');
+                if (tacticalPanel) {
+                    qdGroup = document.createElement('div');
+                    qdGroup.id = 'quantum-drive-status-group';
+                    qdGroup.className = 'system-group';
+                    qdGroup.style.display = cooldownRemaining > 0 ? 'block' : 'none';
+                    qdGroup.innerHTML = `
+                        <div class="system-label" id="quantum-drive-label">QUANTUM DRIVE</div>
+                        <div id="quantum-drive-bar">
+                            <div id="quantum-drive-fill"></div>
+                        </div>
+                    `;
+                    tacticalPanel.appendChild(qdGroup);
+                }
+            }
+
+            if (qdGroup) {
+                const qdLabel = document.getElementById('quantum-drive-label');
+                const qdFill = document.getElementById('quantum-drive-fill');
+                
+                if (qdLabel && qdFill) {
+                    if (cooldownRemaining > 0) {
+                        qdGroup.style.display = 'block';
+                        const cooldownPercentage = ((qd.cooldown - cooldownRemaining) / qd.cooldown) * 100;
+                        qdLabel.textContent = `QD CD ${Math.ceil(cooldownRemaining)}s`;
+                        qdLabel.style.color = '#888';
+                        qdFill.style.width = `${Math.max(0, cooldownPercentage)}%`;
+                        qdFill.style.background = 'linear-gradient(90deg, #444, #666)';
+                    } else {
+                        qdGroup.style.display = 'none';
+                    }
+                }
+            }
+        }
+
+        // Andromedan: Cloak status
+        if (ship.faction === 'ANDROMEDAN' && ship.advancedSystems && ship.advancedSystems.cloakingDevice) {
+            const cloak = ship.advancedSystems.cloakingDevice;
+            const cooldownRemaining = cloak.lastUse > 0 ? cloak.lastUse : 0;
+            
+            let cloakGroup = document.getElementById('cloak-status-group');
+            if (!cloakGroup) {
+                const tacticalPanel = document.getElementById('tactical-panel');
+                if (tacticalPanel) {
+                    cloakGroup = document.createElement('div');
+                    cloakGroup.id = 'cloak-status-group';
+                    cloakGroup.className = 'system-group';
+                    cloakGroup.style.display = 'block';
+                    cloakGroup.innerHTML = `
+                        <div class="system-label" id="cloak-label">CLOAK</div>
+                        <div id="cloak-bar">
+                            <div id="cloak-fill"></div>
+                        </div>
+                    `;
+                    tacticalPanel.appendChild(cloakGroup);
+                }
+            }
+
+            if (cloakGroup) {
+                const cloakLabel = document.getElementById('cloak-label');
+                const cloakFill = document.getElementById('cloak-fill');
+                
+                if (cloakLabel && cloakFill) {
+                    if (cloak.active) {
+                        cloakLabel.textContent = 'CLOAK ACTIVE';
+                        cloakLabel.style.color = '#00ffff';
+                        cloakFill.style.width = '100%';
+                        cloakFill.style.background = 'linear-gradient(90deg, #00ffff, #0088ff)';
+                    } else if (cooldownRemaining > 0) {
+                        const cooldownPercentage = ((cloak.cooldown - cooldownRemaining) / cloak.cooldown) * 100;
+                        cloakLabel.textContent = `CLOAK CD ${Math.ceil(cooldownRemaining)}s`;
+                        cloakLabel.style.color = '#888';
+                        cloakFill.style.width = `${Math.max(0, cooldownPercentage)}%`;
+                        cloakFill.style.background = 'linear-gradient(90deg, #444, #666)';
+                    } else {
+                        cloakLabel.textContent = 'CLOAK READY';
+                        cloakLabel.style.color = '#0f0';
+                        cloakFill.style.width = '100%';
+                        cloakFill.style.background = 'linear-gradient(90deg, #0f0, #0a0)';
+                    }
+                }
+            }
+        }
+
+        // Andromedan: Phase Shift status
+        if (ship.faction === 'ANDROMEDAN' && ship.advancedSystems && ship.advancedSystems.phaseShift) {
+            const ps = ship.advancedSystems.phaseShift;
+            const cooldownRemaining = ps.lastUse > 0 ? ps.lastUse : 0;
+            const activeRemaining = ps.active ? (ps.duration - (currentTime - ps.activationTime)) : 0;
+            
+            let psGroup = document.getElementById('phase-shift-status-group');
+            if (!psGroup) {
+                const tacticalPanel = document.getElementById('tactical-panel');
+                if (tacticalPanel) {
+                    psGroup = document.createElement('div');
+                    psGroup.id = 'phase-shift-status-group';
+                    psGroup.className = 'system-group';
+                    psGroup.style.display = 'block';
+                    psGroup.innerHTML = `
+                        <div class="system-label" id="phase-shift-label">PHASE SHIFT</div>
+                        <div id="phase-shift-bar">
+                            <div id="phase-shift-fill"></div>
+                        </div>
+                    `;
+                    tacticalPanel.appendChild(psGroup);
+                }
+            }
+
+            if (psGroup) {
+                const psLabel = document.getElementById('phase-shift-label');
+                const psFill = document.getElementById('phase-shift-fill');
+                
+                if (psLabel && psFill) {
+                    if (ps.active && activeRemaining > 0) {
+                        const activePercentage = (activeRemaining / ps.duration) * 100;
+                        psLabel.textContent = `PHASE ${Math.ceil(activeRemaining)}s`;
+                        psLabel.style.color = '#00ffff';
+                        psFill.style.width = `${Math.max(0, activePercentage)}%`;
+                        psFill.style.background = 'linear-gradient(90deg, #00ffff, #0088ff)';
+                    } else if (cooldownRemaining > 0) {
+                        const cooldownPercentage = ((ps.cooldown - cooldownRemaining) / ps.cooldown) * 100;
+                        psLabel.textContent = `PS CD ${Math.ceil(cooldownRemaining)}s`;
+                        psLabel.style.color = '#888';
+                        psFill.style.width = `${Math.max(0, cooldownPercentage)}%`;
+                        psFill.style.background = 'linear-gradient(90deg, #444, #666)';
+                    } else {
+                        psLabel.textContent = 'PHASE READY';
+                        psLabel.style.color = '#0f0';
+                        psFill.style.width = '100%';
+                        psFill.style.background = 'linear-gradient(90deg, #0f0, #0a0)';
+                    }
+                }
+            }
+        }
+
+        // Dhojan: Energy Shield status (if active)
+        if (ship.faction === 'DHOJAN' && ship.advancedSystems && ship.advancedSystems.energyShield) {
+            const es = ship.advancedSystems.energyShield;
+            
+            let esGroup = document.getElementById('energy-shield-status-group');
+            if (!esGroup) {
+                const tacticalPanel = document.getElementById('tactical-panel');
+                if (tacticalPanel) {
+                    esGroup = document.createElement('div');
+                    esGroup.id = 'energy-shield-status-group';
+                    esGroup.className = 'system-group';
+                    esGroup.style.display = 'block';
+                    esGroup.innerHTML = `
+                        <div class="system-label" id="energy-shield-label">ENERGY SHIELD</div>
+                        <div id="energy-shield-bar">
+                            <div id="energy-shield-fill"></div>
+                        </div>
+                    `;
+                    tacticalPanel.appendChild(esGroup);
+                }
+            }
+
+            if (esGroup) {
+                const esLabel = document.getElementById('energy-shield-label');
+                const esFill = document.getElementById('energy-shield-fill');
+                
+                if (esLabel && esFill) {
+                    esLabel.textContent = 'ENERGY SHIELD';
+                    esLabel.style.color = '#aa00aa';
+                    esFill.style.width = '100%';
+                    esFill.style.background = 'linear-gradient(90deg, #aa00aa, #880088)';
+                }
+            }
+        }
+
+        // Commonwealth: Laser Shield status (if active)
+        if (ship.faction === 'COMMONWEALTH' && ship.advancedSystems && ship.advancedSystems.laserShield) {
+            const ls = ship.advancedSystems.laserShield;
+            
+            let lsGroup = document.getElementById('laser-shield-status-group');
+            if (!lsGroup) {
+                const tacticalPanel = document.getElementById('tactical-panel');
+                if (tacticalPanel) {
+                    lsGroup = document.createElement('div');
+                    lsGroup.id = 'laser-shield-status-group';
+                    lsGroup.className = 'system-group';
+                    lsGroup.style.display = 'block';
+                    lsGroup.innerHTML = `
+                        <div class="system-label" id="laser-shield-label">LASER SHIELD</div>
+                        <div id="laser-shield-bar">
+                            <div id="laser-shield-fill"></div>
+                        </div>
+                    `;
+                    tacticalPanel.appendChild(lsGroup);
+                }
+            }
+
+            if (lsGroup) {
+                const lsLabel = document.getElementById('laser-shield-label');
+                const lsFill = document.getElementById('laser-shield-fill');
+                
+                if (lsLabel && lsFill) {
+                    lsLabel.textContent = 'LASER SHIELD';
+                    lsLabel.style.color = '#00aa00';
+                    lsFill.style.width = '100%';
+                    lsFill.style.background = 'linear-gradient(90deg, #00aa00, #008800)';
+                }
             }
         }
     }

@@ -354,6 +354,7 @@
         <div class="menu-buttons">
             <button id="btn-new-game">New Game</button>
             <button id="btn-load-game">Load Game</button>
+            <button id="btn-library">Library</button>
             <button id="btn-options">Options</button>
         </div>
     </div>
@@ -579,6 +580,30 @@
         </div>
     </div>
 
+    <!-- Library Screen -->
+    <div id="library-screen" class="menu-screen hidden">
+        <div class="library-container">
+            <div class="library-header">
+                <h2>FACTION LIBRARY</h2>
+                <button id="btn-library-close" class="library-close-btn">×</button>
+            </div>
+            <div class="library-content">
+                <div class="library-sidebar">
+                    <div class="faction-tab active" data-faction="federation">FEDERATION</div>
+                    <div class="faction-tab" data-faction="trigon">TRIGON</div>
+                    <div class="faction-tab" data-faction="scintilian">SCINTILIAN</div>
+                    <div class="faction-tab" data-faction="dhojan">DHOJAN</div>
+                    <div class="faction-tab" data-faction="commonwealth">COMMONWEALTH</div>
+                    <div class="faction-tab" data-faction="andromedan">ANDROMEDAN</div>
+                    <div class="faction-tab" data-faction="pirate">PIRATE</div>
+                </div>
+                <div class="library-main">
+                    <div id="library-faction-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Third-party Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/planck-js@0.3.31/dist/planck.min.js"></script>
 
@@ -592,6 +617,7 @@
     <script src="js/core/Camera.js"></script>
     <script src="js/core/StateManager.js"></script>
     <script src="js/core/GameLoop.js"></script>
+    <script src="js/core/ShipFactory.js"></script>
     <script src="js/core/Engine.js"></script>
 
     <!-- Physics -->
@@ -620,8 +646,8 @@
     <script src="js/components/InternalSystems.js"></script>
 
     <!-- Rendering (loads AFTER weapon components so instanceof checks work) -->
-    <script src="js/rendering/Renderer.js"></script>
     <script src="js/rendering/ShipRenderer.js"></script>
+    <script src="js/rendering/Renderer.js"></script>
     <script src="js/rendering/EnvironmentRenderer.js"></script>
     <script src="js/rendering/UIRenderer.js"></script>
     <script src="js/rendering/ParticleSystem.js"></script>
@@ -643,6 +669,7 @@
     <script src="js/systems/SaveManager.js"></script>
     <script src="js/systems/ProgressionManager.js"></script>
     <script src="js/systems/AudioManager.js"></script>
+    <script src="js/systems/LibrarySystem.js"></script>
 
     <!-- Entities -->
     <script src="js/entities/Entity.js"></script>
@@ -659,12 +686,20 @@
     <script src="js/entities/Environmental.js"></script>
     <script src="js/entities/LaserProjectile.js"></script>
     <script src="js/entities/BeamProjectile.js"></script>
+    <script src="js/entities/DisruptorBeam.js"></script>
+    <script src="js/entities/LaserCannon.js"></script>
+    <script src="js/entities/LaserBeam.js"></script>
+    <script src="js/entities/PhaseBeam.js"></script>
     <script src="js/entities/Shuttle.js"></script>
     <script src="js/entities/Fighter.js"></script>
     <script src="js/entities/Bomber.js"></script>
     <script src="js/entities/Drone.js"></script>
     <script src="js/entities/Probe.js"></script>
     <script src="js/entities/HeavyTorpedo.js"></script>
+    <script src="js/entities/LaserTorpedo.js"></script>
+    <script src="js/entities/PhaseTorpedo.js"></script>
+    <script src="js/entities/DisruptorPulse.js"></script>
+    <script src="js/entities/PlasmaCannon.js"></script>
     <script src="js/entities/InterceptorMissile.js"></script>
     <script src="js/entities/CaptorMine.js"></script>
     <script src="js/entities/PhaserMine.js"></script>

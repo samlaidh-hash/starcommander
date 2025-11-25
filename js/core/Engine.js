@@ -173,6 +173,126 @@ const PLAYER_SHIP_BASE_OPTIONS = [
         description: "Heaviest pirate hull wielding disruptor and plasma tech.",
         torpedo: { loaded: 1, stored: 0, hp: 4, summary: "Plasma torpedo launcher (aft 90-degree arc)" },
         special: "Disruptor cannon paired with stolen plasma warheads."
+    },
+    {
+        id: "DHO_DD",
+        faction: "DHOJAN",
+        shipClass: "DD",
+        name: "Dhojan Destroyer",
+        label: "Dhojan Destroyer (DD)",
+        description: "Advanced destroyer with quantum technology and energy shields.",
+        torpedo: { loaded: 3, stored: 30, hp: 6, summary: "Quantum torpedo launcher" },
+        special: "Quantum drive, energy shield, advanced sensors. G key: Quantum Drive."
+    },
+    {
+        id: "DHO_CL",
+        faction: "DHOJAN",
+        shipClass: "CL",
+        name: "Dhojan Light Cruiser",
+        label: "Dhojan Light Cruiser (CL)",
+        description: "Balanced cruiser with quantum systems and energy manipulation.",
+        torpedo: { loaded: 4, stored: 40, hp: 8, summary: "Quantum torpedo launcher" },
+        special: "Quantum drive, energy shield, advanced sensors. G key: Quantum Drive."
+    },
+    {
+        id: "DHO_CA",
+        faction: "DHOJAN",
+        shipClass: "CA",
+        name: "Dhojan Heavy Cruiser",
+        label: "Dhojan Heavy Cruiser (CA)",
+        description: "Heavy cruiser with enhanced quantum capabilities.",
+        torpedo: { loaded: 5, stored: 50, hp: 10, summary: "Quantum torpedo launcher" },
+        special: "Quantum drive, energy shield, advanced sensors. G key: Quantum Drive."
+    },
+    {
+        id: "DHO_BB",
+        faction: "DHOJAN",
+        shipClass: "BB",
+        name: "Dhojan Battle Cruiser",
+        label: "Dhojan Battle Cruiser (BB)",
+        description: "Flagship battlecruiser with maximum quantum firepower.",
+        torpedo: { loaded: 7, stored: 70, hp: 14, summary: "Quantum torpedo launcher" },
+        special: "Quantum drive, energy shield, advanced sensors. G key: Quantum Drive."
+    },
+    {
+        id: "COM_DD",
+        faction: "COMMONWEALTH",
+        shipClass: "DD",
+        name: "Commonwealth Destroyer",
+        label: "Commonwealth Destroyer (DD)",
+        description: "Laser-equipped destroyer with shield reflection technology.",
+        torpedo: { loaded: 3, stored: 30, hp: 6, summary: "Laser torpedo launcher" },
+        special: "Laser weapons, laser shield reflection, laser targeting. All beam types reflected."
+    },
+    {
+        id: "COM_CL",
+        faction: "COMMONWEALTH",
+        shipClass: "CL",
+        name: "Commonwealth Light Cruiser",
+        label: "Commonwealth Light Cruiser (CL)",
+        description: "Balanced cruiser with laser battery systems.",
+        torpedo: { loaded: 4, stored: 40, hp: 8, summary: "Laser torpedo launcher" },
+        special: "Laser weapons, laser shield reflection, laser targeting. All beam types reflected."
+    },
+    {
+        id: "COM_CA",
+        faction: "COMMONWEALTH",
+        shipClass: "CA",
+        name: "Commonwealth Heavy Cruiser",
+        label: "Commonwealth Heavy Cruiser (CA)",
+        description: "Heavy cruiser with advanced laser arrays.",
+        torpedo: { loaded: 5, stored: 50, hp: 10, summary: "Laser torpedo launcher" },
+        special: "Laser weapons, laser shield reflection, laser targeting. All beam types reflected."
+    },
+    {
+        id: "COM_BB",
+        faction: "COMMONWEALTH",
+        shipClass: "BB",
+        name: "Commonwealth Battle Cruiser",
+        label: "Commonwealth Battle Cruiser (BB)",
+        description: "Flagship battlecruiser with maximum laser firepower.",
+        torpedo: { loaded: 7, stored: 70, hp: 14, summary: "Laser torpedo launcher" },
+        special: "Laser weapons, laser shield reflection, laser targeting. All beam types reflected."
+    },
+    {
+        id: "AND_DD",
+        faction: "ANDROMEDAN",
+        shipClass: "DD",
+        name: "Andromedan Destroyer",
+        label: "Andromedan Destroyer (DD)",
+        description: "Stealth destroyer with phase technology and cloaking.",
+        torpedo: { loaded: 3, stored: 30, hp: 6, summary: "Phase torpedo launcher" },
+        special: "Cloaking device, phase shift, sensor jammer. K key: Cloak, P key: Phase Shift."
+    },
+    {
+        id: "AND_CL",
+        faction: "ANDROMEDAN",
+        shipClass: "CL",
+        name: "Andromedan Light Cruiser",
+        label: "Andromedan Light Cruiser (CL)",
+        description: "Balanced cruiser with enhanced stealth systems.",
+        torpedo: { loaded: 4, stored: 40, hp: 8, summary: "Phase torpedo launcher" },
+        special: "Cloaking device, phase shift, sensor jammer. K key: Cloak, P key: Phase Shift."
+    },
+    {
+        id: "AND_CA",
+        faction: "ANDROMEDAN",
+        shipClass: "CA",
+        name: "Andromedan Heavy Cruiser",
+        label: "Andromedan Heavy Cruiser (CA)",
+        description: "Heavy cruiser with advanced phase weaponry.",
+        torpedo: { loaded: 5, stored: 50, hp: 10, summary: "Phase torpedo launcher" },
+        special: "Cloaking device, phase shift, sensor jammer. K key: Cloak, P key: Phase Shift."
+    },
+    {
+        id: "AND_BB",
+        faction: "ANDROMEDAN",
+        shipClass: "BB",
+        name: "Andromedan Battle Cruiser",
+        label: "Andromedan Battle Cruiser (BB)",
+        description: "Flagship battlecruiser with maximum phase capabilities.",
+        torpedo: { loaded: 7, stored: 70, hp: 14, summary: "Phase torpedo launcher" },
+        special: "Cloaking device, phase shift, sensor jammer. K key: Cloak, P key: Phase Shift."
     }
 ];
 /**
@@ -228,6 +348,9 @@ class Engine {
 
         // Audio system
         this.audioManager = new AudioManager();
+
+        // Library system
+        this.librarySystem = new LibrarySystem();
 
         // Advanced systems
         this.tractorBeamSystem = new TractorBeamSystem();
@@ -307,7 +430,7 @@ class Engine {
             // Space bar: Toggle shields
             if (data.key === ' ' && this.playerShip && this.stateManager.isPlaying()) {
                 if (this.playerShip.shields) {
-                    const shieldState = this.playerShip.shields.toggle();
+                    const shieldState = this.playerShip.shields.toggle(this.playerShip);
                     console.log(`Shields ${shieldState ? 'RAISED' : 'LOWERED'}`);
                     this.audioManager.playSound(shieldState ? 'shield-up' : 'shield-down');
                 }
@@ -362,6 +485,50 @@ class Engine {
             if (consumableKeyMap[data.key]) {
                 if (this.playerShip.consumables) {
                     this.playerShip.consumables.useConsumable(consumableKeyMap[data.key]);
+                }
+            }
+
+            // G key: Dhojan Quantum Drive
+            if (data.key === 'g' || data.key === 'G') {
+                if (this.playerShip && this.stateManager.isPlaying() && this.playerShip.faction === 'DHOJAN') {
+                    // Get mouse position in world coordinates
+                    const mousePos = this.inputManager.getMousePosition();
+                    const worldPos = this.camera.screenToWorld(mousePos.x, mousePos.y);
+                    
+                    if (this.playerShip.useQuantumDrive && this.playerShip.useQuantumDrive(worldPos.x, worldPos.y)) {
+                        this.hud.addCriticalMessage('Quantum Drive activated!');
+                        this.audioManager.playSound('boost');
+                    } else {
+                        this.hud.addCriticalMessage('Quantum Drive: Out of range or on cooldown');
+                    }
+                }
+            }
+
+            // K key: Andromedan Cloak Toggle
+            if (data.key === 'k' || data.key === 'K') {
+                if (this.playerShip && this.stateManager.isPlaying() && this.playerShip.faction === 'ANDROMEDAN') {
+                    if (this.playerShip.activateCloak && this.playerShip.activateCloak()) {
+                        this.hud.addCriticalMessage('Cloak activated');
+                        this.audioManager.playSound('shield-up');
+                    } else if (this.playerShip.deactivateCloak && this.playerShip.deactivateCloak()) {
+                        this.hud.addCriticalMessage('Cloak deactivated');
+                        this.audioManager.playSound('shield-down');
+                    } else {
+                        this.hud.addCriticalMessage('Cloak: On cooldown');
+                    }
+                }
+            }
+
+            // P key: Andromedan Phase Shift
+            if (data.key === 'p' || data.key === 'P') {
+                if (this.playerShip && this.stateManager.isPlaying() && this.playerShip.faction === 'ANDROMEDAN') {
+                    const currentTime = performance.now() / 1000;
+                    if (this.playerShip.activatePhaseShift && this.playerShip.activatePhaseShift(currentTime)) {
+                        this.hud.addCriticalMessage('Phase Shift activated!');
+                        this.audioManager.playSound('boost');
+                    } else {
+                        this.hud.addCriticalMessage('Phase Shift: On cooldown');
+                    }
                 }
             }
         });
@@ -597,6 +764,69 @@ class Engine {
             this.audioManager.playSound('boost');
         });
 
+        // Tactical warp events (double-tap-and-hold W)
+        eventBus.on('tactical-warp-start', (data) => {
+            if (!this.stateManager.isPlaying() || !this.playerShip || !this.playerShip.energy) return;
+            
+            // Only allow for specific factions
+            const allowedFactions = ['FEDERATION', 'SCINTILIAN', 'TRIGON', 'PIRATE', 'PLAYER'];
+            if (!allowedFactions.includes(this.playerShip.faction)) {
+                console.log('Tactical warp not available for this faction');
+                return;
+            }
+
+            // Check cooldown
+            const currentTime = performance.now() / 1000;
+            if (currentTime < this.playerShip.tacticalWarpCooldownEnd) {
+                const cooldownRemaining = this.playerShip.tacticalWarpCooldownEnd - currentTime;
+                console.log(`Tactical warp on cooldown: ${cooldownRemaining.toFixed(1)}s remaining`);
+                this.hud.addCriticalMessage(`Tactical Warp: ${cooldownRemaining.toFixed(1)}s cooldown`);
+                return;
+            }
+
+            // Activate tactical warp
+            if (this.playerShip.activateTacticalWarp(currentTime)) {
+                console.log('Tactical warp activated!');
+                this.audioManager.playSound('boost');
+                this.hud.addCriticalMessage('TACTICAL WARP ENGAGED');
+            }
+        });
+
+        eventBus.on('tactical-warp-end', (data) => {
+            if (!this.stateManager.isPlaying() || !this.playerShip) return;
+            
+            const currentTime = performance.now() / 1000;
+            this.playerShip.deactivateTacticalWarp(currentTime);
+            
+            const cooldownDuration = this.playerShip.tacticalWarpLastDuration * 5;
+            console.log(`Tactical warp ended. Duration: ${this.playerShip.tacticalWarpLastDuration.toFixed(1)}s, Cooldown: ${cooldownDuration.toFixed(1)}s`);
+            this.hud.addCriticalMessage(`Tactical Warp: ${cooldownDuration.toFixed(1)}s cooldown`);
+            this.audioManager.playSound('boost');
+        });
+
+        eventBus.on('tactical-warp-ended-energy', (data) => {
+            if (!this.stateManager.isPlaying() || !this.playerShip) return;
+            
+            const cooldownDuration = this.playerShip.tacticalWarpLastDuration * 5;
+            console.log(`Tactical warp ended (energy depleted). Cooldown: ${cooldownDuration.toFixed(1)}s`);
+            this.hud.addCriticalMessage(`Tactical Warp: Energy depleted. ${cooldownDuration.toFixed(1)}s cooldown`);
+        });
+
+        eventBus.on('tactical-warp-low-energy', (data) => {
+            if (!this.stateManager.isPlaying()) return;
+            this.hud.addCriticalMessage('WARNING: Tactical Warp energy low!');
+        });
+
+        eventBus.on('tactical-warp-low-energy-warning', (data) => {
+            if (!this.stateManager.isPlaying()) return;
+            this.hud.addCriticalMessage('WARNING: Low energy for Tactical Warp');
+        });
+
+        eventBus.on('tactical-warp-cooldown', (data) => {
+            if (!this.stateManager.isPlaying()) return;
+            this.hud.addCriticalMessage(`Tactical Warp: ${data.cooldownRemaining.toFixed(1)}s cooldown`);
+        });
+
         // Lock-on events for reticle visuals
         eventBus.on('lock-acquired', (data) => {
             const reticle = document.getElementById('reticle');
@@ -644,6 +874,7 @@ class Engine {
         // Main menu
         bindClick('btn-new-game', () => this.startNewGame());
         bindClick('btn-load-game', () => this.loadSavedGame());
+        bindClick('btn-library', () => this.showLibrary());
         bindClick('btn-options', highlightSelection);
 
         // Pause menu
@@ -1048,7 +1279,7 @@ class Engine {
 
             // Create player ship based on selection
             console.log('🚀 Creating player ship...');
-            this.playerShip = new Ship({
+            this.playerShip = ShipFactory.createShip({
                 x: 0,
                 y: 0,
                 shipClass: selectedOption.shipClass,
@@ -2836,7 +3067,7 @@ class Engine {
             const config = enemyConfigs[i];
             
             try {
-                const enemyShip = new Ship({
+                const enemyShip = ShipFactory.createShip({
                     x: config.position.x,
                     y: config.position.y,
                     shipClass: config.class,
@@ -3098,6 +3329,15 @@ class Engine {
         }
 
         return null;
+    }
+
+    /**
+     * Show library screen
+     */
+    showLibrary() {
+        if (this.librarySystem) {
+            this.librarySystem.showLibrary();
+        }
     }
 
     start() {

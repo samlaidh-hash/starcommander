@@ -18,8 +18,14 @@ class ShieldSystem {
 
     /**
      * Toggle shield on/off
+     * @param {Ship} ship - Ship instance to check for tactical warp
      */
-    toggle() {
+    toggle(ship = null) {
+        // Cannot raise shields during tactical warp
+        if (ship && ship.tacticalWarpActive && !this.active) {
+            // Trying to raise shields during tactical warp - deny
+            return false;
+        }
         this.active = !this.active;
         return this.active;
     }

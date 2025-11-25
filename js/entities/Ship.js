@@ -345,6 +345,19 @@ class Ship extends Entity {
         this.fastRotateMultiplier = 1.0;
         this.fastRotateEndTime = 0;
 
+        // Tactical warp system (double-tap-and-hold W)
+        this.tacticalWarpActive = false;
+        this.tacticalWarpSpeedMultiplier = 10;
+        this.tacticalWarpEnergyDrainRate = {
+            DD: 8,   // 8 energy/sec
+            CL: 10,  // 10 energy/sec
+            CA: 12,  // 12 energy/sec
+            BB: 15   // 15 energy/sec
+        };
+        this.tacticalWarpStartTime = 0;
+        this.tacticalWarpCooldownEnd = 0;
+        this.tacticalWarpLastDuration = 0;
+
         // Energy System (replaces Internal Systems)
         // Only support DD, CL, CA, BB classes
         if (!['DD', 'CL', 'CA', 'BB'].includes(this.shipClass)) {
@@ -454,6 +467,11 @@ class Ship extends Entity {
 
         if (this.faction === 'TRIGON') {
             speed *= CONFIG.MAX_SPEED_TRIGON_MULTIPLIER;
+        }
+
+        // Tactical warp multiplies speed by 10x
+        if (this.tacticalWarpActive) {
+            speed *= this.tacticalWarpSpeedMultiplier;
         }
 
         return speed;
@@ -1099,7 +1117,6 @@ class Ship extends Entity {
         this.updateDamageEffects(deltaTime);
         
         // Update fast rotation expiration
-        const currentTime = performance.now() / 1000;
         if (this.fastRotateActive && currentTime >= this.fastRotateEndTime) {
             this.fastRotateActive = false;
         }
@@ -1109,6 +1126,9 @@ class Ship extends Entity {
 
         // Update boost system
         this.updateBoost(deltaTime, currentTime);
+
+        // Update tactical warp system
+        this.updateTacticalWarp(deltaTime, currentTime);
 
         // Update consumables (for active effect timers)
         if (this.consumables) {
@@ -1128,9 +1148,14 @@ class Ship extends Entity {
     }
 
     /**
-     * Check if ship can fire weapons (cloaking check)
+     * Check if ship can fire weapons (cloaking check, tactical warp check)
      */
     canFireWeapons() {
+        // Cannot fire weapons during tactical warp
+        if (this.tacticalWarpActive) {
+            return false;
+        }
+
         if (this.systems && this.systems.cloak) {
             const currentTime = performance.now() / 1000;
             return this.systems.cloak.canFireWeapons(currentTime);
@@ -1564,6 +1589,73 @@ class Ship extends Entity {
 
         eventBus.emit('boost-ended', { ship: this });
         console.log('Boost deactivated');
+    }
+
+    /**
+     * Update tactical warp system
+     */
+    updateTacticalWarp(deltaTime, currentTime) {
+        if (!this.tacticalWarpActive) return;
+
+        // Get energy drain rate based on ship class
+        const drainRate = this.tacticalWarpEnergyDrainRate[this.shipClass] || 10;
+        
+        // Drain energy
+        if (this.energy) {
+            const energyDrain = drainRate * deltaTime;
+            this.energy.drain(energyDrain);
+            
+            // Warn when energy < 20%
+            const energyPercent = this.energy.getTotalEnergy() / this.energy.getMaxEnergy();
+            if (energyPercent < 0.2 && energyPercent > 0.19) {
+                eventBus.emit('tactical-warp-low-energy', { ship: this, energyPercent: energyPercent });
+            }
+            
+            // End warp if energy depleted
+            if (this.energy.getTotalEnergy() <= 0) {
+                const warpDuration = currentTime - this.tacticalWarpStartTime;
+                this.tacticalWarpActive = false;
+                this.tacticalWarpLastDuration = warpDuration;
+                this.tacticalWarpCooldownEnd = currentTime + (warpDuration * 5); // 5x duration cooldown
+                eventBus.emit('tactical-warp-ended-energy', { ship: this, duration: warpDuration });
+            }
+        }
+    }
+
+    /**
+     * Activate tactical warp
+     */
+    activateTacticalWarp(currentTime) {
+        // Check cooldown
+        if (currentTime < this.tacticalWarpCooldownEnd) {
+            const cooldownRemaining = this.tacticalWarpCooldownEnd - currentTime;
+            eventBus.emit('tactical-warp-cooldown', { ship: this, cooldownRemaining: cooldownRemaining });
+            return false;
+        }
+
+        // Check if ship has minimum energy (warning only, not required)
+        if (this.energy) {
+            const energyPercent = this.energy.getTotalEnergy() / this.energy.getMaxEnergy();
+            if (energyPercent < 0.1) {
+                eventBus.emit('tactical-warp-low-energy-warning', { ship: this, energyPercent: energyPercent });
+            }
+        }
+
+        this.tacticalWarpActive = true;
+        this.tacticalWarpStartTime = currentTime;
+        return true;
+    }
+
+    /**
+     * Deactivate tactical warp
+     */
+    deactivateTacticalWarp(currentTime) {
+        if (!this.tacticalWarpActive) return;
+
+        const warpDuration = currentTime - this.tacticalWarpStartTime;
+        this.tacticalWarpActive = false;
+        this.tacticalWarpLastDuration = warpDuration;
+        this.tacticalWarpCooldownEnd = currentTime + (warpDuration * 5); // 5x duration cooldown
     }
 
     /**

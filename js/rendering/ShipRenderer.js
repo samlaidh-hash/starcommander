@@ -20,13 +20,18 @@ class ShipRenderer {
         // Apply cloaking alpha
         this.ctx.globalAlpha = alpha;
 
+        // Draw tactical warp effects (if active)
+        if (ship.tacticalWarpActive) {
+            this.drawTacticalWarpEffects(ship);
+        }
+
         // Translate to ship position
         this.ctx.translate(ship.x, ship.y);
 
         // Rotate to ship facing
         this.ctx.rotate(MathUtils.toRadians(ship.rotation));
 
-        // Draw ship hull
+        // Draw ship hull (with stretch effect if tactical warp active)
         this.drawHull(ship);
 
         // Draw visual damage effects (particle trails, flames, explosions)
@@ -40,6 +45,24 @@ class ShipRenderer {
         // Draw shields (only if not cloaked) - ALL SHIPS
         if (!ship.isCloaked()) {
             this.drawShields(ship);
+        }
+
+        // Draw special faction shields
+        if (ship.faction === 'DHOJAN') {
+            this.drawEnergyShield(ship);
+        }
+        if (ship.faction === 'COMMONWEALTH') {
+            this.drawLaserShield(ship);
+        }
+
+        // Draw phase shift effects (if active)
+        if (ship.faction === 'ANDROMEDAN') {
+            this.drawPhaseShiftEffects(ship);
+        }
+
+        // Draw quantum drive effects (if recently used)
+        if (ship.faction === 'DHOJAN') {
+            this.drawQuantumDriveEffects(ship);
         }
 
         // Draw internal systems - ALL SHIPS (scaled down for enemies)
@@ -498,29 +521,6 @@ class ShipRenderer {
         this.ctx.stroke();
         
         this.ctx.restore();
-                        endAngle = 225;
-                        break;
-                }
-
-                // Convert to radians
-                const startRad = MathUtils.toRadians(startAngle);
-                const endRad = MathUtils.toRadians(endAngle);
-
-                // Draw shield arc with glow
-                const gradient = this.ctx.createRadialGradient(0, 0, shieldRadius - 10, 0, 0, shieldRadius + 5);
-                gradient.addColorStop(0, `rgba(0, 150, 255, 0)`);
-                gradient.addColorStop(0.8, `rgba(0, 150, 255, ${effect.alpha * 0.4})`);
-                gradient.addColorStop(1, `rgba(100, 200, 255, ${effect.alpha * 0.8})`);
-
-                this.ctx.strokeStyle = gradient;
-                this.ctx.lineWidth = 8;
-                this.ctx.beginPath();
-                this.ctx.arc(0, 0, shieldRadius, startRad, endRad);
-                this.ctx.stroke();
-
-                this.ctx.restore();
-            }
-        }
     }
 
     drawDebugInfo(ship) {
@@ -756,6 +756,226 @@ class ShipRenderer {
                 this.ctx.restore();
             }
         }
+    }
+
+    /**
+     * Draw tactical warp visual effects
+     */
+    drawTacticalWarpEffects(ship) {
+        if (!ship.tacticalWarpActive) return;
+
+        this.ctx.save();
+        this.ctx.translate(ship.x, ship.y);
+        this.ctx.rotate(MathUtils.toRadians(ship.rotation));
+
+        const size = ship.getShipSize();
+        const velocityAngle = MathUtils.toRadians(ship.rotation);
+        const speed = ship.currentSpeed || 0;
+
+        // Draw warp trail particles (blue/cyan streaks behind ship)
+        const trailLength = Math.min(speed * 0.1, 100); // Trail length based on speed
+        const particleCount = Math.floor(trailLength / 5);
+
+        for (let i = 0; i < particleCount; i++) {
+            const distance = -trailLength + (i * 5);
+            const offsetX = Math.cos(velocityAngle) * distance;
+            const offsetY = Math.sin(velocityAngle) * distance;
+            const spread = (Math.random() - 0.5) * size * 0.3;
+
+            this.ctx.save();
+            this.ctx.globalAlpha = 0.3 + (i / particleCount) * 0.5;
+            this.ctx.strokeStyle = i % 2 === 0 ? '#00ffff' : '#0088ff';
+            this.ctx.lineWidth = 2;
+            this.ctx.shadowBlur = 5;
+            this.ctx.shadowColor = '#00ffff';
+            this.ctx.beginPath();
+            this.ctx.moveTo(offsetX, offsetY);
+            this.ctx.lineTo(offsetX - Math.cos(velocityAngle) * 10, offsetY - Math.sin(velocityAngle) * 10);
+            this.ctx.stroke();
+            this.ctx.restore();
+        }
+
+        // Draw motion blur effect (stretched ship outline)
+        this.ctx.save();
+        this.ctx.globalAlpha = 0.2;
+        this.ctx.fillStyle = ship.color || '#0f0';
+        this.ctx.scale(1.0, 0.3); // Stretch vertically (along velocity)
+        if (ship.vertices && ship.vertices.length > 0) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(ship.vertices[0].x, ship.vertices[0].y);
+            for (let i = 1; i < ship.vertices.length; i++) {
+                this.ctx.lineTo(ship.vertices[i].x, ship.vertices[i].y);
+            }
+            this.ctx.closePath();
+            this.ctx.fill();
+        }
+        this.ctx.restore();
+
+        // Draw energy drain visual indicator (glowing ring)
+        if (ship.energy) {
+            const energyPercent = ship.energy.getTotalEnergy() / ship.energy.getMaxEnergy();
+            this.ctx.save();
+            this.ctx.globalAlpha = 0.4;
+            this.ctx.strokeStyle = energyPercent < 0.2 ? '#ff0000' : '#00ffff';
+            this.ctx.lineWidth = 3;
+            this.ctx.shadowBlur = 10;
+            this.ctx.shadowColor = '#00ffff';
+            this.ctx.beginPath();
+            this.ctx.arc(0, 0, size * 1.5, 0, Math.PI * 2);
+            this.ctx.stroke();
+            this.ctx.restore();
+        }
+
+        this.ctx.restore();
+    }
+
+    /**
+     * Draw quantum drive visual effects
+     */
+    drawQuantumDriveEffects(ship) {
+        if (!ship || !ship.advancedSystems || !ship.advancedSystems.quantumDrive) return;
+
+        // Check if quantum drive was recently used (within last 0.5 seconds)
+        const currentTime = performance.now() / 1000;
+        const qd = ship.advancedSystems.quantumDrive;
+        const timeSinceUse = currentTime - (qd.lastUseTime || 0);
+        
+        if (timeSinceUse < 0.5 && timeSinceUse > 0) {
+            // Draw flash/particle burst at ship location
+            this.ctx.save();
+            this.ctx.translate(ship.x, ship.y);
+            
+            const size = ship.getShipSize();
+            const flashAlpha = 1 - (timeSinceUse / 0.5);
+            
+            // Draw flash burst
+            const gradient = this.ctx.createRadialGradient(0, 0, 0, 0, 0, size * 2);
+            gradient.addColorStop(0, `rgba(170, 0, 170, ${flashAlpha})`);
+            gradient.addColorStop(0.5, `rgba(170, 0, 170, ${flashAlpha * 0.5})`);
+            gradient.addColorStop(1, 'rgba(170, 0, 170, 0)');
+            
+            this.ctx.fillStyle = gradient;
+            this.ctx.beginPath();
+            this.ctx.arc(0, 0, size * 2, 0, Math.PI * 2);
+            this.ctx.fill();
+            
+            // Draw particles
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
+                const distance = size * (1 + timeSinceUse * 2);
+                const x = Math.cos(angle) * distance;
+                const y = Math.sin(angle) * distance;
+                
+                this.ctx.fillStyle = `rgba(170, 0, 170, ${flashAlpha})`;
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, 3, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+            
+            this.ctx.restore();
+        }
+    }
+
+    /**
+     * Draw phase shift visual effects
+     */
+    drawPhaseShiftEffects(ship) {
+        if (!ship || !ship.advancedSystems || !ship.advancedSystems.phaseShift) return;
+        
+        if (ship.advancedSystems.phaseShift.active) {
+            this.ctx.save();
+            this.ctx.translate(ship.x, ship.y);
+            this.ctx.rotate(MathUtils.toRadians(ship.rotation));
+            
+            const size = ship.getShipSize();
+            
+            // Make ship translucent (50% alpha)
+            this.ctx.globalAlpha = 0.5;
+            
+            // Draw glowing outline
+            this.ctx.strokeStyle = '#00ffff';
+            this.ctx.lineWidth = 3;
+            this.ctx.shadowBlur = 10;
+            this.ctx.shadowColor = '#00ffff';
+            
+            if (ship.vertices && ship.vertices.length > 0) {
+                this.ctx.beginPath();
+                this.ctx.moveTo(ship.vertices[0].x, ship.vertices[0].y);
+                for (let i = 1; i < ship.vertices.length; i++) {
+                    this.ctx.lineTo(ship.vertices[i].x, ship.vertices[i].y);
+                }
+                this.ctx.closePath();
+                this.ctx.stroke();
+            }
+            
+            // Draw particle effects around ship
+            const particleCount = 6;
+            for (let i = 0; i < particleCount; i++) {
+                const angle = (i / particleCount) * Math.PI * 2;
+                const distance = size * 1.5;
+                const x = Math.cos(angle) * distance;
+                const y = Math.sin(angle) * distance;
+                
+                this.ctx.fillStyle = '#00ffff';
+                this.ctx.globalAlpha = 0.6;
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, 2, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+            
+            this.ctx.globalAlpha = 1.0;
+            this.ctx.restore();
+        }
+    }
+
+    /**
+     * Draw energy shield visual indicator
+     */
+    drawEnergyShield(ship) {
+        if (!ship || !ship.advancedSystems || !ship.advancedSystems.energyShield) return;
+        
+        this.ctx.save();
+        this.ctx.translate(ship.x, ship.y);
+        
+        const size = ship.getShipSize();
+        
+        // Draw energy shield ring
+        this.ctx.strokeStyle = '#aa00aa';
+        this.ctx.lineWidth = 2;
+        this.ctx.globalAlpha = 0.6;
+        this.ctx.shadowBlur = 5;
+        this.ctx.shadowColor = '#aa00aa';
+        this.ctx.beginPath();
+        this.ctx.arc(0, 0, size * 1.2, 0, Math.PI * 2);
+        this.ctx.stroke();
+        
+        this.ctx.globalAlpha = 1.0;
+        this.ctx.restore();
+    }
+
+    /**
+     * Draw laser shield visual indicator
+     */
+    drawLaserShield(ship) {
+        if (!ship || !ship.advancedSystems || !ship.advancedSystems.laserShield) return;
+        
+        this.ctx.save();
+        this.ctx.translate(ship.x, ship.y);
+        
+        const size = ship.getShipSize();
+        
+        // Draw laser shield ring
+        this.ctx.strokeStyle = '#00aa00';
+        this.ctx.lineWidth = 2;
+        this.ctx.globalAlpha = 0.6;
+        this.ctx.shadowBlur = 5;
+        this.ctx.shadowColor = '#00aa00';
+        this.ctx.beginPath();
+        this.ctx.arc(0, 0, size * 1.2, 0, Math.PI * 2);
+        this.ctx.stroke();
+        
+        this.ctx.globalAlpha = 1.0;
+        this.ctx.restore();
     }
 }
 
