@@ -160,30 +160,21 @@ class PowerManagementSystem {
     }
 
     /**
-     * Apply shield modifiers
+     * Apply shield modifiers (unified shield system)
      */
     applyShieldModifiers(shieldSystem, mode) {
-        const quadrants = shieldSystem.getAllQuadrants();
+        if (!shieldSystem) return;
         
-        for (const [key, shield] of Object.entries(quadrants)) {
-            // Modify shield strength
-            const originalMax = this.originalValues[`shield_${key}_max`] || shield.max;
-            if (!this.originalValues[`shield_${key}_max`]) {
-                this.originalValues[`shield_${key}_max`] = shield.max;
-            }
-            
-            shield.max = originalMax * mode.shieldStrength;
-            shield.current = Math.min(shield.current, shield.max);
-            
-            // Modify recharge rate
-            const originalRechargeRate = this.originalValues[`shield_${key}_recharge`] || CONFIG.SHIELD_RECOVERY_RATE;
-            if (!this.originalValues[`shield_${key}_recharge`]) {
-                this.originalValues[`shield_${key}_recharge`] = CONFIG.SHIELD_RECOVERY_RATE;
-            }
-            
-            // Note: Shield recharge rate is handled in ShieldSystem.update()
-            // We'll need to modify the global config or pass the modifier
+        // Store original max strength if not already stored
+        if (!this.originalValues.shield_maxStrength) {
+            this.originalValues.shield_maxStrength = shieldSystem.maxStrength;
         }
+        
+        // Apply shield strength modifier
+        shieldSystem.maxStrength = this.originalValues.shield_maxStrength * mode.shieldStrength;
+        shieldSystem.currentStrength = Math.min(shieldSystem.currentStrength, shieldSystem.maxStrength);
+        
+        // Note: Shield recharge rate is handled in ShieldSystem.update() via CONFIG.SHIELD_RECOVERY_RATE
     }
 
     /**
