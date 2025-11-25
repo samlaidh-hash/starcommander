@@ -185,10 +185,14 @@ class TorpedoLauncher extends Weapon {
             const worldCos = Math.cos(worldRad);
             const worldSin = Math.sin(worldRad);
 
-            // Apply weapon mount position with additional forward offset to clear ship hull
-            const forwardOffset = shipSize * 1.5; // 150% of ship size forward - prevents stuck torpedoes
+            // Apply weapon mount position with additional offset to clear ship hull
+            const clearOffset = shipSize * 1.5; // 150% of ship size - prevents stuck torpedoes
             const totalX = this.position.x;
-            const totalY = this.position.y - forwardOffset; // Negative Y = forward
+            // For forward weapons (negative Y), subtract offset to move forward
+            // For aft weapons (positive Y), add offset to move backward
+            const totalY = this.position.y < 0 
+                ? this.position.y - clearOffset  // Forward: move further forward
+                : this.position.y + clearOffset; // Aft: move further backward
 
             let worldX = ship.x + (totalX * worldCos - totalY * worldSin);
             let worldY = ship.y + (totalX * worldSin + totalY * worldCos);

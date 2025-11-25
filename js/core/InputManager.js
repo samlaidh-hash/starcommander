@@ -26,6 +26,9 @@ class InputManager {
         this.tacticalWarpCooldownEnd = 0;
         this.wKeyDoubleTapped = false; // Track if W was double-tapped
         this.wKeyHeld = false; // Track if W is currently held
+        
+        // Fast rotate state tracking (prevent multiple triggers while holding)
+        this.fastRotateTriggered = new Set(); // Track which keys have triggered fast-rotate
 
         this.init();
     }
@@ -77,9 +80,10 @@ class InputManager {
             const currentTime = performance.now();
             const lastPressTime = this.lastKeyPressTimes.get(key) || 0;
             const timeSinceLastPress = currentTime - lastPressTime;
+            const isKeyHeld = this.keys.get(key) === true; // Check if key was already held
 
-            if (timeSinceLastPress < this.doubleTapThreshold) {
-                // Double-tap detected!
+            if (timeSinceLastPress < this.doubleTapThreshold && !isKeyHeld) {
+                // Double-tap detected! (only if key wasn't already held)
                 if (key === 'w') {
                     // For W key: Mark as double-tapped, will activate tactical warp if held
                     this.wKeyDoubleTapped = true;
@@ -88,7 +92,11 @@ class InputManager {
                 } else if (key === 's') {
                     eventBus.emit('instant-stop', { direction: key });
                 } else if (key === 'a' || key === 'd') {
-                    eventBus.emit('fast-rotate', { direction: key });
+                    // Only trigger fast-rotate if it hasn't been triggered for this key yet
+                    if (!this.fastRotateTriggered.has(key)) {
+                        this.fastRotateTriggered.add(key);
+                        eventBus.emit('fast-rotate', { direction: key });
+                    }
                 }
                 this.lastKeyPressTimes.set(key, 0); // Reset to prevent triple-tap
             } else {
@@ -96,7 +104,10 @@ class InputManager {
                 // If W key is pressed but not double-tapped, track it
                 if (key === 'w') {
                     this.wKeyHeld = true;
-                    this.wKeyDoubleTapped = false;
+                    if (!isKeyHeld) {
+                        // First press, not a double-tap
+                        this.wKeyDoubleTapped = false;
+                    }
                 }
             }
         }
@@ -144,6 +155,11 @@ class InputManager {
                 this.wKeyDoubleTapped = false;
                 eventBus.emit('burst-acceleration', { direction: 'w' });
             }
+        }
+        
+        // Reset fast-rotate trigger when key is released
+        if (key === 'a' || key === 'd') {
+            this.fastRotateTriggered.delete(key);
         }
 
         // Handle spacebar - now used for shield toggle (single press)
