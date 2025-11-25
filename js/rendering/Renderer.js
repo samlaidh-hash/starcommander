@@ -38,6 +38,10 @@ class Renderer {
     }
 
     renderEntities(entities) {
+        if (!entities || entities.length === 0) {
+            console.warn('Renderer: No entities to render');
+            return;
+        }
         for (const entity of entities) {
             if (!entity.active) continue;
 
