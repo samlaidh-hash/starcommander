@@ -527,7 +527,6 @@ class MissionUI {
         });
 
         // Disable + buttons if bay full (check available space for player selections)
-        const playerUsage = this.getPlayerBayUsage();
         const available = this.getAvailableBaySpace();
         document.querySelectorAll('.btn-plus').forEach(btn => {
             const item = btn.closest('.consumable-item');
