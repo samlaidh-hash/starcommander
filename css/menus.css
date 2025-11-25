@@ -265,10 +265,10 @@
 
 .briefing-mission-frame .briefing-text,
 .debriefing-text {
-    padding: 15px 0;
+    padding: 0;
     background: transparent;
     border: none;
-    flex-shrink: 1;
+    flex-shrink: 0;
     min-height: 0;
     overflow: visible;
     margin: 0;
@@ -320,15 +320,15 @@
 
 .briefing-mission-frame .briefing-objectives,
 .debriefing-objectives {
-    padding: 15px 0;
+    padding: 0;
     background: transparent;
     border: none;
-    flex: 1;
+    flex: 0 0 auto;
     display: flex;
     flex-direction: column;
     min-height: 0;
     overflow: visible;
-    flex-shrink: 1;
+    flex-shrink: 0;
     margin: 0;
 }
 
