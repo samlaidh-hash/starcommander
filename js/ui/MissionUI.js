@@ -346,9 +346,11 @@ class MissionUI {
      * Increment consumable count
      */
     incrementConsumable(type) {
-        const playerUsage = Object.values(this.loadout).reduce((sum, count) => sum + count, 0);
+        const currentPlayerUsage = this.getPlayerBayUsage();
         const available = this.getAvailableBaySpace();
-        if (playerUsage < available) {
+        const itemCost = (type === 'extraBombers') ? 2 : 1;
+        
+        if (currentPlayerUsage + itemCost <= available) {
             this.loadout[type]++;
             this.updateLoadoutDisplay();
             this.saveLoadout();
@@ -395,11 +397,25 @@ class MissionUI {
     }
 
     /**
+     * Get player selection bay usage (accounting for bombers taking 2 spaces)
+     */
+    getPlayerBayUsage() {
+        let usage = 0;
+        for (const [type, count] of Object.entries(this.loadout)) {
+            if (type === 'extraBombers') {
+                usage += count * 2; // Bombers take 2 spaces each
+            } else {
+                usage += count; // All other items take 1 space each
+            }
+        }
+        return usage;
+    }
+
+    /**
      * Get total bay usage (defaults + player selections)
      */
     getTotalBayUsage() {
-        const playerUsage = Object.values(this.loadout).reduce((sum, count) => sum + count, 0);
-        return this.getDefaultBayUsage() + playerUsage;
+        return this.getDefaultBayUsage() + this.getPlayerBayUsage();
     }
 
     /**
@@ -490,11 +506,13 @@ class MissionUI {
         });
 
         // Disable + buttons if bay full (check available space for player selections)
-        const playerUsage = Object.values(this.loadout).reduce((sum, count) => sum + count, 0);
+        const playerUsage = this.getPlayerBayUsage();
         const available = this.getAvailableBaySpace();
-        const isFull = playerUsage >= available;
         document.querySelectorAll('.btn-plus').forEach(btn => {
-            btn.disabled = isFull;
+            const item = btn.closest('.consumable-item');
+            const type = item ? item.dataset.type : null;
+            const itemCost = (type === 'extraBombers') ? 2 : 1;
+            btn.disabled = (playerUsage + itemCost > available);
         });
     }
 
