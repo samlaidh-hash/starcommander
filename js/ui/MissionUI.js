@@ -296,10 +296,8 @@ class MissionUI {
      * Setup loadout selection UI
      */
     setupLoadoutSelection() {
-        // Get bay size from ship class or BaySystem
-        if (window.game && window.game.baySystem) {
-            this.bayMax = window.game.baySystem.maxBaySpace;
-        } else if (this.playerShip && this.playerShip.shipClass) {
+        // Get bay size from ship class (prioritize ship class over BaySystem for accuracy)
+        if (this.playerShip && this.playerShip.shipClass) {
             // Get bay size from ship class (Updated: BC 10, CA 8, CL 6, DD 4)
             const bayByClass = {
                 'FG': 2,
@@ -313,6 +311,8 @@ class MissionUI {
                 'SD': 16
             };
             this.bayMax = bayByClass[this.playerShip.shipClass] || 8;
+        } else if (window.game && window.game.baySystem) {
+            this.bayMax = window.game.baySystem.maxBaySpace;
         } else {
             this.bayMax = 8; // Default bay capacity
         }
@@ -479,13 +479,43 @@ class MissionUI {
      * Update loadout display
      */
     updateLoadoutDisplay() {
+        // Ensure bayMax is set correctly
+        if (this.playerShip && this.playerShip.shipClass) {
+            const bayByClass = {
+                'FG': 2,
+                'DD': 4,
+                'CL': 6,
+                'CS': 8,
+                'CA': 8,
+                'BC': 10,
+                'BB': 12,
+                'DN': 14,
+                'SD': 16
+            };
+            this.bayMax = bayByClass[this.playerShip.shipClass] || 8;
+        }
+        
+        // Ensure default loadout is set
+        this.setDefaultLoadout();
+        
         // Update bay capacity display
-        const bayUsed = this.getTotalBayUsage();
+        const defaultUsage = this.getDefaultBayUsage();
+        const playerUsage = this.getPlayerBayUsage();
+        const bayUsed = defaultUsage + playerUsage;
         const bayUsedElement = document.getElementById('bay-used');
         const bayMaxElement = document.getElementById('bay-max');
 
         if (bayUsedElement) bayUsedElement.textContent = bayUsed;
         if (bayMaxElement) bayMaxElement.textContent = this.bayMax;
+        
+        console.log('Bay Display:', {
+            shipClass: this.playerShip?.shipClass,
+            bayMax: this.bayMax,
+            defaultUsage: defaultUsage,
+            playerUsage: playerUsage,
+            totalUsed: bayUsed,
+            defaultLoadout: this.defaultLoadout
+        });
 
         // Update loadout summary (includes defaults)
         const summaryTextElement = document.getElementById('loadout-summary-text');
