@@ -388,15 +388,16 @@ class ConsumableSystem {
      * Get damage multiplier (for weapon damage calculation)
      */
     getDamageMultiplier() {
-        return this.activeEffects.energyCells.active ? 1.2 : 1.0;
+        // Energy cells are now instant boost only, no damage multiplier
+        return 1.0;
     }
 
     /**
      * Get remaining time for energy cells (for UI display)
      */
     getEnergyCellsTimeRemaining(currentTime) {
-        if (!this.activeEffects.energyCells.active) return 0;
-        return Math.max(0, this.activeEffects.energyCells.endTime - currentTime);
+        // Energy cells are now instant boost only, no time remaining
+        return 0;
     }
 
     /**
