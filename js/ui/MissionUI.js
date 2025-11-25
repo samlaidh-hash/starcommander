@@ -320,8 +320,22 @@ class MissionUI {
         // Set default loadout based on faction
         this.setDefaultLoadout();
 
-        // Load saved loadout from localStorage
-        this.loadLoadout();
+        // Reset player loadout to empty (each mission briefing starts fresh)
+        this.loadout = {
+            hullRepairKit: 0,
+            energyCells: 0,
+            extraTorpedoes: 0,
+            extraDecoys: 0,
+            extraMines: 0,
+            extraShuttles: 0,
+            extraFighters: 0,
+            extraBombers: 0,
+            extraDrones: 0,
+            extraProbes: 0
+        };
+        
+        // Note: We don't load from localStorage here - each mission starts with empty player selections
+        // Player can still select items, and they'll be saved when mission is accepted
 
         // Attach event listeners to + and - buttons
         document.querySelectorAll('.btn-plus').forEach(btn => {
