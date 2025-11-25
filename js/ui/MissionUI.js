@@ -507,6 +507,18 @@ class MissionUI {
 
         if (bayUsedElement) bayUsedElement.textContent = bayUsed;
         if (bayMaxElement) bayMaxElement.textContent = this.bayMax;
+        
+        // Debug logging
+        console.log('Bay Calculation:', {
+            shipClass: this.playerShip?.shipClass,
+            faction: this.playerShip?.faction,
+            bayMax: this.bayMax,
+            defaultLoadout: { ...this.defaultLoadout },
+            defaultUsage: defaultUsage,
+            playerUsage: playerUsage,
+            totalUsed: bayUsed,
+            available: this.bayMax - defaultUsage
+        });
 
         // Update loadout summary (includes defaults)
         const summaryTextElement = document.getElementById('loadout-summary-text');
