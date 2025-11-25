@@ -149,7 +149,6 @@
     gap: 20px;
     box-sizing: border-box;
     overflow: hidden;
-    margin-bottom: 20px;
 }
 
 .briefing-header,
@@ -187,12 +186,14 @@
     min-height: 0; /* Critical: allows flex child to shrink below content size */
 }
 
-/* Two-column layout for objectives and loadout */
+/* Two-column layout for mission info and loadout */
 .briefing-columns {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
     min-height: 0;
+    flex: 1;
+    overflow: hidden;
 }
 
 .briefing-column-left,
@@ -201,6 +202,7 @@
     flex-direction: column;
     min-height: 0;
     overflow: hidden;
+    gap: 15px;
 }
 
 .briefing-officer {
@@ -210,6 +212,7 @@
     padding: 15px;
     background: rgba(0, 50, 0, 0.3);
     border-left: 4px solid #0a0;
+    flex-shrink: 0;
 }
 
 .officer-portrait {
@@ -231,6 +234,7 @@
     padding: 20px;
     background: rgba(0, 30, 0, 0.5);
     border: 1px solid #0a0;
+    flex-shrink: 0;
 }
 
 .briefing-text h3,
@@ -261,6 +265,7 @@
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
+    flex-shrink: 1;
 }
 
 .briefing-objectives h3,
