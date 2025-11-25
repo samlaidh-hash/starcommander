@@ -352,6 +352,44 @@ class MissionUI {
     }
 
     /**
+     * Get display name for consumable type
+     */
+    getConsumableDisplayName(type) {
+        const names = {
+            hullRepairKit: 'Hull Repair Kit',
+            energyCells: 'Energy Cells',
+            extraTorpedoes: 'Extra Torpedoes',
+            extraDecoys: 'Extra Decoys',
+            extraMines: 'Extra Mines',
+            shieldBoost: 'Shield Boost',
+            extraShuttles: 'Extra Shuttles',
+            extraFighters: 'Extra Fighters',
+            extraBombers: 'Extra Bombers',
+            extraDrones: 'Extra Drones',
+            extraProbes: 'Extra Probes'
+        };
+        return names[type] || type;
+    }
+
+    /**
+     * Generate loadout summary text
+     */
+    generateLoadoutSummary() {
+        const items = [];
+        for (const [type, count] of Object.entries(this.loadout)) {
+            if (count > 0) {
+                const name = this.getConsumableDisplayName(type);
+                items.push(`${count}x ${name}`);
+            }
+        }
+        
+        if (items.length === 0) {
+            return 'None selected';
+        }
+        return items.join(', ');
+    }
+
+    /**
      * Update loadout display
      */
     updateLoadoutDisplay() {
@@ -362,6 +400,12 @@ class MissionUI {
 
         if (bayUsedElement) bayUsedElement.textContent = bayUsed;
         if (bayMaxElement) bayMaxElement.textContent = this.bayMax;
+
+        // Update loadout summary
+        const summaryTextElement = document.getElementById('loadout-summary-text');
+        if (summaryTextElement) {
+            summaryTextElement.textContent = this.generateLoadoutSummary();
+        }
 
         // Update each consumable count display
         document.querySelectorAll('.consumable-item').forEach(item => {

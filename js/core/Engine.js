@@ -700,6 +700,39 @@ class Engine {
             }
         });
 
+        // Shuttle/Fighter/Bomber weapon firing events
+        eventBus.on('shuttle-fired-beam', (data) => {
+            if (data.projectile) {
+                this.projectiles.push(data.projectile);
+                this.entities.push(data.projectile);
+                this.audioManager.playSound('beam-fire', { volume: 0.3 });
+            }
+        });
+
+        eventBus.on('fighter-fired-beam', (data) => {
+            if (data.projectile) {
+                this.projectiles.push(data.projectile);
+                this.entities.push(data.projectile);
+                this.audioManager.playSound('beam-fire', { volume: 0.3 });
+            }
+        });
+
+        eventBus.on('bomber-fired-beam', (data) => {
+            if (data.projectile) {
+                this.projectiles.push(data.projectile);
+                this.entities.push(data.projectile);
+                this.audioManager.playSound('beam-fire', { volume: 0.4 });
+            }
+        });
+
+        eventBus.on('bomber-fired-torpedo', (data) => {
+            if (data.projectile) {
+                this.projectiles.push(data.projectile);
+                this.entities.push(data.projectile);
+                this.audioManager.playSound('torpedo-fire', { volume: 0.4 });
+            }
+        });
+
         // Double-tap W: Burst acceleration (2x max speed, then slow to normal, instant energy cost)
         eventBus.on('burst-acceleration', (data) => {
             if (!this.stateManager.isPlaying() || !this.playerShip || !this.playerShip.energy) return;

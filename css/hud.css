@@ -898,11 +898,32 @@
     text-transform: uppercase;
 }
 
+.loadout-summary {
+    margin-bottom: 10px;
+    padding: 8px 12px;
+    background: rgba(0, 40, 80, 0.5);
+    border: 1px solid #048;
+    border-radius: 3px;
+    font-size: 0.9em;
+    color: #0ff;
+    flex-shrink: 0;
+}
+
+.loadout-summary strong {
+    color: #ff0;
+    margin-right: 5px;
+}
+
+#loadout-summary-text {
+    color: #0ff;
+}
+
 #bay-capacity {
     margin-bottom: 15px;
     font-weight: bold;
     color: #0ff;
     font-size: 1em;
+    flex-shrink: 0;
 }
 
 #bay-capacity span {
