@@ -410,23 +410,28 @@
                         Mission description goes here...
                     </p>
                 </div>
-            </div>
 
-            <div class="briefing-objectives">
-                <h3>MISSION OBJECTIVES</h3>
-                <ul id="objectives-list">
-                    <!-- Objectives populated by JavaScript -->
-                </ul>
-            </div>
+                <!-- Two-column layout: Objectives on left, Loadout on right -->
+                <div class="briefing-columns">
+                    <!-- Left Column: Mission Objectives -->
+                    <div class="briefing-column-left">
+                        <div class="briefing-objectives">
+                            <h3>MISSION OBJECTIVES</h3>
+                            <ul id="objectives-list">
+                                <!-- Objectives populated by JavaScript -->
+                            </ul>
+                        </div>
+                    </div>
 
-            <!-- Consumables Loadout Selection -->
-            <div id="loadout-selection" class="briefing-section">
-                <h3>Consumables Loadout</h3>
-                <div id="bay-capacity">
-                    Bay Capacity: <span id="bay-used">0</span> / <span id="bay-max">10</span>
-                </div>
+                    <!-- Right Column: Consumables Loadout -->
+                    <div class="briefing-column-right">
+                        <div id="loadout-selection" class="briefing-section">
+                            <h3>Consumables Loadout</h3>
+                            <div id="bay-capacity">
+                                Bay Capacity: <span id="bay-used">0</span> / <span id="bay-max">10</span>
+                            </div>
 
-                <div class="consumables-grid">
+                            <div class="consumables-grid">
                     <div class="consumable-item" data-type="hullRepairKit">
                         <span class="consumable-name">Hull Repair Kit</span>
                         <div class="consumable-controls">
@@ -536,13 +541,16 @@
                         </div>
                         <span class="consumable-cost">1 bay</span>
                     </div>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <div class="briefing-footer">
-                <button id="btn-accept-mission" class="mission-btn">ACCEPT MISSION</button>
-                <button id="btn-decline-mission" class="mission-btn secondary">DECLINE</button>
-            </div>
+        <!-- Buttons outside briefing container -->
+        <div class="briefing-footer">
+            <button id="btn-accept-mission" class="mission-btn">ACCEPT MISSION</button>
+            <button id="btn-decline-mission" class="mission-btn secondary">BACK TO MAIN MENU</button>
         </div>
     </div>
 

@@ -138,8 +138,8 @@
 .debriefing-container {
     width: 90%;
     max-width: 1200px;
-    height: 90%;
-    max-height: 85vh;
+    height: auto;
+    max-height: 70vh;
     background: rgba(0, 20, 0, 0.95);
     border: 3px solid #0f0;
     box-shadow: 0 0 30px rgba(0, 255, 0, 0.5);
@@ -149,6 +149,7 @@
     gap: 20px;
     box-sizing: border-box;
     overflow: hidden;
+    margin-bottom: 20px;
 }
 
 .briefing-header,
@@ -181,9 +182,25 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
-    overflow-y: auto;
+    overflow-y: visible;
     padding-right: 10px;
     min-height: 0; /* Critical: allows flex child to shrink below content size */
+}
+
+/* Two-column layout for objectives and loadout */
+.briefing-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    min-height: 0;
+}
+
+.briefing-column-left,
+.briefing-column-right {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .briefing-officer {
@@ -238,6 +255,23 @@
     padding: 15px;
     background: rgba(0, 40, 0, 0.4);
     border: 1px solid #0a0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.briefing-objectives h3,
+.debriefing-objectives h3 {
+    flex-shrink: 0;
+}
+
+#objectives-list,
+#debriefing-objectives-list {
+    flex: 1;
+    min-height: 0;
 }
 
 .briefing-objectives h3,
@@ -288,10 +322,10 @@
     display: flex;
     justify-content: center;
     gap: 20px;
-    padding-top: 15px;
-    border-top: 2px solid #0f0;
+    padding: 15px 0;
     flex-shrink: 0; /* Prevent footer from shrinking - always visible */
-    margin-top: auto; /* Push footer to bottom */
+    width: 90%;
+    max-width: 1200px;
 }
 
 .mission-btn {
