@@ -949,13 +949,16 @@ class HUD {
         const factionLabel = HUD.FACTION_LABELS[hoveredShip.faction] || hoveredShip.faction;
         header.textContent = `${factionLabel} ${classLabel}`;
 
-        // Update shields
+        // Update shields (unified shield system)
         if (hoveredShip.shields) {
-            const quadrants = hoveredShip.shields.getAllQuadrants();
-            tooltip.querySelector('[data-shield="fore"]').textContent = `${Math.round(quadrants.fore.current)}/${quadrants.fore.max}`;
-            tooltip.querySelector('[data-shield="port"]').textContent = `${Math.round(quadrants.port.current)}/${quadrants.port.max}`;
-            tooltip.querySelector('[data-shield="starboard"]').textContent = `${Math.round(quadrants.starboard.current)}/${quadrants.starboard.max}`;
-            tooltip.querySelector('[data-shield="aft"]').textContent = `${Math.round(quadrants.aft.current)}/${quadrants.aft.max}`;
+            const shieldSystem = hoveredShip.shields;
+            const current = Math.round(shieldSystem.currentStrength || 0);
+            const max = Math.round(shieldSystem.maxStrength || 0);
+            // Update all quadrants to show unified shield value
+            tooltip.querySelector('[data-shield="fore"]').textContent = `${current}/${max}`;
+            tooltip.querySelector('[data-shield="port"]').textContent = `${current}/${max}`;
+            tooltip.querySelector('[data-shield="starboard"]').textContent = `${current}/${max}`;
+            tooltip.querySelector('[data-shield="aft"]').textContent = `${current}/${max}`;
         }
 
         // Update systems
@@ -992,15 +995,13 @@ class HUD {
             targetName.textContent = name;
         }
 
-        // Update target shields
+        // Update target shields (unified shield system)
         const targetShields = document.getElementById('target-shields');
         if (targetShields && target.shields) {
-            const shields = target.shields.getAllQuadrants();
-            const totalCurrent = shields.fore.current + shields.aft.current +
-                                shields.port.current + shields.starboard.current;
-            const totalMax = shields.fore.max + shields.aft.max +
-                            shields.port.max + shields.starboard.max;
-            targetShields.textContent = `Shields: ${Math.round(totalCurrent)}/${Math.round(totalMax)}`;
+            const shieldSystem = target.shields;
+            const current = Math.round(shieldSystem.currentStrength || 0);
+            const max = Math.round(shieldSystem.maxStrength || 0);
+            targetShields.textContent = `Shields: ${current}/${max}`;
         }
 
         // Update target hull

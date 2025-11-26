@@ -1551,21 +1551,17 @@ class Ship extends Entity {
     updateBoost(deltaTime, currentTime) {
         if (!this.boostActive) return;
 
-        // Drain shields while boost is active (1 HP per second from all quadrants)
+        // Drain shields while boost is active (1 HP per second from unified shield)
         if (this.shields) {
             const drainAmount = 1.0 * deltaTime; // 1 HP per second
-            const quadrants = this.shields.getAllQuadrants();
+            // Unified shield system - drain from currentStrength
+            this.shields.currentStrength = Math.max(0, this.shields.currentStrength - drainAmount);
 
-            for (const quadrantName of ['fore', 'aft', 'port', 'starboard']) {
-                const quadrant = quadrants[quadrantName];
-                quadrant.current = Math.max(0, quadrant.current - drainAmount);
-
-                // If any quadrant hits 0, deactivate boost
-                if (quadrant.current <= 0) {
-                    console.log(`Boost deactivated: ${quadrantName} shield depleted`);
-                    this.deactivateBoost();
-                    return;
-                }
+            // If shield depleted, deactivate boost
+            if (this.shields.currentStrength <= 0) {
+                console.log(`Boost deactivated: shield depleted`);
+                this.deactivateBoost();
+                return;
             }
         }
 

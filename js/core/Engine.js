@@ -2072,7 +2072,16 @@ class Engine {
                 const currentTime = performance.now() / 1000;
                 for (const enemyShip of this.enemyShips) {
                     if (enemyShip.aiController && enemyShip.active) {
-                        enemyShip.aiController.update(deltaTime, currentTime, this.playerShip, this.entities);
+                        try {
+                            enemyShip.aiController.update(deltaTime, currentTime, this.playerShip, this.entities);
+                        } catch (aiError) {
+                            console.error(`Error updating AI for ${enemyShip.faction} ${enemyShip.shipClass}:`, aiError);
+                            // Continue with other ships even if one fails
+                        }
+                    } else if (enemyShip.active && !enemyShip.aiController) {
+                        // Ship is active but missing AI controller - create it
+                        console.warn(`Creating missing AI controller for ${enemyShip.faction} ${enemyShip.shipClass}`);
+                        enemyShip.aiController = new AIController(enemyShip);
                     }
                 }
             } catch (error) {

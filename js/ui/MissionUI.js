@@ -30,7 +30,7 @@ class MissionUI {
             fighters: 0,  // 1 fighter for Trigons only
             mines: 1      // 1 mine for all ships
         };
-        this.bayMax = 10; // Default, will be updated from ship class
+        this.bayMax = 8; // Default (CA), will be updated from ship class
 
         this.setupEventListeners();
     }
@@ -298,7 +298,7 @@ class MissionUI {
     setupLoadoutSelection() {
         // Get bay size from ship class (prioritize ship class over BaySystem for accuracy)
         if (this.playerShip && this.playerShip.shipClass) {
-            // Get bay size from ship class (Updated: BC 10, CA 8, CL 6, DD 4)
+            // Get bay size from ship class (DD=4, CL=6, CA=8, BC=10)
             const bayByClass = {
                 'FG': 2,
                 'DD': 4,

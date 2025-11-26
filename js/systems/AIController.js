@@ -49,10 +49,17 @@ class AIController {
     }
 
     update(deltaTime, currentTime, playerShip, allEntities) {
-        if (!this.ship.active || (this.ship.systems && this.ship.systems.hull && this.ship.systems.hull.hp <= 0)) return;
+        if (!this.ship.active) return;
+        
+        // Check if ship is destroyed (handle both systems.hull and direct hull property)
+        const hullHp = (this.ship.systems && this.ship.systems.hull) ? this.ship.systems.hull.hp : 
+                       (this.ship.hull ? this.ship.hull.hp : null);
+        if (hullHp !== null && hullHp <= 0) return;
 
-        // Apply system effects to accuracy
-        const systemAccuracy = this.ship.systems ? this.ship.systems.sensors.getTargetingAccuracy() : 1.0;
+        // Apply system effects to accuracy (defensive check for sensors)
+        const systemAccuracy = (this.ship.systems && this.ship.systems.sensors && 
+                                typeof this.ship.systems.sensors.getTargetingAccuracy === 'function') 
+            ? this.ship.systems.sensors.getTargetingAccuracy() : 1.0;
         const effectiveAccuracy = this.accuracy * systemAccuracy;
 
         // Update target
@@ -118,9 +125,13 @@ class AIController {
                 break;
 
             case 'ATTACK':
-                // Check if should evade (low HP or shields)
-                const hpPercent = this.ship.systems && this.ship.systems.hull ?
-                    (this.ship.systems.hull.hp / this.ship.systems.hull.maxHp) : 1.0;
+                // Check if should evade (low HP or shields) - defensive check
+                let hpPercent = 1.0;
+                if (this.ship.systems && this.ship.systems.hull && this.ship.systems.hull.maxHp > 0) {
+                    hpPercent = this.ship.systems.hull.hp / this.ship.systems.hull.maxHp;
+                } else if (this.ship.hull && this.ship.hull.maxHp > 0) {
+                    hpPercent = this.ship.hull.hp / this.ship.hull.maxHp;
+                }
                 const shouldEvade = hpPercent < 0.3 && this.aggressiveness < 0.8;
 
                 if (shouldEvade) {
@@ -133,9 +144,13 @@ class AIController {
             case 'EVADE':
                 this.evadeTimer -= 0.016; // Roughly deltaTime
                 if (this.evadeTimer <= 0) {
-                    // Check HP again
-                    const newHpPercent = this.ship.systems && this.ship.systems.hull ?
-                        (this.ship.systems.hull.hp / this.ship.systems.hull.maxHp) : 1.0;
+                    // Check HP again - defensive check
+                    let newHpPercent = 1.0;
+                    if (this.ship.systems && this.ship.systems.hull && this.ship.systems.hull.maxHp > 0) {
+                        newHpPercent = this.ship.systems.hull.hp / this.ship.systems.hull.maxHp;
+                    } else if (this.ship.hull && this.ship.hull.maxHp > 0) {
+                        newHpPercent = this.ship.hull.hp / this.ship.hull.maxHp;
+                    }
                     if (newHpPercent > 0.5 || this.aggressiveness > 0.8) {
                         this.changeState('ATTACK', currentTime);
                     } else {
@@ -445,10 +460,19 @@ class AIController {
     }
 
     getDetectionRadius() {
-        if (!this.ship.systems) return CONFIG.DETECTION_RADIUS_CA_PIXELS;
+        // Defensive check - ships may not have systems property
+        if (!this.ship.systems) {
+            return CONFIG.DETECTION_RADIUS_CA_PIXELS;
+        }
 
-        const baseRadius = CONFIG.DETECTION_RADIUS_CA_PIXELS;
-        return baseRadius * this.ship.systems.getDetectionMultiplier();
+        // Check if getDetectionMultiplier method exists
+        if (typeof this.ship.systems.getDetectionMultiplier === 'function') {
+            const baseRadius = CONFIG.DETECTION_RADIUS_CA_PIXELS;
+            return baseRadius * this.ship.systems.getDetectionMultiplier();
+        }
+
+        // Fallback to base detection radius
+        return CONFIG.DETECTION_RADIUS_CA_PIXELS;
     }
 
     getWeaponRange() {

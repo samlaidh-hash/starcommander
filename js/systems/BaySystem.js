@@ -29,26 +29,26 @@ class BaySystem {
 
     calculateMaxBaySpace() {
         // Bay space based on ship class
-        // Updated: BC 10, CA 8, CL 6, DD 4
+        // DD=4, CL=6, CA=8, BC=10 (FG, DN, SD not currently used)
         const shipClass = this.playerShip.shipClass;
         switch (shipClass) {
-            case 'FG': return 2; // Frigate - 2 bay spaces
+            case 'FG': return 2; // Frigate - 2 bay spaces (not currently used)
             case 'DD': return 4; // Destroyer - 4 bay spaces
             case 'CL': return 6; // Light Cruiser - 6 bay spaces
             case 'CS': return 8; // Strike Cruiser - 8 bay spaces (same as CA)
             case 'CA': return 8; // Heavy Cruiser - 8 bay spaces
             case 'BC': return 10; // Battlecruiser - 10 bay spaces
-            case 'BB': return 12; // Battleship - 12 bay spaces
-            case 'DN': return 14; // Dreadnought - 14 bay spaces
-            case 'SD': return 16; // Super Dreadnought - 16 bay spaces
+            case 'BB': return 12; // Battleship - 12 bay spaces (not currently used)
+            case 'DN': return 14; // Dreadnought - 14 bay spaces (not currently used)
+            case 'SD': return 16; // Super Dreadnought - 16 bay spaces (not currently used)
             default: return 4;
         }
     }
 
     initializeDefaultLoadouts() {
-        // Default loadouts based on corrected bay spaces
+        // Default loadouts based on bay spaces
         // Design Doc: "Each ship gets 1 Shuttle and 1 Mine by default, randomise the other Bay slots"
-        // Bay spaces: FG=2, DD=3, CL=4, CA=5, BC=6, BB=7, DN=8, SD=9
+        // Bay spaces: DD=4, CL=6, CA=8, BC=10 (FG, DN, SD not currently used)
         return {
             'FEDERATION': {
                 'FG': { shuttles: 1, fighters: 0, bombers: 0 },  // 2 spaces: 1 shuttle, 1 free
