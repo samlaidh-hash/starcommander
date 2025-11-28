@@ -8,7 +8,22 @@ class AndromedanShip extends Ship {
         super(config);
         this.faction = 'ANDROMEDAN';
         this.advancedSystems = this.initializeAdvancedSystems();
-        this.uniqueWeapons = this.initializeUniqueWeapons();
+        // Old unique weapons removed - now using standard loadout system with energyTorpedo and tractorRepulsorBeam
+    }
+
+    createShields() {
+        // Andromedan ships use PowerAbsorberSystem instead of normal shields
+        let maxStrength = 30; // Default (not used, but kept for compatibility)
+        switch (this.shipClass) {
+            case 'DD': maxStrength = 25; break;
+            case 'CL': maxStrength = 35; break;
+            case 'CA': maxStrength = 50; break;
+            case 'BB': maxStrength = 70; break;
+        }
+        
+        return new PowerAbsorberSystem({
+            maxStrength: maxStrength
+        });
     }
 
     initializeAdvancedSystems() {
@@ -37,45 +52,14 @@ class AndromedanShip extends Ship {
         };
     }
 
-    initializeUniqueWeapons() {
-        return {
-            // Phase torpedo that phases through shields and hull
-            phaseTorpedo: {
-                damage: 2.5,
-                shieldPenetration: true,
-                hullPenetration: true, // Can pass through hull
-                range: 350,
-                speed: 220,
-                cooldown: 6.0,
-                lastFire: 0
-            },
-            // Disruptor pulse with area effect
-            disruptorPulse: {
-                damage: 2,
-                blastRadius: 60,
-                range: 180,
-                cooldown: 4.0,
-                lastFire: 0
-            },
-            // Phase beam that ignores shields
-            phaseBeam: {
-                damage: 1.8,
-                shieldPenetration: true,
-                range: 220,
-                cooldown: 3.0,
-                lastFire: 0
-            }
-        };
-    }
+    // Old unique weapons removed - now using standard loadout system
+    // energyTorpedo and tractorRepulsorBeam are defined in WEAPON_BUILDERS
 
     update(deltaTime, currentTime) {
         super.update(deltaTime, currentTime);
         
         // Update advanced systems
         this.updateAdvancedSystems(deltaTime, currentTime);
-        
-        // Update unique weapons
-        this.updateUniqueWeapons(deltaTime, currentTime);
     }
 
     updateAdvancedSystems(deltaTime, currentTime) {
@@ -105,14 +89,6 @@ class AndromedanShip extends Ship {
         }
     }
 
-    updateUniqueWeapons(deltaTime, currentTime) {
-        // Update weapon cooldowns
-        for (const weapon of Object.values(this.uniqueWeapons)) {
-            if (weapon.lastFire > 0) {
-                weapon.lastFire -= deltaTime;
-            }
-        }
-    }
 
     /**
      * Check if ship is cloaked (override to check advanced cloaking device)
@@ -154,67 +130,6 @@ class AndromedanShip extends Ship {
         return false;
     }
 
-    firePhaseTorpedo(targetX, targetY) {
-        const weapon = this.uniqueWeapons.phaseTorpedo;
-        if (weapon.lastFire > 0) return null;
-
-        const projectile = new PhaseTorpedo({
-            x: this.x,
-            y: this.y,
-            rotation: this.rotation,
-            targetX: targetX,
-            targetY: targetY,
-            damage: weapon.damage,
-            shieldPenetration: weapon.shieldPenetration,
-            hullPenetration: weapon.hullPenetration,
-            range: weapon.range,
-            speed: weapon.speed,
-            sourceShip: this
-        });
-
-        weapon.lastFire = weapon.cooldown;
-        return projectile;
-    }
-
-    fireDisruptorPulse(targetX, targetY) {
-        const weapon = this.uniqueWeapons.disruptorPulse;
-        if (weapon.lastFire > 0) return null;
-
-        const projectile = new DisruptorPulse({
-            x: this.x,
-            y: this.y,
-            rotation: this.rotation,
-            targetX: targetX,
-            targetY: targetY,
-            damage: weapon.damage,
-            blastRadius: weapon.blastRadius,
-            range: weapon.range,
-            sourceShip: this
-        });
-
-        weapon.lastFire = weapon.cooldown;
-        return projectile;
-    }
-
-    firePhaseBeam(targetX, targetY) {
-        const weapon = this.uniqueWeapons.phaseBeam;
-        if (weapon.lastFire > 0) return null;
-
-        const projectile = new PhaseBeam({
-            x: this.x,
-            y: this.y,
-            rotation: this.rotation,
-            targetX: targetX,
-            targetY: targetY,
-            damage: weapon.damage,
-            shieldPenetration: weapon.shieldPenetration,
-            range: weapon.range,
-            sourceShip: this
-        });
-
-        weapon.lastFire = weapon.cooldown;
-        return projectile;
-    }
 
     takeDamage(damage, damageType = 'normal') {
         // Phase shift makes ship invulnerable
