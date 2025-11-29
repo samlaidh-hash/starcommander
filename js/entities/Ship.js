@@ -111,69 +111,6 @@ const SHIP_WEAPON_LOADOUTS = {
         ]
     },
     // PIRATE loadouts removed - now generated randomly per-ship for variety
-    COMMONWEALTH: {
-        DD: [
-            { type: 'streakBeam', name: 'Forward Streak Beam', arc: 270, arcCenter: 0, positionKey: 'forwardCenter' },
-            { type: 'quantumTorpedo', name: 'Forward Quantum Torpedo Launcher', arc: 90, arcCenter: 0, positionKey: 'forwardTorpPort', readyMagSize: 2, maxLoaded: 2 }
-        ],
-        CL: [
-            { type: 'streakBeam', name: 'Forward Streak Beam', arc: 270, arcCenter: 0, positionKey: 'forwardCenter' },
-            { type: 'quantumTorpedo', name: 'Forward Quantum Torpedo Launcher', arc: 90, arcCenter: 0, positionKey: 'forwardTorpPort', readyMagSize: 3, maxLoaded: 3 }
-        ],
-        CA: [
-            { type: 'streakBeam', name: 'Forward Streak Beam', arc: 270, arcCenter: 0, positionKey: 'forwardCenter' },
-            { type: 'streakBeam', name: 'Aft Streak Beam', arc: 270, arcCenter: 180, positionKey: 'aftCenter' },
-            { type: 'quantumTorpedo', name: 'Forward Quantum Torpedo Launcher', arc: 90, arcCenter: 0, positionKey: 'forwardTorpPort', readyMagSize: 4, maxLoaded: 4 }
-        ],
-        BB: [
-            { type: 'streakBeam', name: 'Port Forward Streak Beam', arc: 270, arcCenter: 0, positionKey: 'forwardPort' },
-            { type: 'streakBeam', name: 'Starboard Forward Streak Beam', arc: 270, arcCenter: 0, positionKey: 'forwardStarboard' },
-            { type: 'streakBeam', name: 'Aft Streak Beam', arc: 270, arcCenter: 180, positionKey: 'aftCenter' },
-            { type: 'quantumTorpedo', name: 'Forward Quantum Torpedo Launcher', arc: 90, arcCenter: 0, positionKey: 'forwardTorpPort', readyMagSize: 5, maxLoaded: 5 }
-        ]
-    },
-    DHOJAN: {
-        DD: [
-            { type: 'gravBeam', name: 'Forward Grav Beam', arc: 270, arcCenter: 0, positionKey: 'forwardCenter' },
-            { type: 'gravityTorpedo', name: 'Forward Gravity Torpedo Launcher', arc: 90, arcCenter: 0, positionKey: 'forwardTorpPort', readyMagSize: 2, maxLoaded: 2 }
-        ],
-        CL: [
-            { type: 'gravBeam', name: 'Forward Grav Beam', arc: 270, arcCenter: 0, positionKey: 'forwardCenter' },
-            { type: 'gravityTorpedo', name: 'Forward Gravity Torpedo Launcher', arc: 90, arcCenter: 0, positionKey: 'forwardTorpPort', readyMagSize: 3, maxLoaded: 3 }
-        ],
-        CA: [
-            { type: 'gravBeam', name: 'Forward Grav Beam', arc: 270, arcCenter: 0, positionKey: 'forwardCenter' },
-            { type: 'gravBeam', name: 'Aft Grav Beam', arc: 270, arcCenter: 180, positionKey: 'aftCenter' },
-            { type: 'gravityTorpedo', name: 'Forward Gravity Torpedo Launcher', arc: 90, arcCenter: 0, positionKey: 'forwardTorpPort', readyMagSize: 4, maxLoaded: 4 }
-        ],
-        BB: [
-            { type: 'gravBeam', name: 'Port Forward Grav Beam', arc: 270, arcCenter: 0, positionKey: 'forwardPort' },
-            { type: 'gravBeam', name: 'Starboard Forward Grav Beam', arc: 270, arcCenter: 0, positionKey: 'forwardStarboard' },
-            { type: 'gravBeam', name: 'Aft Grav Beam', arc: 270, arcCenter: 180, positionKey: 'aftCenter' },
-            { type: 'gravityTorpedo', name: 'Forward Gravity Torpedo Launcher', arc: 90, arcCenter: 0, positionKey: 'forwardTorpPort', readyMagSize: 5, maxLoaded: 5 }
-        ]
-    },
-    ANDROMEDAN: {
-        DD: [
-            { type: 'tractorRepulsorBeam', name: 'Forward Tractor-Repulsor Beam', arc: 270, arcCenter: 0, positionKey: 'forwardCenter' },
-            { type: 'energyTorpedo', name: 'Forward Energy Torpedo Launcher', arc: 90, arcCenter: 0, positionKey: 'forwardTorpPort', readyMagSize: 2, maxLoaded: 2 }
-        ],
-        CL: [
-            { type: 'tractorRepulsorBeam', name: 'Forward Tractor-Repulsor Beam', arc: 270, arcCenter: 0, positionKey: 'forwardCenter' },
-            { type: 'energyTorpedo', name: 'Forward Energy Torpedo Launcher', arc: 90, arcCenter: 0, positionKey: 'forwardTorpPort', readyMagSize: 3, maxLoaded: 3 }
-        ],
-        CA: [
-            { type: 'tractorRepulsorBeam', name: 'Forward Tractor-Repulsor Beam', arc: 270, arcCenter: 0, positionKey: 'forwardCenter' },
-            { type: 'tractorRepulsorBeam', name: 'Aft Tractor-Repulsor Beam', arc: 270, arcCenter: 180, positionKey: 'aftCenter' },
-            { type: 'energyTorpedo', name: 'Forward Energy Torpedo Launcher', arc: 90, arcCenter: 0, positionKey: 'forwardTorpPort', readyMagSize: 4, maxLoaded: 4 }
-        ],
-        BB: [
-            { type: 'tractorRepulsorBeam', name: 'Port Forward Tractor-Repulsor Beam', arc: 270, arcCenter: 0, positionKey: 'forwardPort' },
-            { type: 'tractorRepulsorBeam', name: 'Starboard Forward Tractor-Repulsor Beam', arc: 270, arcCenter: 0, positionKey: 'forwardStarboard' },
-            { type: 'tractorRepulsorBeam', name: 'Aft Tractor-Repulsor Beam', arc: 270, arcCenter: 180, positionKey: 'aftCenter' },
-            { type: 'energyTorpedo', name: 'Forward Energy Torpedo Launcher', arc: 90, arcCenter: 0, positionKey: 'forwardTorpPort', readyMagSize: 5, maxLoaded: 5 }
-        ]
-    },
     DEFAULT: {
         DD: [
             { type: 'continuousBeam', name: 'Forward Beam Battery', arc: 270, arcCenter: 0, positionKey: 'forwardCenter' },
@@ -201,15 +138,7 @@ const WEAPON_BUILDERS = {
     dualTorpedo: spec => new DualTorpedoLauncher(spec),
     plasma: spec => new PlasmaTorpedo(spec),
     disruptor: spec => new Disruptor(spec),
-    streakBeam: spec => new StreakBeam(spec),
-    // Commonwealth weapons
-    quantumTorpedo: spec => new QuantumTorpedoLauncher(spec),
-    // Dhojan weapons
-    gravityTorpedo: spec => new GravityTorpedoLauncher(spec),
-    gravBeam: spec => new GravBeam(spec),
-    // Andromedan weapons
-    energyTorpedo: spec => new EnergyTorpedoLauncher(spec),
-    tractorRepulsorBeam: spec => new TractorRepulsorBeam(spec)
+    streakBeam: spec => new StreakBeam(spec)
 };
 
 function cloneWeaponPosition(positionKey, explicitPosition, shipSize) {
@@ -227,75 +156,15 @@ function cloneWeaponPosition(positionKey, explicitPosition, shipSize) {
     return undefined;
 }
 
-/**
- * Get random light weapon type (continuousBeam, streakBeam, or pulseBeam)
- */
-function getRandomLightWeaponType() {
-    const lightWeapons = ['continuousBeam', 'streakBeam', 'pulseBeam'];
-    return lightWeapons[Math.floor(Math.random() * lightWeapons.length)];
-}
-
-/**
- * Get random heavy weapon type (torpedo, disruptor, or plasma)
- */
-function getRandomHeavyWeaponType() {
-    const heavyWeapons = ['torpedo', 'disruptor', 'plasma'];
-    return heavyWeapons[Math.floor(Math.random() * heavyWeapons.length)];
-}
-
-/**
- * Resolve random weapon types to actual weapon types
- * @param {string} weaponType - The weapon type (may be 'randomLight' or 'randomHeavy')
- * @param {string} shipClass - Ship class (for torpedo ready magazine size)
- * @returns {Object} - Resolved weapon type and any additional properties
- */
-function resolveRandomWeaponType(weaponType, shipClass) {
-    if (weaponType === 'randomLight') {
-        return { type: getRandomLightWeaponType() };
-    } else if (weaponType === 'randomHeavy') {
-        const resolvedType = getRandomHeavyWeaponType();
-        const result = { type: resolvedType };
-        
-        // If torpedo was selected, add ready magazine size based on ship class
-        if (resolvedType === 'torpedo') {
-            let readyMagSize;
-            switch (shipClass.toUpperCase()) {
-                case 'DD': readyMagSize = 2; break;
-                case 'CL': readyMagSize = 3; break;
-                case 'CA': readyMagSize = 4; break;
-                case 'BC':
-                case 'BB': readyMagSize = 5; break;
-                default: readyMagSize = 3; break;
-            }
-            result.readyMagSize = readyMagSize;
-            result.maxLoaded = readyMagSize;
-        }
-        
-        return result;
-    }
-    return { type: weaponType };
-}
-
-function buildWeaponFromSpec(spec, shipSize, shipClass) {
-    // Resolve random weapon types first
-    const resolved = resolveRandomWeaponType(spec.type, shipClass);
-    const actualType = resolved.type;
-    
-    const builder = WEAPON_BUILDERS[actualType];
+function buildWeaponFromSpec(spec, shipSize) {
+    const builder = WEAPON_BUILDERS[spec.type];
     if (!builder) {
-        console.warn(`Unknown weapon type in loadout: ${actualType}`);
+        console.warn(`Unknown weapon type in loadout: ${spec.type}`);
         return null;
     }
 
     const { type, positionKey, position, ...rest } = spec;
     const config = { ...rest };
-    
-    // Apply resolved type and any additional properties (like readyMagSize for torpedoes)
-    if (resolved.readyMagSize !== undefined) {
-        config.readyMagSize = resolved.readyMagSize;
-        config.maxLoaded = resolved.maxLoaded;
-    }
-    
     const finalPosition = cloneWeaponPosition(positionKey, position, shipSize);
     if (finalPosition) {
         config.position = finalPosition;
@@ -317,7 +186,6 @@ function buildWeaponFromSpec(spec, shipSize, shipClass) {
         }
     }
 
-    // Build weapon with resolved type (builder expects the type in the config, but WEAPON_BUILDERS uses the key)
     return builder(config);
 }
 
@@ -389,59 +257,13 @@ function generatePirateLoadout(shipClass) {
     return loadout;
 }
 
-// Global registry for custom weapon loadouts loaded from JSON files
-// Format: { 'FACTION_CLASS': { weapons: [...], scaleFactor: 1.0 } }
-const CUSTOM_WEAPON_LOADOUTS = {};
-
-/**
- * Load a custom weapon loadout from JSON data (exported from weapon-arc-editor.html)
- * @param {Object} data - JSON data with faction, shipClass, weapons, and scaleFactor
- */
-function loadCustomWeaponLoadout(data) {
-    if (!data.faction || !data.shipClass) {
-        console.warn('Invalid weapon loadout data: missing faction or shipClass');
-        return;
-    }
-    
-    const key = `${data.faction.toUpperCase()}_${data.shipClass.toUpperCase()}`;
-    CUSTOM_WEAPON_LOADOUTS[key] = {
-        weapons: data.weapons || [],
-        scaleFactor: data.scaleFactor || 1.0
-    };
-    
-    console.log(`Loaded custom weapon loadout: ${key} (scaleFactor: ${data.scaleFactor || 1.0})`);
-}
-
-/**
- * Get scale factor for a ship from custom loadout
- * @param {string} faction - Ship faction
- * @param {string} shipClass - Ship class
- * @returns {number} Scale factor (default 1.0)
- */
-function getCustomScaleFactor(faction, shipClass) {
-    const factionKey = resolveLoadoutFaction(faction);
-    const key = `${factionKey}_${shipClass.toUpperCase()}`;
-    const customLoadout = CUSTOM_WEAPON_LOADOUTS[key];
-    return customLoadout ? customLoadout.scaleFactor : 1.0;
-}
-
 function getShipLoadoutSpecs(faction, shipClass) {
-    // Check for custom weapon loadout first (from JSON)
-    const factionKey = resolveLoadoutFaction(faction);
-    const key = `${factionKey}_${shipClass.toUpperCase()}`;
-    const customLoadout = CUSTOM_WEAPON_LOADOUTS[key];
-    
-    if (customLoadout && customLoadout.weapons && customLoadout.weapons.length > 0) {
-        // Use custom loadout from JSON
-        return customLoadout.weapons;
-    }
-    
     // Pirates get random loadouts for variety
     if (faction === 'PIRATE') {
         return generatePirateLoadout(shipClass);
     }
 
-    // Use default loadouts
+    const factionKey = resolveLoadoutFaction(faction);
     const factionLoadouts = SHIP_WEAPON_LOADOUTS[factionKey];
     if (factionLoadouts && factionLoadouts[shipClass]) {
         return factionLoadouts[shipClass];
@@ -472,9 +294,6 @@ class Ship extends Entity {
 
         // Visual properties
         this.color = this.getColor();
-        // Weapon scale factor from loadout JSON (overrides auto-scaling, default 1.0)
-        // Get from custom loadout if available, otherwise use config or default to 1.0
-        this.weaponScaleFactor = config.weaponScaleFactor || getCustomScaleFactor(this.faction, this.shipClass);
         this.vertices = this.generateShipVertices();
 
         // Weapon firing points
@@ -581,7 +400,7 @@ class Ship extends Entity {
         const shipSize = this.getShipSize();
 
         for (const spec of specs) {
-            const weapon = buildWeaponFromSpec(spec, shipSize, this.shipClass);
+            const weapon = buildWeaponFromSpec(spec, shipSize);
             if (weapon) {
                 weapons.push(weapon);
             }
@@ -593,8 +412,6 @@ class Ship extends Entity {
     createShields() {
         // Unified shield system - single shield for whole ship
         // Shield strength varies by ship class
-        // Dhojan ships use ReflectorShieldSystem (overridden in DhojanShip)
-        // Andromedan ships use PowerAbsorberSystem (overridden in AndromedanShip)
         let maxStrength = 30; // Default
         switch (this.shipClass) {
             case 'DD': maxStrength = 25; break;
@@ -603,7 +420,7 @@ class Ship extends Entity {
             case 'BB': maxStrength = 70; break;
         }
         
-        return new ShieldSystem({
+            return new ShieldSystem({
             maxStrength: maxStrength
         });
     }
@@ -737,16 +554,13 @@ class Ship extends Entity {
     }
 
     getShipSize() {
-        let baseSize;
         switch (this.shipClass) {
-            case 'DD': baseSize = CONFIG.SHIP_LENGTH_DD; break;
-            case 'CL': baseSize = CONFIG.SHIP_LENGTH_CL; break;
-            case 'CA': baseSize = CONFIG.SHIP_LENGTH_CA; break;
-            case 'BB': baseSize = CONFIG.SHIP_LENGTH_BC || CONFIG.SHIP_LENGTH_CA; break; // Use BC config for BB
-            default: baseSize = CONFIG.SHIP_LENGTH_CA; break;
+            case 'DD': return CONFIG.SHIP_LENGTH_DD;
+            case 'CL': return CONFIG.SHIP_LENGTH_CL;
+            case 'CA': return CONFIG.SHIP_LENGTH_CA;
+            case 'BB': return CONFIG.SHIP_LENGTH_BC || CONFIG.SHIP_LENGTH_CA; // Use BC config for BB
+            default: return CONFIG.SHIP_LENGTH_CA;
         }
-        // Apply weapon scale factor (from weapon loadout JSON) - overrides auto-scaling
-        return baseSize * (this.weaponScaleFactor || 1.0);
     }
 
     generateGalaxyClass(size) {
@@ -1331,6 +1145,13 @@ class Ship extends Entity {
             this.shields.update(deltaTime, currentTime, this);
         }
 
+        // Update weapons (for torpedo reloading, beam cooldowns, etc.)
+        if (this.weapons) {
+            for (const weapon of this.weapons) {
+                weapon.update(deltaTime, currentTime, this);
+            }
+        }
+
     }
 
     /**
@@ -1737,17 +1558,21 @@ class Ship extends Entity {
     updateBoost(deltaTime, currentTime) {
         if (!this.boostActive) return;
 
-        // Drain shields while boost is active (1 HP per second from unified shield)
+        // Drain shields while boost is active (1 HP per second from all quadrants)
         if (this.shields) {
             const drainAmount = 1.0 * deltaTime; // 1 HP per second
-            // Unified shield system - drain from currentStrength
-            this.shields.currentStrength = Math.max(0, this.shields.currentStrength - drainAmount);
+            const quadrants = this.shields.getAllQuadrants();
 
-            // If shield depleted, deactivate boost
-            if (this.shields.currentStrength <= 0) {
-                console.log(`Boost deactivated: shield depleted`);
-                this.deactivateBoost();
-                return;
+            for (const quadrantName of ['fore', 'aft', 'port', 'starboard']) {
+                const quadrant = quadrants[quadrantName];
+                quadrant.current = Math.max(0, quadrant.current - drainAmount);
+
+                // If any quadrant hits 0, deactivate boost
+                if (quadrant.current <= 0) {
+                    console.log(`Boost deactivated: ${quadrantName} shield depleted`);
+                    this.deactivateBoost();
+                    return;
+                }
             }
         }
 
@@ -2034,11 +1859,6 @@ class Ship extends Entity {
             }
         }
     }
-}
-
-// Export loadCustomWeaponLoadout for use in game
-if (typeof window !== 'undefined') {
-    window.loadCustomWeaponLoadout = loadCustomWeaponLoadout;
 }
 
 

@@ -916,15 +916,20 @@ class HUD {
         if (!forwardBar || !reverseBar) return;
 
         // Calculate percentage of max speed
+        // Speed bar should only be full when throttle is 100% AND ship has accelerated to max speed
         if (ship.currentSpeed >= 0) {
             // Moving forward
-            const forwardPercent = (ship.currentSpeed / ship.maxSpeed) * 100;
-            forwardBar.style.width = `${forwardPercent}%`;
+            // Only fill bar when at max speed (currentSpeed >= maxSpeed * throttle)
+            const targetSpeed = ship.maxSpeed * ship.throttle;
+            const forwardPercent = ship.throttle === 1.0 && ship.currentSpeed >= ship.maxSpeed 
+                ? 100 
+                : (ship.currentSpeed / ship.maxSpeed) * 100;
+            forwardBar.style.width = `${Math.min(forwardPercent, 100)}%`;
             reverseBar.style.width = '0%';
         } else {
             // Moving backward
             const reversePercent = (Math.abs(ship.currentSpeed) / ship.maxReverseSpeed) * 100;
-            reverseBar.style.width = `${reversePercent}%`;
+            reverseBar.style.width = `${Math.min(reversePercent, 100)}%`;
             forwardBar.style.width = '0%';
         }
     }
@@ -961,13 +966,33 @@ class HUD {
             tooltip.querySelector('[data-shield="aft"]').textContent = `${current}/${max}`;
         }
 
-        // Update systems
+        // Update systems and energy
         const systemsDiv = tooltip.querySelector('.tooltip-systems');
         if (hoveredShip.systems) {
             const systemsHTML = [];
             systemsHTML.push(`HP: ${Math.round(hoveredShip.systems.hull.hp)}/${hoveredShip.systems.hull.maxHp}`);
             systemsHTML.push(`Impulse: ${Math.round((hoveredShip.systems.impulse.hp / hoveredShip.systems.impulse.maxHp) * 100)}%`);
             systemsHTML.push(`Weapons: ${Math.round((hoveredShip.systems.power.hp / hoveredShip.systems.power.maxHp) * 100)}%`);
+            
+            // Add energy bars if ship has energy system
+            if (hoveredShip.energy) {
+                const energyPercent = Math.round(hoveredShip.energy.getEnergyPercent() * 100);
+                systemsHTML.push(`Energy: ${energyPercent}%`);
+            }
+            
+            // Add weapon summary
+            if (hoveredShip.weapons && hoveredShip.weapons.length > 0) {
+                const weaponTypes = new Map();
+                hoveredShip.weapons.forEach(weapon => {
+                    const type = weapon.constructor.name;
+                    weaponTypes.set(type, (weaponTypes.get(type) || 0) + 1);
+                });
+                const weaponSummary = Array.from(weaponTypes.entries())
+                    .map(([type, count]) => `${type} x${count}`)
+                    .join(', ');
+                systemsHTML.push(`Weapons: ${weaponSummary}`);
+            }
+            
             systemsDiv.innerHTML = systemsHTML.join('<br>');
         }
     }

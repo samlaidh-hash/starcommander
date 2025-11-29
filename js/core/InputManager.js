@@ -80,9 +80,10 @@ class InputManager {
             const currentTime = performance.now();
             const lastPressTime = this.lastKeyPressTimes.get(key) || 0;
             const timeSinceLastPress = currentTime - lastPressTime;
-            const isKeyHeld = this.keys.get(key) === true; // Check if key was already held
+            // Check if key was already held BEFORE we set it to true (line 70 sets it)
+            const wasKeyAlreadyDown = this.keys.get(key) === true;
 
-            if (timeSinceLastPress < this.doubleTapThreshold && !isKeyHeld) {
+            if (timeSinceLastPress < this.doubleTapThreshold && !wasKeyAlreadyDown) {
                 // Double-tap detected! (only if key wasn't already held)
                 if (key === 'w') {
                     // For W key: Mark as double-tapped, will activate tactical warp if held
@@ -100,11 +101,14 @@ class InputManager {
                 }
                 this.lastKeyPressTimes.set(key, 0); // Reset to prevent triple-tap
             } else {
-                this.lastKeyPressTimes.set(key, currentTime);
+                // Only update last press time if this is a new press (not a repeat)
+                if (!wasKeyAlreadyDown) {
+                    this.lastKeyPressTimes.set(key, currentTime);
+                }
                 // If W key is pressed but not double-tapped, track it
                 if (key === 'w') {
                     this.wKeyHeld = true;
-                    if (!isKeyHeld) {
+                    if (!wasKeyAlreadyDown) {
                         // First press, not a double-tap
                         this.wKeyDoubleTapped = false;
                     }

@@ -8,22 +8,7 @@ class DhojanShip extends Ship {
         super(config);
         this.faction = 'DHOJAN';
         this.advancedSystems = this.initializeAdvancedSystems();
-        // Old unique weapons removed - now using standard loadout system with gravBeam and gravityTorpedo
-    }
-
-    createShields() {
-        // Dhojan ships use ReflectorShieldSystem instead of normal shields
-        let maxStrength = 30; // Default (not used, but kept for compatibility)
-        switch (this.shipClass) {
-            case 'DD': maxStrength = 25; break;
-            case 'CL': maxStrength = 35; break;
-            case 'CA': maxStrength = 50; break;
-            case 'BB': maxStrength = 70; break;
-        }
-        
-        return new ReflectorShieldSystem({
-            maxStrength: maxStrength
-        });
+        this.uniqueWeapons = this.initializeUniqueWeapons();
     }
 
     initializeAdvancedSystems() {
@@ -52,14 +37,44 @@ class DhojanShip extends Ship {
         };
     }
 
-    // Old unique weapons removed - now using standard loadout system
-    // gravBeam and gravityTorpedo are defined in WEAPON_BUILDERS
+    initializeUniqueWeapons() {
+        return {
+            // Quantum torpedo that phases through shields
+            quantumTorpedo: {
+                damage: 2,
+                shieldPenetration: true, // Ignores shields
+                range: 300,
+                speed: 200,
+                cooldown: 5.0,
+                lastFire: 0
+            },
+            // Disruptor beam with shield drain
+            disruptorBeam: {
+                damage: 1.5,
+                shieldDrain: 0.5, // Drains 0.5 shield per second
+                range: 150,
+                cooldown: 2.0,
+                lastFire: 0
+            },
+            // Plasma cannon with area damage
+            plasmaCannon: {
+                damage: 3,
+                blastRadius: 50,
+                range: 200,
+                cooldown: 8.0,
+                lastFire: 0
+            }
+        };
+    }
 
     update(deltaTime, currentTime) {
         super.update(deltaTime, currentTime);
         
         // Update advanced systems
         this.updateAdvancedSystems(deltaTime, currentTime);
+        
+        // Update unique weapons
+        this.updateUniqueWeapons(deltaTime, currentTime);
     }
 
     updateAdvancedSystems(deltaTime, currentTime) {
@@ -69,6 +84,14 @@ class DhojanShip extends Ship {
         }
     }
 
+    updateUniqueWeapons(deltaTime, currentTime) {
+        // Update weapon cooldowns
+        for (const weapon of Object.values(this.uniqueWeapons)) {
+            if (weapon.lastFire > 0) {
+                weapon.lastFire -= deltaTime;
+            }
+        }
+    }
 
     canUseQuantumDrive() {
         return this.advancedSystems.quantumDrive.active && 
@@ -103,6 +126,65 @@ class DhojanShip extends Ship {
         return true;
     }
 
+    fireQuantumTorpedo(targetX, targetY) {
+        const weapon = this.uniqueWeapons.quantumTorpedo;
+        if (weapon.lastFire > 0) return null;
+
+        const projectile = new QuantumTorpedo({
+            x: this.x,
+            y: this.y,
+            rotation: this.rotation,
+            targetX: targetX,
+            targetY: targetY,
+            damage: weapon.damage,
+            speed: weapon.speed,
+            range: weapon.range,
+            sourceShip: this
+        });
+
+        weapon.lastFire = weapon.cooldown;
+        return projectile;
+    }
+
+    fireDisruptorBeam(targetX, targetY) {
+        const weapon = this.uniqueWeapons.disruptorBeam;
+        if (weapon.lastFire > 0) return null;
+
+        const projectile = new DisruptorBeam({
+            x: this.x,
+            y: this.y,
+            rotation: this.rotation,
+            targetX: targetX,
+            targetY: targetY,
+            damage: weapon.damage,
+            shieldDrain: weapon.shieldDrain,
+            range: weapon.range,
+            sourceShip: this
+        });
+
+        weapon.lastFire = weapon.cooldown;
+        return projectile;
+    }
+
+    firePlasmaCannon(targetX, targetY) {
+        const weapon = this.uniqueWeapons.plasmaCannon;
+        if (weapon.lastFire > 0) return null;
+
+        const projectile = new PlasmaCannon({
+            x: this.x,
+            y: this.y,
+            rotation: this.rotation,
+            targetX: targetX,
+            targetY: targetY,
+            damage: weapon.damage,
+            blastRadius: weapon.blastRadius,
+            range: weapon.range,
+            sourceShip: this
+        });
+
+        weapon.lastFire = weapon.cooldown;
+        return projectile;
+    }
 
     takeDamage(damage, damageType = 'normal') {
         // Energy shield absorption

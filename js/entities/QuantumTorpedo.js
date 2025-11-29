@@ -10,8 +10,6 @@ class QuantumTorpedo extends TorpedoProjectile {
         this.shieldPenetration = true; // Ignores shields
         this.color = CONFIG.COLOR_QUANTUM_TORPEDO || '#aa00aa';
         this.radius = 5;
-        // Note: Damage and speed are set by QuantumTorpedoLauncher
-        // (50% more damage, 75% speed)
     }
 
     update(deltaTime) {

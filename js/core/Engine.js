@@ -564,8 +564,8 @@ class Engine {
                 }
             }
 
-            // Start looping beam sound while firing
-            this.audioManager.startLoopingSound('fed-beam', { volume: 0.5 });
+            // Don't start sound here - let the update loop manage it based on actual firing
+            // Sound will only play when beams are actually firing (projectiles created)
 
             console.log('✅ beamFiring set to TRUE with fixed start point');
         });
@@ -1932,12 +1932,24 @@ class Engine {
             }
 
             const projectiles = this.playerShip.fireContinuousBeams(worldPos.x, worldPos.y, currentTime);
+            
+            // Check if any beams are actually firing (projectiles created)
+            const anyBeamsFiring = projectiles && projectiles.length > 0;
+            
+            // Manage sound based on whether beams are actually firing
+            const isSoundPlaying = this.audioManager.isLoopingSound('fed-beam');
+            
+            if (anyBeamsFiring && !isSoundPlaying) {
+                // Beams started firing - start sound
+                this.audioManager.startLoopingSound('fed-beam', { volume: 0.5 });
+            } else if (!anyBeamsFiring && isSoundPlaying) {
+                // Beams stopped firing (reticle outside arc) - stop sound
+                this.audioManager.stopLoopingSound('fed-beam');
+            }
+            
             if (projectiles && projectiles.length > 0) {
                 this.projectiles.push(...projectiles);
                 this.entities.push(...projectiles);
-
-                // Note: Beam sound is now handled by looping audio in beam-fire-start/stop events
-                // Removed per-frame playSound call to avoid audio spam
             }
         }
         perf.beamFiring = Date.now() - beamStart;
@@ -2050,8 +2062,8 @@ class Engine {
 
                         this.particleSystem.createEngineTrail(trailX, trailY, rearAngle, {
                             color: trailColor,
-                            size: 0.8,
-                            intensity: trailIntensity
+                            size: 1.2, // Increased from 0.8 for brighter exhaust
+                            intensity: Math.min(trailIntensity * 1.5, 1.0) // Increased intensity for brighter exhaust
                         });
                     }
                 }
@@ -2072,16 +2084,7 @@ class Engine {
                 const currentTime = performance.now() / 1000;
                 for (const enemyShip of this.enemyShips) {
                     if (enemyShip.aiController && enemyShip.active) {
-                        try {
-                            enemyShip.aiController.update(deltaTime, currentTime, this.playerShip, this.entities);
-                        } catch (aiError) {
-                            console.error(`Error updating AI for ${enemyShip.faction} ${enemyShip.shipClass}:`, aiError);
-                            // Continue with other ships even if one fails
-                        }
-                    } else if (enemyShip.active && !enemyShip.aiController) {
-                        // Ship is active but missing AI controller - create it
-                        console.warn(`Creating missing AI controller for ${enemyShip.faction} ${enemyShip.shipClass}`);
-                        enemyShip.aiController = new AIController(enemyShip);
+                        enemyShip.aiController.update(deltaTime, currentTime, this.playerShip, this.entities);
                     }
                 }
             } catch (error) {
@@ -2256,44 +2259,12 @@ class Engine {
                             const localX = dx * Math.cos(rad) - dy * Math.sin(rad);
                             const localY = dx * Math.sin(rad) + dy * Math.cos(rad);
 
-                            // Shields absorb first
+                            // Shields absorb first (only if shields are active/up)
                             let remainingDamage = projectile.damage;
-                            if (entity.shields && !entity.isCloaked()) {
+                            if (entity.shields && !entity.isCloaked() && entity.shields.active) {
+                                const impactAngle = MathUtils.angleBetween(entity.x, entity.y, projectile.x, projectile.y);
                                 const currentTime = performance.now() / 1000;
-                                
-                                // Check if beam ignores shields (grav beam)
-                                const ignoresShields = projectile.ignoresShields || 
-                                                      (projectile.sourceWeapon && 
-                                                       (projectile.sourceWeapon instanceof GravBeam || 
-                                                        projectile.sourceWeapon.ignoresShields));
-                                
-                                if (!ignoresShields) {
-                                    // Normal shield processing
-                                if (entity.shields instanceof ReflectorShieldSystem) {
-                                    // Reflector shield - may reflect damage back
-                                    const result = entity.shields.applyDamage(remainingDamage, currentTime, entity, projectile);
-                                    
-                                    // Handle both return types (number for compatibility, object for reflection)
-                                    if (typeof result === 'object' && result.remainingDamage !== undefined) {
-                                        remainingDamage = result.remainingDamage;
-                                        
-                                        // Handle reflection
-                                        if (result.reflected && result.reflectedDamage > 0 && projectile.sourceShip) {
-                                            this.createReflectedProjectile(projectile, entity, result.reflectedDamage, currentTime);
-                                        }
-                                    } else {
-                                        // Returned number (compatibility mode)
-                                        remainingDamage = result;
-                                    }
-                                } else if (entity.shields instanceof PowerAbsorberSystem) {
-                                        // Power absorber - adds energy, bypasses if energy full
-                                        remainingDamage = entity.shields.applyDamage(remainingDamage, currentTime, entity);
-                                    } else {
-                                        // Normal shield
-                                        remainingDamage = entity.shields.applyDamage(remainingDamage, currentTime, entity);
-                                    }
-                                }
-                                // If ignores shields, remainingDamage stays as projectile.damage
+                                remainingDamage = entity.shields.applyDamage(entity.rotation, impactAngle, remainingDamage, currentTime);
                             }
 
                             // Apply to single nearest system (overflow automatically goes to hull)
@@ -2348,29 +2319,7 @@ class Engine {
                             let remainingDamage = projectile.damage;
                             if (entity.shields && !entity.isCloaked()) {
                                 const currentTime = performance.now() / 1000;
-                                
-                                // Check torpedo type for special handling
-                                const isGravityTorpedo = projectile.type === 'gravity_torpedo' || 
-                                                         (projectile instanceof GravityTorpedo);
-                                const isQuantumTorpedo = projectile.type === 'quantum_torpedo' || 
-                                                         (projectile instanceof QuantumTorpedo);
-                                
-                                if (entity.shields instanceof ReflectorShieldSystem) {
-                                    // Reflector shield - may reflect damage back (but not torpedoes)
-                                    // Torpedoes don't reflect, only beam/energy weapons
-                                    remainingDamage = entity.shields.applyDamage(remainingDamage, currentTime, entity, projectile).remainingDamage;
-                                } else if (entity.shields instanceof PowerAbsorberSystem) {
-                                    // Power absorber - adds energy, bypasses if energy full
-                                    remainingDamage = entity.shields.applyDamage(remainingDamage, currentTime, entity);
-                                } else {
-                                    // Normal shield
-                                    // Quantum torpedoes ignore shields
-                                    if (isQuantumTorpedo && projectile.shieldPenetration) {
-                                        // Pass through shields
-                                    } else {
-                                        remainingDamage = entity.shields.applyDamage(remainingDamage, currentTime, entity);
-                                    }
-                                }
+                                remainingDamage = entity.shields.applyDamage(entity.rotation, impactAngle, remainingDamage, currentTime);
                             }
 
                             // Apply to 2-3 systems (overflow automatically goes to hull)
@@ -2402,54 +2351,13 @@ class Engine {
                             }
                         }
 
-                        // Check if this is a gravity torpedo for area effect
-                        const isGravityTorpedo = projectile.type === 'gravity_torpedo' || 
-                                                 (projectile instanceof GravityTorpedo);
-                        
-                        if (isGravityTorpedo && projectile.areaEffectRadius) {
-                            // Gravity torpedo - apply area effect damage
-                            const entitiesInArea = projectile.getEntitiesInAreaEffect ? 
-                                projectile.getEntitiesInAreaEffect(this.entities, entity) : [];
-                            
-                            for (const areaEntity of entitiesInArea) {
-                                if (areaEntity !== entity && areaEntity !== projectile.sourceShip && areaEntity.takeDamage) {
-                                    // Apply 50% damage to secondary targets
-                                    const areaDamage = projectile.areaEffectDamage || (projectile.damage * 0.5);
-                                    
-                                    if (areaEntity.type === 'ship' && areaEntity.systems) {
-                                        // Apply to systems (bypasses shields for area effect)
-                                        const dx = projectile.x - areaEntity.x;
-                                        const dy = projectile.y - areaEntity.y;
-                                        const rad = MathUtils.toRadians(-areaEntity.rotation);
-                                        const localX = dx * Math.cos(rad) - dy * Math.sin(rad);
-                                        const localY = dx * Math.sin(rad) + dy * Math.cos(rad);
-                                        
-                                        areaEntity.systems.applyTorpedoToMultipleSystems(localX, localY, areaDamage);
-                                        areaEntity.damageFlashAlpha = 0.6;
-                                    } else {
-                                        areaEntity.takeDamage(areaDamage, { x: projectile.x, y: projectile.y });
-                                    }
-                                }
-                            }
-                            
-                            // Create shockwave effect
-                            this.particleSystem.createExplosion(projectile.x, projectile.y, {
-                                particleCount: 50,
-                                size: 2.0,
-                                color: '#0066aa',
-                                speed: 150,
-                                radius: projectile.areaEffectRadius
-                            });
-                        } else {
-                            // Normal torpedo explosion
-                            this.particleSystem.createExplosion(projectile.x, projectile.y, {
-                                particleCount: 25,
-                                size: 1.0,
-                                color: '#ff6600',
-                                speed: 120
-                            });
-                        }
-                        
+                        // Torpedo explosion
+                        this.particleSystem.createExplosion(projectile.x, projectile.y, {
+                            particleCount: 25,
+                            size: 1.0,
+                            color: '#ff6600',
+                            speed: 120
+                        });
                         this.audioManager.playSound('torpedo-explosion');
 
                         // Break asteroid if hit
@@ -2498,51 +2406,6 @@ class Engine {
                 }
             }
         }
-    }
-
-    /**
-     * Create a reflected projectile from a reflected beam/energy weapon
-     */
-    createReflectedProjectile(originalProjectile, reflectingEntity, reflectedDamage, currentTime) {
-        if (!originalProjectile.sourceShip || !originalProjectile.sourceShip.active) {
-            return; // Can't reflect if source ship is gone
-        }
-
-        // Calculate direction back to original firer
-        const angle = MathUtils.angleBetween(reflectingEntity.x, reflectingEntity.y, 
-                                             originalProjectile.sourceShip.x, originalProjectile.sourceShip.y);
-        
-        // Create reflected beam projectile
-        const reflectedProjectile = new BeamProjectile({
-            x: reflectingEntity.x,
-            y: reflectingEntity.y,
-            rotation: angle,
-            targetX: originalProjectile.sourceShip.x,
-            targetY: originalProjectile.sourceShip.y,
-            damage: reflectedDamage,
-            range: originalProjectile.range || 200,
-            speed: originalProjectile.speed || CONFIG.BEAM_SPEED,
-            sourceShip: reflectingEntity, // Reflecting ship is now the source
-            sourceWeapon: originalProjectile.sourceWeapon
-        });
-
-        // Set color to indicate reflection (slightly different)
-        reflectedProjectile.color = '#ff00ff'; // Magenta for reflected beams
-        
-        // Add to projectiles array
-        this.projectiles.push(reflectedProjectile);
-        
-        // Visual effect
-        this.particleSystem.createImpact(reflectingEntity.x, reflectingEntity.y, angle, {
-            color: '#ff00ff',
-            size: 1.2
-        });
-        
-        eventBus.emit('beam-reflected', {
-            reflectingShip: reflectingEntity,
-            originalFirer: originalProjectile.sourceShip,
-            damage: reflectedDamage
-        });
     }
 
     handleDecoyConfusion() {

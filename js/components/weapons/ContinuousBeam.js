@@ -92,7 +92,7 @@ class ContinuousBeam extends BeamWeapon {
 
         // Drain energy while firing
         if (this.isFiring && ship && ship.energy) {
-            const energyDrained = ship.energy.drainEnergy(0, deltaTime * this.energyDrainRate);
+            const energyDrained = ship.energy.drainEnergy(deltaTime * this.energyDrainRate, 0);
             // Stop firing if out of energy
             if (ship.energy.getTotalEnergy() <= 0) {
                 this.stopFiring(currentTime);

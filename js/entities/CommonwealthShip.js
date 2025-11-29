@@ -8,7 +8,7 @@ class CommonwealthShip extends Ship {
         super(config);
         this.faction = 'COMMONWEALTH';
         this.laserSystems = this.initializeLaserSystems();
-        // Old unique weapons removed - now using standard loadout system with quantumTorpedo and streakBeam
+        this.uniqueWeapons = this.initializeUniqueWeapons();
     }
 
     initializeLaserSystems() {
@@ -37,14 +37,45 @@ class CommonwealthShip extends Ship {
         };
     }
 
-    // Old unique weapons removed - now using standard loadout system
-    // quantumTorpedo and streakBeam are defined in WEAPON_BUILDERS
+    initializeUniqueWeapons() {
+        return {
+            // Laser cannon with continuous fire
+            laserCannon: {
+                damage: 2,
+                range: 250,
+                continuousFire: true,
+                cooldown: 1.0,
+                lastFire: 0
+            },
+            // Laser torpedo with shield penetration
+            laserTorpedo: {
+                damage: 3,
+                shieldPenetration: true,
+                range: 300,
+                speed: 180,
+                cooldown: 4.0,
+                lastFire: 0
+            },
+            // Laser beam array (multiple beams)
+            laserBeamArray: {
+                damage: 1.5,
+                beamCount: 5,
+                spread: 30, // 30 degree spread
+                range: 200,
+                cooldown: 6.0,
+                lastFire: 0
+            }
+        };
+    }
 
     update(deltaTime, currentTime) {
         super.update(deltaTime, currentTime);
         
         // Update laser systems
         this.updateLaserSystems(deltaTime, currentTime);
+        
+        // Update unique weapons
+        this.updateUniqueWeapons(deltaTime, currentTime);
     }
 
     updateLaserSystems(deltaTime, currentTime) {
@@ -54,6 +85,82 @@ class CommonwealthShip extends Ship {
         }
     }
 
+    updateUniqueWeapons(deltaTime, currentTime) {
+        // Update weapon cooldowns
+        for (const weapon of Object.values(this.uniqueWeapons)) {
+            if (weapon.lastFire > 0) {
+                weapon.lastFire -= deltaTime;
+            }
+        }
+    }
+
+    fireLaserCannon(targetX, targetY) {
+        const weapon = this.uniqueWeapons.laserCannon;
+        if (weapon.lastFire > 0) return null;
+
+        const projectile = new LaserCannon({
+            x: this.x,
+            y: this.y,
+            rotation: this.rotation,
+            targetX: targetX,
+            targetY: targetY,
+            damage: weapon.damage,
+            range: weapon.range,
+            sourceShip: this
+        });
+
+        weapon.lastFire = weapon.cooldown;
+        return projectile;
+    }
+
+    fireLaserTorpedo(targetX, targetY) {
+        const weapon = this.uniqueWeapons.laserTorpedo;
+        if (weapon.lastFire > 0) return null;
+
+        const projectile = new LaserTorpedo({
+            x: this.x,
+            y: this.y,
+            rotation: this.rotation,
+            targetX: targetX,
+            targetY: targetY,
+            damage: weapon.damage,
+            shieldPenetration: weapon.shieldPenetration,
+            range: weapon.range,
+            speed: weapon.speed,
+            sourceShip: this
+        });
+
+        weapon.lastFire = weapon.cooldown;
+        return projectile;
+    }
+
+    fireLaserBeamArray(targetX, targetY) {
+        const weapon = this.uniqueWeapons.laserBeamArray;
+        if (weapon.lastFire > 0) return null;
+
+        const projectiles = [];
+        const baseAngle = MathUtils.angleBetween(this.x, this.y, targetX, targetY);
+        const angleStep = weapon.spread / (weapon.beamCount - 1);
+        const startAngle = baseAngle - weapon.spread / 2;
+
+        for (let i = 0; i < weapon.beamCount; i++) {
+            const angle = startAngle + (angleStep * i);
+            const projectile = new LaserBeam({
+                x: this.x,
+                y: this.y,
+                rotation: angle,
+                targetX: targetX,
+                targetY: targetY,
+                damage: weapon.damage,
+                range: weapon.range,
+                sourceShip: this
+            });
+            projectiles.push(projectile);
+        }
+
+        weapon.lastFire = weapon.cooldown;
+        return projectiles;
+    }
 
     takeDamage(damage, damageType = 'normal') {
         // Laser shield reflection

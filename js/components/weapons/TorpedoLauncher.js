@@ -138,6 +138,11 @@ class TorpedoLauncher extends Weapon {
         // Call parent auto-repair
         super.update(deltaTime, currentTime);
 
+        // Ensure currentTime is valid (fallback if not provided)
+        if (!currentTime || currentTime === 0) {
+            currentTime = performance.now() / 1000;
+        }
+
         // Handle reloading - top-off system: reload ONE torpedo every 5 seconds until full
         if (this.isReloading && this.stored > 0 && this.loaded < this.maxLoaded) {
             const timeSinceReloadStart = currentTime - this.reloadStartTime;
@@ -150,7 +155,8 @@ class TorpedoLauncher extends Weapon {
                 if (CONFIG.DEBUG_MODE) {
                     console.log('Torpedo reloaded:', {
                         loaded: this.loaded,
-                        stored: this.stored
+                        stored: this.stored,
+                        timeSinceReloadStart: timeSinceReloadStart.toFixed(2)
                     });
                 }
 

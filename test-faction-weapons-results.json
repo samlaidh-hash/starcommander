@@ -1,0 +1,122 @@
+{
+  "commonwealth": {
+    "passed": true,
+    "errors": [],
+    "dd": {
+      "passed": true,
+      "errors": [],
+      "shipData": {
+        "faction": "COMMONWEALTH",
+        "shipClass": "DD",
+        "weaponCount": 2,
+        "weaponTypes": [
+          "streakBeam",
+          "quantumTorpedo"
+        ],
+        "shieldType": "ShieldSystem",
+        "isReflectorShield": false,
+        "isPowerAbsorber": false,
+        "isNormalShield": true,
+        "hasEnergy": true
+      }
+    },
+    "cl": {
+      "passed": true,
+      "errors": [],
+      "shipData": {
+        "faction": "COMMONWEALTH",
+        "shipClass": "CL",
+        "weaponCount": 2,
+        "weaponTypes": [
+          "streakBeam",
+          "quantumTorpedo"
+        ],
+        "shieldType": "ShieldSystem",
+        "isReflectorShield": false,
+        "isPowerAbsorber": false,
+        "isNormalShield": true,
+        "hasEnergy": true
+      }
+    }
+  },
+  "dhojan": {
+    "passed": true,
+    "errors": [],
+    "dd": {
+      "passed": true,
+      "errors": [],
+      "shipData": {
+        "faction": "DHOJAN",
+        "shipClass": "DD",
+        "weaponCount": 2,
+        "weaponTypes": [
+          "gravBeam",
+          "gravityTorpedo"
+        ],
+        "shieldType": "ReflectorShieldSystem",
+        "isReflectorShield": true,
+        "isPowerAbsorber": false,
+        "isNormalShield": false,
+        "hasEnergy": true
+      }
+    },
+    "cl": {
+      "passed": true,
+      "errors": [],
+      "shipData": {
+        "faction": "DHOJAN",
+        "shipClass": "CL",
+        "weaponCount": 2,
+        "weaponTypes": [
+          "gravBeam",
+          "gravityTorpedo"
+        ],
+        "shieldType": "ReflectorShieldSystem",
+        "isReflectorShield": true,
+        "isPowerAbsorber": false,
+        "isNormalShield": false,
+        "hasEnergy": true
+      }
+    }
+  },
+  "andromedan": {
+    "passed": true,
+    "errors": [],
+    "dd": {
+      "passed": true,
+      "errors": [],
+      "shipData": {
+        "faction": "ANDROMEDAN",
+        "shipClass": "DD",
+        "weaponCount": 2,
+        "weaponTypes": [
+          "tractorRepulsorBeam",
+          "energyTorpedo"
+        ],
+        "shieldType": "PowerAbsorberSystem",
+        "isReflectorShield": false,
+        "isPowerAbsorber": true,
+        "isNormalShield": false,
+        "hasEnergy": true
+      }
+    },
+    "cl": {
+      "passed": true,
+      "errors": [],
+      "shipData": {
+        "faction": "ANDROMEDAN",
+        "shipClass": "CL",
+        "weaponCount": 2,
+        "weaponTypes": [
+          "tractorRepulsorBeam",
+          "energyTorpedo"
+        ],
+        "shieldType": "PowerAbsorberSystem",
+        "isReflectorShield": false,
+        "isPowerAbsorber": true,
+        "isNormalShield": false,
+        "hasEnergy": true
+      }
+    }
+  }
+}

@@ -11,27 +11,6 @@ class GravityTorpedo extends TorpedoProjectile {
         this.gravityWellStrength = config.gravityWellStrength || 0.3;
         this.color = CONFIG.COLOR_GRAVITY_TORPEDO || '#0066aa';
         this.radius = 6;
-        // Area effect properties (200px radius, 50% damage to secondary targets)
-        this.areaEffectRadius = config.areaEffectRadius || 200;
-        this.areaEffectDamage = config.areaEffectDamage || (this.damage * 0.5);
-    }
-
-    /**
-     * Get entities in area effect radius (for secondary damage)
-     */
-    getEntitiesInAreaEffect(entities, primaryTarget) {
-        const entitiesHit = [];
-        for (const entity of entities) {
-            if (!entity.active) continue;
-            if (entity === this.sourceShip) continue; // Don't hit source
-            if (entity === primaryTarget) continue; // Primary target gets normal damage, not area effect
-
-            const distance = MathUtils.distance(this.x, this.y, entity.x, entity.y);
-            if (distance <= this.areaEffectRadius) {
-                entitiesHit.push(entity);
-            }
-        }
-        return entitiesHit;
     }
 
     explode() {
@@ -49,8 +28,6 @@ class GravityTorpedo extends TorpedoProjectile {
             y: this.y,
             damage: this.damage,
             blastRadius: this.blastRadius,
-            areaEffectRadius: this.areaEffectRadius,
-            areaEffectDamage: this.areaEffectDamage,
             gravityWell: gravityWell,
             sourceShip: this.sourceShip
         });
