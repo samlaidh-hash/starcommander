@@ -426,6 +426,32 @@ class Engine {
             }
         });
         
+        // Handle state changes to pause/resume audio and activity
+        eventBus.on('state-changed', (data) => {
+            const { from, to } = data;
+            
+            // When pausing, stop all sounds and activity
+            if (to === 'PAUSED') {
+                if (this.audioManager) {
+                    this.audioManager.pauseAll();
+                }
+            }
+            
+            // When resuming, resume sounds
+            if (from === 'PAUSED' && to === 'PLAYING') {
+                if (this.audioManager) {
+                    this.audioManager.resumeAll();
+                }
+            }
+            
+            // When stopping (menu, etc.), stop all sounds
+            if (to === 'MAIN_MENU' || to === 'BRIEFING' || to === 'DEBRIEFING') {
+                if (this.audioManager) {
+                    this.audioManager.stopAll();
+                }
+            }
+        });
+        
         // ESC to pause/unpause
         eventBus.on('keydown', (data) => {
             if (data.key === 'escape') {
@@ -2891,8 +2917,9 @@ class Engine {
     }
 
     render(deltaTime) {
-        if (!this.stateManager.isPlaying() && !this.stateManager.isPaused()) {
-            return; // Don't render game when in menu
+        // Don't render when paused or in menu - only render when actively playing
+        if (!this.stateManager.isPlaying()) {
+            return; // Don't render game when paused or in menu
         }
 
         const renderStart = Date.now();

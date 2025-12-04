@@ -28,6 +28,10 @@ class AudioManager {
 
     playSound(name, options = {}) {
         if (!this.enabled) return;
+        // Don't play sounds if game is paused (check via global game reference)
+        if (window.game && window.game.stateManager && !window.game.stateManager.isPlaying()) {
+            return;
+        }
         const audio = this.buffers.get(name);
         if (!audio) return;
 
@@ -47,6 +51,10 @@ class AudioManager {
      */
     startLoopingSound(name, options = {}) {
         if (!this.enabled) return;
+        // Don't start looping sounds if game is paused
+        if (window.game && window.game.stateManager && !window.game.stateManager.isPlaying()) {
+            return;
+        }
 
         // Stop existing instance if any
         this.stopLoopingSound(name);
@@ -87,5 +95,39 @@ class AudioManager {
      */
     isLoopingSound(name) {
         return this.loopingInstances.has(name);
+    }
+
+    /**
+     * Pause all sounds (used when game is paused)
+     */
+    pauseAll() {
+        // Pause all looping sounds
+        for (const [name, instance] of this.loopingInstances.entries()) {
+            instance.pause();
+        }
+    }
+
+    /**
+     * Resume all sounds (used when game is resumed)
+     */
+    resumeAll() {
+        // Resume all looping sounds
+        for (const [name, instance] of this.loopingInstances.entries()) {
+            instance.play().catch(() => {
+                // Ignore play errors
+            });
+        }
+    }
+
+    /**
+     * Stop all sounds (used when game is paused or stopped)
+     */
+    stopAll() {
+        // Stop all looping sounds
+        for (const [name, instance] of this.loopingInstances.entries()) {
+            instance.pause();
+            instance.currentTime = 0;
+        }
+        this.loopingInstances.clear();
     }
 }
