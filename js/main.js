@@ -24,6 +24,15 @@ window.addEventListener('DOMContentLoaded', () => {
     // Create game engine
     const engine = new Engine();
 
+    // Preload ship images
+    if (window.assetManager) {
+        window.assetManager.preloadAllShips().then(() => {
+            console.log('✅ All ship images preloaded');
+        }).catch(err => {
+            console.warn('⚠️ Some ship images failed to preload:', err);
+        });
+    }
+
     // Start the game loop (menu will be shown first)
     engine.start();
 

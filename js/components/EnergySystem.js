@@ -29,7 +29,7 @@ class EnergySystem {
         }
         
         // Energy drain/refill rates
-        this.drainRate = 5; // Energy per second when draining
+        this.drainRate = 1.5; // Energy per second when draining (reduced 70% from 5)
         this.refillRate = 3; // Energy per second when refilling
     }
     

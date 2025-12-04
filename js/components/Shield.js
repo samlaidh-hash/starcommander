@@ -9,7 +9,7 @@ class ShieldSystem {
         this.active = false; // Shield up/down state
         this.maxStrength = config.maxStrength || 50; // Base shield strength
         this.currentStrength = this.maxStrength; // Current shield strength
-        this.energyDrainRate = 3; // Energy per second while shield is up
+        this.energyDrainRate = 0.9; // Energy per second while shield is up (reduced 70% from 3)
         this.damageToEnergyRatio = 0.5; // Damage drains this much energy (damage * ratio)
         this.lastHitTime = 0;
         this.hitFlashAlpha = 0; // Visual flash on hit (0-1)

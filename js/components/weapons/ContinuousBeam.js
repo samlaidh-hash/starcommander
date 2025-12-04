@@ -22,7 +22,7 @@ class ContinuousBeam extends BeamWeapon {
         this.firingDuration = 0; // Track how long we fired (DYNAMIC COOLDOWN = fire duration, max 5s)
         this.lastStopTime = 0;
         this.fixedStartPoint = null; // FIXED START POINT - calculated once when firing starts
-        this.energyDrainRate = 8; // Energy per second while firing
+        this.energyDrainRate = 2.4; // Energy per second while firing (reduced 70% from 8)
     }
 
     canFire(currentTime, ship = null) {

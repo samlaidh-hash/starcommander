@@ -349,10 +349,10 @@ class Ship extends Entity {
         this.tacticalWarpActive = false;
         this.tacticalWarpSpeedMultiplier = 10;
         this.tacticalWarpEnergyDrainRate = {
-            DD: 8,   // 8 energy/sec
-            CL: 10,  // 10 energy/sec
-            CA: 12,  // 12 energy/sec
-            BB: 15   // 15 energy/sec
+            DD: 2.4,   // 2.4 energy/sec (reduced 70% from 8)
+            CL: 3.0,  // 3.0 energy/sec (reduced 70% from 10)
+            CA: 3.6,  // 3.6 energy/sec (reduced 70% from 12)
+            BB: 4.5   // 4.5 energy/sec (reduced 70% from 15)
         };
         this.tacticalWarpStartTime = 0;
         this.tacticalWarpCooldownEnd = 0;
@@ -1610,7 +1610,7 @@ class Ship extends Entity {
         // Drain energy
         if (this.energy) {
             const energyDrain = drainRate * deltaTime;
-            this.energy.drain(energyDrain);
+            this.energy.drainEnergy(energyDrain);
             
             // Warn when energy < 20%
             const energyPercent = this.energy.getTotalEnergy() / this.energy.getMaxEnergy();

@@ -309,6 +309,9 @@ class AIController {
     }
 
     applyThrust(thrustPercent) {
+        // Set throttle for enemy ships so updateThrottle() works correctly
+        this.ship.throttle = thrustPercent;
+        
         // Physics-based movement (if physics is enabled)
         if (this.ship.physicsComponent && !CONFIG.DISABLE_PHYSICS) {
             const thrust = this.ship.acceleration * thrustPercent;

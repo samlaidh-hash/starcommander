@@ -19,7 +19,7 @@ class HeavyBeam extends ContinuousBeam {
         // Override values for heavy beam: 2x damage, 2x energy, 1.5x range
         this.damagePerSecond = 4; // 4 DPS (2 damage per 0.5s) - twice standard beam
         this.damage = config.damage || (CONFIG.BEAM_DAMAGE * 2); // 2 damage per beam hit (twice standard)
-        this.energyDrainRate = 16; // Energy per second while firing (twice standard beam's 8)
+        this.energyDrainRate = 4.8; // Energy per second while firing (reduced 70% from 16)
         // Range is 1.5x standard beam range
         this.range = config.range || (CONFIG.BEAM_RANGE_PIXELS * 1.5);
     }

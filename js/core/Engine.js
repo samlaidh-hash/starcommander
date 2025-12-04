@@ -1912,7 +1912,7 @@ class Engine {
 
             // Drain energy while firing beams
             if (this.playerShip.energy) {
-                const energyDrainRate = 8; // Energy per second per beam weapon
+                const energyDrainRate = 2.4; // Energy per second per beam weapon (reduced 70% from 8)
                 const activeBeams = this.playerShip.weapons.filter(w => 
                     w instanceof ContinuousBeam && w.isFiring
                 ).length;
@@ -2543,6 +2543,23 @@ class Engine {
 
     handlePlayerInput(deltaTime) {
         const ship = this.playerShip;
+
+        // Check for tactical warp activation continuously while W is held (double-tap-and-hold)
+        if (this.inputManager.isKeyDown('w') && this.inputManager.wKeyDoubleTapped && 
+            !this.inputManager.tacticalWarpActive && ship && ship.energy) {
+            const currentTime = performance.now() / 1000;
+            // Check if tactical warp should activate
+            const allowedFactions = ['FEDERATION', 'SCINTILIAN', 'TRIGON', 'PIRATE', 'PLAYER'];
+            if (allowedFactions.includes(ship.faction)) {
+                if (currentTime >= ship.tacticalWarpCooldownEnd) {
+                    if (ship.activateTacticalWarp(currentTime)) {
+                        this.inputManager.tacticalWarpActive = true;
+                        this.inputManager.tacticalWarpStartTime = performance.now();
+                        eventBus.emit('tactical-warp-start', { time: this.inputManager.tacticalWarpStartTime });
+                    }
+                }
+            }
+        }
 
         // Movement (A/D for turning)
         // NOTE: W/S throttle adjustment now handled in keydown event listener (setupEventListeners)
