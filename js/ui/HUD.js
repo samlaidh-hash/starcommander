@@ -188,11 +188,11 @@ class HUD {
             throttleBar.style.width = `${ship.throttle * 100}%`;
             // Color based on throttle level
             if (ship.throttle > 0.5) {
-                throttleBar.style.background = '#f00'; // Red when draining energy
+                throttleBar.style.background = '#ff8800'; // Orange when draining energy
             } else if (ship.throttle < 0.5) {
                 throttleBar.style.background = '#0f0'; // Green when refilling
             } else {
-                throttleBar.style.background = '#ff0'; // Yellow at 50%
+                throttleBar.style.background = '#0f0'; // Green at 50% (not draining)
             }
         }
     }
@@ -915,22 +915,21 @@ class HUD {
 
         if (!forwardBar || !reverseBar) return;
 
-        // Calculate percentage of max speed
-        // Speed bar should only be full when throttle is 100% AND ship has accelerated to max speed
-        if (ship.currentSpeed >= 0) {
-            // Moving forward
-            // Only fill bar when at max speed (currentSpeed >= maxSpeed * throttle)
-            const targetSpeed = ship.maxSpeed * ship.throttle;
-            const forwardPercent = ship.throttle === 1.0 && ship.currentSpeed >= ship.maxSpeed 
-                ? 100 
-                : (ship.currentSpeed / ship.maxSpeed) * 100;
-            forwardBar.style.width = `${Math.min(forwardPercent, 100)}%`;
-            reverseBar.style.width = '0%';
+        // Show throttle percentage instead of actual speed
+        // 50% throttle = 50% full bar
+        const throttlePercent = ship.throttle * 100;
+        
+        // Forward bar shows throttle percentage (0-100%)
+        forwardBar.style.width = `${Math.min(throttlePercent, 100)}%`;
+        reverseBar.style.width = '0%';
+        
+        // Color based on energy drain/regeneration
+        // Orange when draining energy (throttle > 50%)
+        // Green when regenerating energy (throttle < 50%)
+        if (ship.throttle > 0.5) {
+            forwardBar.style.background = 'linear-gradient(90deg, #ff8800, #ffaa00)'; // Orange gradient
         } else {
-            // Moving backward
-            const reversePercent = (Math.abs(ship.currentSpeed) / ship.maxReverseSpeed) * 100;
-            reverseBar.style.width = `${Math.min(reversePercent, 100)}%`;
-            forwardBar.style.width = '0%';
+            forwardBar.style.background = 'linear-gradient(90deg, #0a0, #0f0)'; // Green gradient
         }
     }
 

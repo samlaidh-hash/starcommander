@@ -144,6 +144,56 @@ class ShipRenderer {
     }
 
     drawHull(ship) {
+        const size = ship.getShipSize();
+        
+        // Try to load and draw PNG image first
+        if (window.assetManager && ship.faction && ship.shipClass) {
+            // Normalize faction name to handle case variations (AssetManager expects lowercase)
+            // Map "player" to "federation" for image loading (player ships use Federation images)
+            let normalizedFaction = typeof ship.faction === 'string' ? ship.faction.toLowerCase() : ship.faction;
+            if (normalizedFaction === 'player') {
+                normalizedFaction = 'federation';
+            }
+            const img = window.assetManager.getShipImage(normalizedFaction, ship.shipClass);
+            
+            // Check if image is loaded and ready
+            if (img && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
+                // Draw PNG image (rotation already applied in render() function)
+                const imgWidth = img.naturalWidth;
+                const imgHeight = img.naturalHeight;
+                const scale = size / Math.max(imgWidth, imgHeight) * 2; // Scale to fit ship size
+                
+                this.ctx.drawImage(img, -imgWidth * scale / 2, -imgHeight * scale / 2, 
+                                  imgWidth * scale, imgHeight * scale);
+                
+                // Draw engine glow at rear (if moving)
+                const speed = Math.abs(ship.vx) + Math.abs(ship.vy);
+                if (speed > 10) {
+                    const glowIntensity = Math.min(speed / 100, 1.0);
+                    const glowSize = 6 * glowIntensity;
+
+                    // Create radial gradient for engine glow
+                    const gradient = this.ctx.createRadialGradient(0, size, 0, 0, size, glowSize + 10);
+                    gradient.addColorStop(0, `rgba(100, 150, 255, ${glowIntensity * 0.8})`);
+                    gradient.addColorStop(0.5, `rgba(100, 150, 255, ${glowIntensity * 0.4})`);
+                    gradient.addColorStop(1, 'rgba(100, 150, 255, 0)');
+
+                    this.ctx.fillStyle = gradient;
+                    this.ctx.beginPath();
+                    this.ctx.arc(0, size, glowSize + 10, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+                
+                return; // PNG drawn successfully, skip vector graphics
+            } else {
+                // Image not loaded yet, try to load it asynchronously
+                window.assetManager.loadShipImage(normalizedFaction, ship.shipClass).catch(() => {
+                    // Image load failed, will fall through to vector graphics
+                });
+            }
+        }
+        
+        // Fallback to vector graphics if PNG not available
         if (!ship.vertices || ship.vertices.length === 0) return;
 
         this.ctx.strokeStyle = ship.color;
@@ -165,7 +215,6 @@ class ShipRenderer {
         // Forward indicator removed per user request
 
         // Draw engine glow at rear (if moving)
-        const size = ship.getShipSize();
         const speed = Math.abs(ship.vx) + Math.abs(ship.vy);
         if (speed > 10) {
             const glowIntensity = Math.min(speed / 100, 1.0);
@@ -882,17 +931,14 @@ class ShipRenderer {
     drawPhaseShiftEffects(ship) {
         if (!ship || !ship.advancedSystems || !ship.advancedSystems.phaseShift) return;
         
+        // Only draw effects when phase shift is actually active
         if (ship.advancedSystems.phaseShift.active) {
-            this.ctx.save();
-            this.ctx.translate(ship.x, ship.y);
-            this.ctx.rotate(MathUtils.toRadians(ship.rotation));
-            
             const size = ship.getShipSize();
             
             // Make ship translucent (50% alpha)
             this.ctx.globalAlpha = 0.5;
             
-            // Draw glowing outline
+            // Draw glowing outline (context already translated and rotated in render())
             this.ctx.strokeStyle = '#00ffff';
             this.ctx.lineWidth = 3;
             this.ctx.shadowBlur = 10;
@@ -924,7 +970,6 @@ class ShipRenderer {
             }
             
             this.ctx.globalAlpha = 1.0;
-            this.ctx.restore();
         }
     }
 
@@ -934,9 +979,7 @@ class ShipRenderer {
     drawEnergyShield(ship) {
         if (!ship || !ship.advancedSystems || !ship.advancedSystems.energyShield) return;
         
-        this.ctx.save();
-        this.ctx.translate(ship.x, ship.y);
-        
+        // Context already translated and rotated in render() function
         const size = ship.getShipSize();
         
         // Draw energy shield ring
@@ -950,7 +993,6 @@ class ShipRenderer {
         this.ctx.stroke();
         
         this.ctx.globalAlpha = 1.0;
-        this.ctx.restore();
     }
 
     /**
@@ -959,9 +1001,7 @@ class ShipRenderer {
     drawLaserShield(ship) {
         if (!ship || !ship.advancedSystems || !ship.advancedSystems.laserShield) return;
         
-        this.ctx.save();
-        this.ctx.translate(ship.x, ship.y);
-        
+        // Context already translated and rotated in render() function
         const size = ship.getShipSize();
         
         // Draw laser shield ring
@@ -975,7 +1015,6 @@ class ShipRenderer {
         this.ctx.stroke();
         
         this.ctx.globalAlpha = 1.0;
-        this.ctx.restore();
     }
 }
 

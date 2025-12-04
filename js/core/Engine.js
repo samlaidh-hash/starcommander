@@ -412,6 +412,20 @@ class Engine {
     }
 
     setupEventListeners() {
+        // Pause game when briefing/loadout screen is shown
+        eventBus.on('game-paused', () => {
+            if (this.stateManager.getState() === 'PLAYING') {
+                this.stateManager.setState('PAUSED');
+            }
+        });
+        
+        // Resume game when briefing screen is hidden
+        eventBus.on('game-resumed', () => {
+            if (this.stateManager.getState() === 'PAUSED') {
+                this.stateManager.setState('PLAYING');
+            }
+        });
+        
         // ESC to pause/unpause
         eventBus.on('keydown', (data) => {
             if (data.key === 'escape') {
@@ -550,24 +564,40 @@ class Engine {
                 console.log('⚠️ Cannot fire: playing=' + this.stateManager.isPlaying() + ', hasShip=' + !!this.playerShip);
                 return;
             }
-            this.beamFiring = true;
-
+            
             // Get mouse world position for fixed start point calculation
             const mousePos = this.inputManager.getMousePosition();
             const worldPos = this.camera.screenToWorld(mousePos.x, mousePos.y);
             const currentTime = performance.now() / 1000;
-
-            // Start firing all continuous beam weapons with FIXED start points
-            for (const weapon of this.playerShip.weapons) {
-                if (weapon instanceof ContinuousBeam) {
-                    weapon.startFiring(currentTime, this.playerShip, worldPos.x, worldPos.y);
+            
+            // Check if ship has disruptors (Trigon faction)
+            const hasDisruptors = this.playerShip.weapons && this.playerShip.weapons.some(w => w instanceof Disruptor);
+            
+            if (hasDisruptors) {
+                // Fire disruptors instead of beams
+                for (const weapon of this.playerShip.weapons) {
+                    if (weapon instanceof Disruptor) {
+                        if (weapon.canFire(currentTime)) {
+                            weapon.fire(this.playerShip, worldPos.x, worldPos.y, currentTime);
+                        }
+                    }
                 }
+            } else {
+                // Fire beams (Federation/other factions)
+                this.beamFiring = true;
+
+                // Start firing all continuous beam weapons with FIXED start points
+                for (const weapon of this.playerShip.weapons) {
+                    if (weapon instanceof ContinuousBeam) {
+                        weapon.startFiring(currentTime, this.playerShip, worldPos.x, worldPos.y);
+                    }
+                }
+
+                // Don't start sound here - let the update loop manage it based on actual firing
+                // Sound will only play when beams are actually firing (projectiles created)
+
+                console.log('✅ beamFiring set to TRUE with fixed start point');
             }
-
-            // Don't start sound here - let the update loop manage it based on actual firing
-            // Sound will only play when beams are actually firing (projectiles created)
-
-            console.log('✅ beamFiring set to TRUE with fixed start point');
         });
 
         eventBus.on('beam-fire-stop', (data) => {

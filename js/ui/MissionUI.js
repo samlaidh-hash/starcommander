@@ -111,6 +111,7 @@ class MissionUI {
 
         // Show the screen
         this.briefingScreen.classList.remove('hidden');
+        // Pause the game while briefing/loadout screen is open
         eventBus.emit('game-paused');
     }
 
@@ -120,6 +121,8 @@ class MissionUI {
     hideBriefing() {
         if (this.briefingScreen) {
             this.briefingScreen.classList.add('hidden');
+            // Resume the game when briefing screen is closed
+            eventBus.emit('game-resumed');
         }
     }
 
@@ -253,9 +256,9 @@ class MissionUI {
             console.warn('MissionUI: No consumables system on player ship');
         }
 
+        // Hide briefing screen (this will emit game-resumed event)
         this.hideBriefing();
         eventBus.emit('mission-accepted', { mission: this.currentMission });
-        eventBus.emit('game-resumed');
     }
 
     /**
@@ -296,9 +299,15 @@ class MissionUI {
      * Setup loadout selection UI
      */
     setupLoadoutSelection() {
-        // Get bay size from ship class (prioritize ship class over BaySystem for accuracy)
-        if (this.playerShip && this.playerShip.shipClass) {
-            // Get bay size from ship class (DD=4, CL=6, CA=8, BC=10)
+        // Get bay size - prioritize baySystem, then ship systems, then ship class
+        if (window.game && window.game.baySystem && window.game.baySystem.maxBaySpace > 0) {
+            // Use baySystem.maxBaySpace if available (most accurate)
+            this.bayMax = window.game.baySystem.maxBaySpace;
+        } else if (this.playerShip && this.playerShip.systems && this.playerShip.systems.bay && this.playerShip.systems.bay.maxHp > 0) {
+            // Use ship's bay system maxHp if available
+            this.bayMax = this.playerShip.systems.bay.maxHp;
+        } else if (this.playerShip && this.playerShip.shipClass) {
+            // Fallback to ship class mapping
             const bayByClass = {
                 'FG': 2,
                 'DD': 4,
@@ -311,8 +320,6 @@ class MissionUI {
                 'SD': 16
             };
             this.bayMax = bayByClass[this.playerShip.shipClass] || 8;
-        } else if (window.game && window.game.baySystem) {
-            this.bayMax = window.game.baySystem.maxBaySpace;
         } else {
             this.bayMax = 8; // Default bay capacity
         }
@@ -493,8 +500,15 @@ class MissionUI {
      * Update loadout display
      */
     updateLoadoutDisplay() {
-        // Ensure bayMax is set correctly
-        if (this.playerShip && this.playerShip.shipClass) {
+        // Ensure bayMax is set correctly - prioritize baySystem, then ship systems, then ship class
+        if (window.game && window.game.baySystem && window.game.baySystem.maxBaySpace > 0) {
+            // Use baySystem.maxBaySpace if available (most accurate)
+            this.bayMax = window.game.baySystem.maxBaySpace;
+        } else if (this.playerShip && this.playerShip.systems && this.playerShip.systems.bay && this.playerShip.systems.bay.maxHp > 0) {
+            // Use ship's bay system maxHp if available
+            this.bayMax = this.playerShip.systems.bay.maxHp;
+        } else if (this.playerShip && this.playerShip.shipClass) {
+            // Fallback to ship class mapping
             const bayByClass = {
                 'FG': 2,
                 'DD': 4,
@@ -507,6 +521,8 @@ class MissionUI {
                 'SD': 16
             };
             this.bayMax = bayByClass[this.playerShip.shipClass] || 8;
+        } else {
+            this.bayMax = 8; // Default fallback
         }
         
         // Ensure default loadout is set

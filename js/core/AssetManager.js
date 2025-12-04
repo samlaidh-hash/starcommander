@@ -149,6 +149,7 @@ class AssetManager {
      * @returns {Promise<void>} Promise that resolves when all images are loaded
      */
     async preloadAllShips() {
+        // Preload all faction images (player ships use federation images, so we don't need to preload 'player' separately)
         const factions = ['federation', 'trigon', 'scintilian', 'pirate', 'andromedan', 'commonwealth', 'dhojan'];
         const classes = ['DD', 'CL', 'CA', 'BB'];
         const promises = [];

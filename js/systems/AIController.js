@@ -404,34 +404,51 @@ class AIController {
             shouldFireTorpedoes = hasTorpedoWeapons && Math.random() < 0.5;
         }
 
-        // Fire beams if selected
+        // Fire beams/disruptors if selected
         if (shouldFireBeams) {
-            // Check if ship has continuous beams that need to be started
-            let hasContinuousBeams = false;
+            // Check if ship has disruptors (Trigon faction)
+            let hasDisruptors = false;
             if (this.ship.weapons) {
                 for (const weapon of this.ship.weapons) {
-                    if (weapon.constructor.name === 'ContinuousBeam') {
-                        hasContinuousBeams = true;
-                        // Start firing if not already firing
-                        if (!weapon.isFiring) {
-                            weapon.startFiring(currentTime, targetX, targetY);
+                    if (weapon instanceof Disruptor) {
+                        hasDisruptors = true;
+                        // Fire disruptor if cooldown ready
+                        if (weapon.canFire(currentTime)) {
+                            weapon.fire(this.ship, targetX, targetY, currentTime);
                         }
                     }
                 }
             }
-
-            // Fire continuous beams or regular beams
-            if (hasContinuousBeams && this.ship.fireContinuousBeams) {
-                const beamProjectiles = this.ship.fireContinuousBeams(targetX, targetY, currentTime);
-                if (beamProjectiles && beamProjectiles.length > 0) {
-                    eventBus.emit('ai-fired-beams', { ship: this.ship, projectiles: beamProjectiles });
-                    this.lastFireTime = currentTime;
+            
+            // If no disruptors, fire beams
+            if (!hasDisruptors) {
+                // Check if ship has continuous beams that need to be started
+                let hasContinuousBeams = false;
+                if (this.ship.weapons) {
+                    for (const weapon of this.ship.weapons) {
+                        if (weapon.constructor.name === 'ContinuousBeam') {
+                            hasContinuousBeams = true;
+                            // Start firing if not already firing
+                            if (!weapon.isFiring) {
+                                weapon.startFiring(currentTime, targetX, targetY);
+                            }
+                        }
+                    }
                 }
-            } else if (this.ship.fireBeams) {
-                const beamProjectiles = this.ship.fireBeams(targetX, targetY, currentTime);
-                if (beamProjectiles && beamProjectiles.length > 0) {
-                    eventBus.emit('ai-fired-beams', { ship: this.ship, projectiles: beamProjectiles });
-                    this.lastFireTime = currentTime;
+
+                // Fire continuous beams or regular beams
+                if (hasContinuousBeams && this.ship.fireContinuousBeams) {
+                    const beamProjectiles = this.ship.fireContinuousBeams(targetX, targetY, currentTime);
+                    if (beamProjectiles && beamProjectiles.length > 0) {
+                        eventBus.emit('ai-fired-beams', { ship: this.ship, projectiles: beamProjectiles });
+                        this.lastFireTime = currentTime;
+                    }
+                } else if (this.ship.fireBeams) {
+                    const beamProjectiles = this.ship.fireBeams(targetX, targetY, currentTime);
+                    if (beamProjectiles && beamProjectiles.length > 0) {
+                        eventBus.emit('ai-fired-beams', { ship: this.ship, projectiles: beamProjectiles });
+                        this.lastFireTime = currentTime;
+                    }
                 }
             }
         }
