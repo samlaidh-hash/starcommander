@@ -1,0 +1,59 @@
+{
+  "faction": "DHOJAN",
+  "shipClass": "BB",
+  "scaleFactor": 1,
+  "weapons": [
+    {
+      "type": "continuousBeam",
+      "name": "Port Forward Beam Array",
+      "arc": 270,
+      "arcCenter": 0,
+      "position": {
+        "x": -2,
+        "y": -168
+      },
+      "beamArrayExtension": 220
+    },
+    {
+      "type": "continuousBeam",
+      "name": "Starboard Forward Beam Array",
+      "arc": 270,
+      "arcCenter": 0,
+      "position": {
+        "x": 2,
+        "y": -168
+      },
+      "beamArrayExtension": 220
+    },
+    {
+      "type": "continuousBeam",
+      "name": "Aft Beam Array",
+      "arc": 270,
+      "arcCenter": 180,
+      "position": {
+        "x": 0,
+        "y": 355
+      },
+      "beamArrayExtension": 100
+    },
+    {
+      "type": "dualTorpedo",
+      "name": "Dual Torpedo Launcher",
+      "arc": 90,
+      "arcCenter": 0,
+      "arcCenters": [
+        0,
+        180
+      ],
+      "position": {
+        "x": 0,
+        "y": 20
+      }
+    }
+  ]
+}
+
+
+
+
+

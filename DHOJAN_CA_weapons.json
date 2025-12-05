@@ -1,0 +1,44 @@
+{
+  "faction": "DHOJAN",
+  "shipClass": "CA",
+  "scaleFactor": 1,
+  "weapons": [
+    {
+      "type": "continuousBeam",
+      "name": "Forward Beam Battery",
+      "arc": 270,
+      "arcCenter": 0,
+      "position": {
+        "x": 0,
+        "y": -50
+      },
+      "beamArrayExtension": 250
+    },
+    {
+      "type": "continuousBeam",
+      "name": "Aft Beam Battery",
+      "arc": 270,
+      "arcCenter": 180,
+      "position": {
+        "x": 0,
+        "y": 301
+      },
+      "beamArrayExtension": 90
+    },
+    {
+      "type": "torpedo",
+      "name": "Forward Torpedo Launcher",
+      "arc": 90,
+      "arcCenter": 0,
+      "position": {
+        "x": 0,
+        "y": 123
+      }
+    }
+  ]
+}
+
+
+
+
+

@@ -1,0 +1,33 @@
+{
+  "faction": "ANDROMEDAN",
+  "shipClass": "CL",
+  "scaleFactor": 1,
+  "weapons": [
+    {
+      "type": "continuousBeam",
+      "name": "Forward Tractor/Repulsor Beam",
+      "arc": 270,
+      "arcCenter": 0,
+      "position": {
+        "x": 0,
+        "y": -121
+      },
+      "beamArrayExtension": 95
+    },
+    {
+      "type": "torpedo",
+      "name": "Forward Torpedo Launcher",
+      "arc": 90,
+      "arcCenter": 0,
+      "position": {
+        "x": 0,
+        "y": -10
+      }
+    }
+  ]
+}
+
+
+
+
+
