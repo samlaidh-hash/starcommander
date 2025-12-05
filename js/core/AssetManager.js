@@ -74,7 +74,8 @@ class AssetManager {
         
         const shipName = shipNames[className] || 'delta';
         // File names are lowercase with spaces: "federation dd delta.png" or "federation bc galaxy.png"
-        return `assets/IMAGES/${factionName} ${className} ${shipName}.png`;
+        // Note: Path uses uppercase ASSETS to match GitHub repository structure
+        return `ASSETS/IMAGES/${factionName} ${className} ${shipName}.png`;
     }
 
     /**
