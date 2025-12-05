@@ -165,7 +165,18 @@ function buildWeaponFromSpec(spec, shipSize) {
 
     const { type, positionKey, position, ...rest } = spec;
     const config = { ...rest };
-    const finalPosition = cloneWeaponPosition(positionKey, position, shipSize);
+    
+    // If JSON file provides explicit position (from PNG image coordinates), use it directly
+    // Otherwise, use positionKey to look up position
+    let finalPosition;
+    if (position && position.x !== undefined && position.y !== undefined) {
+        // Explicit position from JSON - use as-is (already in pixel coordinates matching PNG)
+        finalPosition = { x: position.x, y: position.y };
+    } else {
+        // Use positionKey lookup (for hardcoded loadouts)
+        finalPosition = cloneWeaponPosition(positionKey, position, shipSize);
+    }
+    
     if (finalPosition) {
         config.position = finalPosition;
     }
@@ -258,6 +269,35 @@ function generatePirateLoadout(shipClass) {
 }
 
 function getShipLoadoutSpecs(faction, shipClass) {
+    // Try to get from preloaded JSON cache first (matches PNG image positions)
+    if (window.weaponLoadoutManager) {
+        const jsonLoadout = window.weaponLoadoutManager.getLoadout(faction, shipClass);
+        if (jsonLoadout && jsonLoadout.weapons && jsonLoadout.weapons.length > 0) {
+            // Convert JSON format to internal format
+            return jsonLoadout.weapons.map(weapon => {
+                const spec = {
+                    type: weapon.type,
+                    name: weapon.name,
+                    arc: weapon.arc,
+                    arcCenter: weapon.arcCenter,
+                    position: weapon.position ? { x: weapon.position.x, y: weapon.position.y } : undefined
+                };
+                
+                // Copy additional properties
+                if (weapon.arcCenters) spec.arcCenters = weapon.arcCenters;
+                if (weapon.beamArrayExtension) spec.beamArrayExtension = weapon.beamArrayExtension;
+                if (weapon.cooldown !== undefined) spec.cooldown = weapon.cooldown;
+                if (weapon.damage !== undefined) spec.damage = weapon.damage;
+                if (weapon.hp !== undefined) spec.hp = weapon.hp;
+                if (weapon.loaded !== undefined) spec.loaded = weapon.loaded;
+                if (weapon.maxLoaded !== undefined) spec.maxLoaded = weapon.maxLoaded;
+                
+                return spec;
+            });
+        }
+    }
+
+    // Fallback to hardcoded loadouts
     // Pirates get random loadouts for variety
     if (faction === 'PIRATE') {
         return generatePirateLoadout(shipClass);
