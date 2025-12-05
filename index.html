@@ -604,6 +604,88 @@
         </div>
     </div>
 
+    <!-- Options Screen -->
+    <div id="options-screen" class="menu-screen hidden">
+        <div class="options-container">
+            <div class="options-header">
+                <h2>OPTIONS</h2>
+                <button id="btn-options-close" class="library-close-btn">×</button>
+            </div>
+            <div class="options-content">
+                <div class="options-section">
+                    <h3>AUDIO</h3>
+                    <div class="options-item">
+                        <label>Master Volume</label>
+                        <input type="range" id="master-volume" min="0" max="100" value="100">
+                        <span id="master-volume-value">100%</span>
+                    </div>
+                    <div class="options-item">
+                        <label>Sound Effects</label>
+                        <input type="range" id="sfx-volume" min="0" max="100" value="100">
+                        <span id="sfx-volume-value">100%</span>
+                    </div>
+                    <div class="options-item">
+                        <label>Music</label>
+                        <input type="range" id="music-volume" min="0" max="100" value="100">
+                        <span id="music-volume-value">100%</span>
+                    </div>
+                </div>
+                <div class="options-section">
+                    <h3>GRAPHICS</h3>
+                    <div class="options-item">
+                        <label>Target FPS</label>
+                        <select id="target-fps">
+                            <option value="30" selected>30 FPS</option>
+                            <option value="60">60 FPS</option>
+                        </select>
+                    </div>
+                    <div class="options-item">
+                        <label>Particle Effects</label>
+                        <input type="checkbox" id="particles-enabled" checked>
+                    </div>
+                    <div class="options-item">
+                        <label>Performance Mode</label>
+                        <input type="checkbox" id="performance-mode">
+                        <span class="option-hint">Simplified rendering for better performance</span>
+                    </div>
+                </div>
+                <div class="options-section">
+                    <h3>CONTROLS</h3>
+                    <div class="options-item">
+                        <label>Mouse Sensitivity</label>
+                        <input type="range" id="mouse-sensitivity" min="0.5" max="2" step="0.1" value="1">
+                        <span id="mouse-sensitivity-value">1.0</span>
+                    </div>
+                    <div class="options-item">
+                        <label>Invert Mouse Y</label>
+                        <input type="checkbox" id="invert-mouse-y">
+                    </div>
+                </div>
+                <div class="options-section">
+                    <h3>GAMEPLAY</h3>
+                    <div class="options-item">
+                        <label>Auto-Save</label>
+                        <input type="checkbox" id="auto-save" checked>
+                        <span class="option-hint">Automatically save progress</span>
+                    </div>
+                    <div class="options-item">
+                        <label>Show Tutorial</label>
+                        <input type="checkbox" id="show-tutorial" checked>
+                    </div>
+                    <div class="options-item">
+                        <label>Debug Mode</label>
+                        <input type="checkbox" id="debug-mode">
+                        <span class="option-hint">Show debug information</span>
+                    </div>
+                </div>
+                <div class="options-footer">
+                    <button id="btn-options-reset" class="options-btn secondary">Reset to Defaults</button>
+                    <button id="btn-options-save" class="options-btn">Save & Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Library Screen -->
     <div id="library-screen" class="menu-screen hidden">
         <div class="library-container">
@@ -613,6 +695,7 @@
             </div>
             <div class="library-content">
                 <div class="library-sidebar">
+                    <div class="library-section-header">FACTIONS</div>
                     <div class="faction-tab active" data-faction="federation">FEDERATION</div>
                     <div class="faction-tab" data-faction="trigon">TRIGON</div>
                     <div class="faction-tab" data-faction="scintilian">SCINTILIAN</div>
@@ -620,6 +703,10 @@
                     <div class="faction-tab" data-faction="commonwealth">COMMONWEALTH</div>
                     <div class="faction-tab" data-faction="andromedan">ANDROMEDAN</div>
                     <div class="faction-tab" data-faction="pirate">PIRATE</div>
+                    <div class="library-section-header">SYSTEMS</div>
+                    <div class="faction-tab" data-faction="ship-systems">SHIP SYSTEMS</div>
+                    <div class="faction-tab" data-faction="weapons">WEAPONS</div>
+                    <div class="faction-tab" data-faction="consumables">CONSUMABLES</div>
                 </div>
                 <div class="library-main">
                     <div id="library-faction-content"></div>
@@ -703,6 +790,7 @@
     <script src="js/systems/ProgressionManager.js"></script>
     <script src="js/systems/AudioManager.js"></script>
     <script src="js/systems/LibrarySystem.js"></script>
+    <script src="js/systems/OptionsSystem.js"></script>
 
     <!-- Entities -->
     <script src="js/entities/Entity.js"></script>

@@ -351,6 +351,9 @@ class Engine {
 
         // Library system
         this.librarySystem = new LibrarySystem();
+        
+        // Options system
+        this.optionsSystem = new OptionsSystem();
 
         // Advanced systems
         this.tractorBeamSystem = new TractorBeamSystem();
@@ -969,13 +972,13 @@ class Engine {
         bindClick('btn-new-game', () => this.startNewGame());
         bindClick('btn-load-game', () => this.loadSavedGame());
         bindClick('btn-library', () => this.showLibrary());
-        bindClick('btn-options', highlightSelection);
+        bindClick('btn-options', () => this.showOptions());
 
         // Pause menu
         bindClick('btn-resume', () => this.stateManager.setState('PLAYING'));
         bindClick('btn-save', () => this.saveCurrentGame());
         bindClick('btn-load', () => this.loadSavedGame());
-        bindClick('btn-options-pause', highlightSelection);
+        bindClick('btn-options-pause', () => this.showOptions());
         bindClick('btn-main-menu', () => {
             if (confirm('Return to main menu? Unsaved progress will be lost.')) {
                 this.stateManager.setState('MAIN_MENU');
@@ -3461,6 +3464,12 @@ class Engine {
     showLibrary() {
         if (this.librarySystem) {
             this.librarySystem.showLibrary();
+        }
+    }
+
+    showOptions() {
+        if (this.optionsSystem) {
+            this.optionsSystem.showOptions();
         }
     }
 
