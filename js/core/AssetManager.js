@@ -103,8 +103,10 @@ class AssetManager {
             };
             img.onerror = () => {
                 this.loadPromises.delete(path);
-                console.warn(`Failed to load image: ${path}`);
-                reject(new Error(`Failed to load image: ${path}`));
+                // Don't log warnings for missing images - they're optional
+                // Ships will render without textures if images don't exist
+                // Resolve with null instead of rejecting to prevent game-breaking errors
+                resolve(null);
             };
             img.src = path;
         });
@@ -156,8 +158,9 @@ class AssetManager {
 
         for (const faction of factions) {
             for (const shipClass of classes) {
-                promises.push(this.loadShipImage(faction, shipClass).catch(err => {
-                    console.warn(`Failed to preload ${faction} ${shipClass}:`, err);
+                // Images are optional - ships will render without textures if images don't exist
+                promises.push(this.loadShipImage(faction, shipClass).catch(() => {
+                    // Silently handle missing images - they're optional assets
                 }));
             }
         }
