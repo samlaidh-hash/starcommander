@@ -34,8 +34,8 @@ class PlasmaTorpedo extends Weapon {
         // Use charged damage if provided, otherwise use default
         const damagePotential = chargeDamage > 0 ? chargeDamage : CONFIG.PLASMA_DAMAGE_POTENTIAL;
 
-        // Calculate firing point offset from ship center
-        const firingPoint = this.calculateFiringPoint(ship);
+        // Calculate firing point offset from ship center (pass target for edge calculation)
+        const firingPoint = this.calculateFiringPoint(ship, targetX, targetY);
 
         // Create plasma torpedo projectile
         const plasmaTorp = new PlasmaTorpedoProjectile({
@@ -89,10 +89,82 @@ class PlasmaTorpedo extends Weapon {
 
     /**
      * Calculate plasma torpedo firing point from weapon mount position
+     * @param {Ship} ship - The ship firing the torpedo
+     * @param {number} targetX - Target X coordinate (optional, for edge calculation)
+     * @param {number} targetY - Target Y coordinate (optional, for edge calculation)
      */
-    calculateFiringPoint(ship) {
+    calculateFiringPoint(ship, targetX = null, targetY = null) {
         // Get ship size for proper offset calculation
         const shipSize = ship.getShipSize ? ship.getShipSize() : 40;
+
+        // If target is provided and ship has PNG, calculate edge point closest to target
+        if (targetX !== null && targetY !== null && ship.hasPNGImage && ship.pngImageWidth && ship.pngImageHeight) {
+            const worldRad = MathUtils.toRadians(ship.rotation);
+            const worldCos = Math.cos(worldRad);
+            const worldSin = Math.sin(worldRad);
+            
+            // Convert target to ship-local coordinates
+            const relX = targetX - ship.x;
+            const relY = targetY - ship.y;
+            const localTargetX = relX * worldCos + relY * worldSin;
+            const localTargetY = -relX * worldSin + relY * worldCos;
+            
+            // PNG image bounds in ship-local space (centered at origin)
+            const halfWidth = ship.pngImageWidth / 2;
+            const halfHeight = ship.pngImageHeight / 2;
+            
+            // Find closest point on PNG rectangle edge to target
+            // Clamp target to rectangle bounds first
+            const clampedX = Math.max(-halfWidth, Math.min(halfWidth, localTargetX));
+            const clampedY = Math.max(-halfHeight, Math.min(halfHeight, localTargetY));
+            
+            // Determine which edge is closest
+            const distToLeft = Math.abs(localTargetX - (-halfWidth));
+            const distToRight = Math.abs(localTargetX - halfWidth);
+            const distToTop = Math.abs(localTargetY - (-halfHeight));
+            const distToBottom = Math.abs(localTargetY - halfHeight);
+            
+            const minDist = Math.min(distToLeft, distToRight, distToTop, distToBottom);
+            
+            let edgeX, edgeY;
+            if (minDist === distToLeft) {
+                // Left edge
+                edgeX = -halfWidth;
+                edgeY = clampedY;
+            } else if (minDist === distToRight) {
+                // Right edge
+                edgeX = halfWidth;
+                edgeY = clampedY;
+            } else if (minDist === distToTop) {
+                // Top edge (forward)
+                edgeX = clampedX;
+                edgeY = -halfHeight;
+            } else {
+                // Bottom edge (aft)
+                edgeX = clampedX;
+                edgeY = halfHeight;
+            }
+            
+            // Add small offset outward from edge to clear image
+            const offsetDist = 5; // Small offset to clear edge
+            const dx = localTargetX - edgeX;
+            const dy = localTargetY - edgeY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 0) {
+                edgeX += (dx / dist) * offsetDist;
+                edgeY += (dy / dist) * offsetDist;
+            }
+            
+            // Convert back to world coordinates
+            const worldX = ship.x + (edgeX * worldCos - edgeY * worldSin);
+            const worldY = ship.y + (edgeX * worldSin + edgeY * worldCos);
+            
+            // Add velocity compensation for fast-moving ships
+            const finalX = worldX + (ship.vx || 0) * 0.15;
+            const finalY = worldY + (ship.vy || 0) * 0.15;
+            
+            return { x: finalX, y: finalY };
+        }
 
         // Use weapon position if available
         if (this.position) {

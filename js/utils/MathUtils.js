@@ -96,6 +96,37 @@ const MathUtils = {
     },
 
     /**
+     * Calculate distance from a point to a line segment
+     * @param {number} x1 - Line segment start X
+     * @param {number} y1 - Line segment start Y
+     * @param {number} x2 - Line segment end X
+     * @param {number} y2 - Line segment end Y
+     * @param {number} px - Point X
+     * @param {number} py - Point Y
+     * @returns {number} - Distance from point to line segment
+     */
+    distanceToLineSegment(x1, y1, x2, y2, px, py) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const lengthSq = dx * dx + dy * dy;
+        
+        if (lengthSq === 0) {
+            // Line segment is a point
+            return this.distance(px, py, x1, y1);
+        }
+        
+        // Calculate t (parameter along line segment, 0-1)
+        const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / lengthSq));
+        
+        // Find closest point on line segment
+        const closestX = x1 + t * dx;
+        const closestY = y1 + t * dy;
+        
+        // Return distance from point to closest point on line segment
+        return this.distance(px, py, closestX, closestY);
+    },
+    
+    /**
      * Get point at distance and angle from origin
      */
     pointAtAngle(x, y, angle, distance) {

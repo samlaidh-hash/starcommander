@@ -71,18 +71,17 @@ class ShipRenderer {
         }
 
         // Draw damage flash effect if ship was recently hit
-        if (ship.damageFlashAlpha && ship.damageFlashAlpha > 0) {
+        // Only flash PNG images, not fallback vector shapes
+        if (ship.damageFlashAlpha && ship.damageFlashAlpha > 0 && ship.hasPNGImage && ship.pngImageWidth && ship.pngImageHeight) {
             this.ctx.globalAlpha = ship.damageFlashAlpha;
             this.ctx.strokeStyle = '#f00';
             this.ctx.lineWidth = 4;
             this.ctx.beginPath();
-            if (ship.vertices && ship.vertices.length > 0) {
-                this.ctx.moveTo(ship.vertices[0].x, ship.vertices[0].y);
-                for (let i = 1; i < ship.vertices.length; i++) {
-                    this.ctx.lineTo(ship.vertices[i].x, ship.vertices[i].y);
-                }
-                this.ctx.closePath();
-            }
+            
+            // Draw red outline around PNG image bounds only
+            const halfWidth = ship.pngImageWidth / 2;
+            const halfHeight = ship.pngImageHeight / 2;
+            this.ctx.rect(-halfWidth, -halfHeight, ship.pngImageWidth, ship.pngImageHeight);
             this.ctx.stroke();
             this.ctx.globalAlpha = 1.0;
         }
@@ -163,6 +162,12 @@ class ShipRenderer {
                 const imgHeight = img.naturalHeight;
                 const scale = size / Math.max(imgWidth, imgHeight) * 2; // Scale to fit ship size
                 
+                // Store image dimensions on ship for hit detection and torpedo offsets
+                ship.pngImageWidth = imgWidth * scale;
+                ship.pngImageHeight = imgHeight * scale;
+                ship.pngImageScale = scale;
+                ship.hasPNGImage = true;
+                
                 this.ctx.drawImage(img, -imgWidth * scale / 2, -imgHeight * scale / 2, 
                                   imgWidth * scale, imgHeight * scale);
                 
@@ -194,6 +199,7 @@ class ShipRenderer {
         }
         
         // Fallback to vector graphics if PNG not available
+        ship.hasPNGImage = false; // Mark as no PNG image
         if (!ship.vertices || ship.vertices.length === 0) return;
 
         this.ctx.strokeStyle = ship.color;

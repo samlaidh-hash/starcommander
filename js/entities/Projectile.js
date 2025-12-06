@@ -12,9 +12,16 @@ class Projectile extends Entity {
         this.lifetime = config.lifetime || 2;
         this.creationTime = performance.now() / 1000;
         this.hitTargets = new Set(); // Track what we've hit (for penetration/multi-hit logic)
+        
+        // Track previous position for path obstacle checking
+        this.lastX = config.x;
+        this.lastY = config.y;
     }
 
     update(deltaTime) {
+        // Note: lastX/lastY are updated by subclasses BEFORE they move
+        // Base class only checks lifetime
+        
         super.update(deltaTime);
 
         // Check lifetime
@@ -69,6 +76,10 @@ class TorpedoProjectile extends Projectile {
     }
 
     update(deltaTime) {
+        // Update last position BEFORE moving (for obstacle path checking)
+        this.lastX = this.x;
+        this.lastY = this.y;
+        
         // Lock-on target mode - home towards entity
         if (this.lockOnTarget && this.lockOnTarget.active) {
             // Homing behavior
@@ -186,6 +197,10 @@ class DisruptorProjectile extends Projectile {
     }
 
     update(deltaTime) {
+        // Update last position BEFORE moving (for obstacle path checking)
+        this.lastX = this.x;
+        this.lastY = this.y;
+        
         // Move disruptor
         this.x += this.vx * deltaTime;
         this.y += this.vy * deltaTime;
@@ -274,6 +289,10 @@ class PlasmaTorpedoProjectile extends Projectile {
     }
 
     update(deltaTime) {
+        // Update last position BEFORE moving (for obstacle path checking)
+        this.lastX = this.x;
+        this.lastY = this.y;
+        
         // Degrade DP over time
         this.damagePotential = Math.max(10, this.damagePotential - (this.dpDecayRate * deltaTime));
 

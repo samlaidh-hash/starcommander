@@ -6,6 +6,8 @@ class AudioManager {
         this.buffers = new Map();
         this.initialized = false;
         this.loopingInstances = new Map(); // Track looping sound instances
+        this.lastPlayTime = new Map(); // Track last play time for each sound (for throttling)
+        this.minPlayInterval = 0.05; // Minimum 50ms between same sound plays (prevents spam)
     }
 
     initialize() {
@@ -35,10 +37,22 @@ class AudioManager {
         const audio = this.buffers.get(name);
         if (!audio) return;
 
+        // Throttle rapid-fire sounds to prevent timing issues
+        const now = performance.now() / 1000;
+        const lastPlay = this.lastPlayTime.get(name) || 0;
+        if (now - lastPlay < this.minPlayInterval && !options.allowOverlap) {
+            return; // Skip if played too recently (unless overlap explicitly allowed)
+        }
+        this.lastPlayTime.set(name, now);
+
         // Clone to allow overlapping playback
         const instance = audio.cloneNode();
         const volume = options.volume !== undefined ? options.volume : (AUDIO_CONFIG.sounds[name]?.volume || 1.0);
         instance.volume = this.volumeMaster * volume;
+        
+        // Set currentTime to 0 to ensure consistent timing
+        instance.currentTime = 0;
+        
         instance.play().catch(() => {
             // Ignore play errors (e.g., not triggered by user gesture)
         });
@@ -67,6 +81,9 @@ class AudioManager {
         instance.loop = true;
         const volume = options.volume !== undefined ? options.volume : (AUDIO_CONFIG.sounds[name]?.volume || 1.0);
         instance.volume = this.volumeMaster * volume;
+        
+        // Reset playback position for consistent timing
+        instance.currentTime = 0;
 
         this.loopingInstances.set(name, instance);
 

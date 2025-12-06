@@ -332,6 +332,11 @@ class Engine {
         this.torpedoCharging = false;
         this.plasmaChargeStart = 0;
         this.plasmaChargeDamage = 0;
+        
+        // Plasma charge audio
+        this.plasmaChargeAudioContext = null;
+        this.plasmaChargeOscillator = null;
+        this.plasmaChargeGainNode = null;
 
         // Mission system
         this.missionManager = new MissionManager();
@@ -351,9 +356,6 @@ class Engine {
 
         // Library system
         this.librarySystem = new LibrarySystem();
-        
-        // Options system
-        this.optionsSystem = new OptionsSystem();
 
         // Advanced systems
         this.tractorBeamSystem = new TractorBeamSystem();
@@ -415,46 +417,6 @@ class Engine {
     }
 
     setupEventListeners() {
-        // Pause game when briefing/loadout screen is shown
-        eventBus.on('game-paused', () => {
-            if (this.stateManager.getState() === 'PLAYING') {
-                this.stateManager.setState('PAUSED');
-            }
-        });
-        
-        // Resume game when briefing screen is hidden
-        eventBus.on('game-resumed', () => {
-            if (this.stateManager.getState() === 'PAUSED') {
-                this.stateManager.setState('PLAYING');
-            }
-        });
-        
-        // Handle state changes to pause/resume audio and activity
-        eventBus.on('state-changed', (data) => {
-            const { from, to } = data;
-            
-            // When pausing, stop all sounds and activity
-            if (to === 'PAUSED') {
-                if (this.audioManager) {
-                    this.audioManager.pauseAll();
-                }
-            }
-            
-            // When resuming, resume sounds
-            if (from === 'PAUSED' && to === 'PLAYING') {
-                if (this.audioManager) {
-                    this.audioManager.resumeAll();
-                }
-            }
-            
-            // When stopping (menu, etc.), stop all sounds
-            if (to === 'MAIN_MENU' || to === 'BRIEFING' || to === 'DEBRIEFING') {
-                if (this.audioManager) {
-                    this.audioManager.stopAll();
-                }
-            }
-        });
-        
         // ESC to pause/unpause
         eventBus.on('keydown', (data) => {
             if (data.key === 'escape') {
@@ -593,40 +555,24 @@ class Engine {
                 console.log('⚠️ Cannot fire: playing=' + this.stateManager.isPlaying() + ', hasShip=' + !!this.playerShip);
                 return;
             }
-            
+            this.beamFiring = true;
+
             // Get mouse world position for fixed start point calculation
             const mousePos = this.inputManager.getMousePosition();
             const worldPos = this.camera.screenToWorld(mousePos.x, mousePos.y);
             const currentTime = performance.now() / 1000;
-            
-            // Check if ship has disruptors (Trigon faction)
-            const hasDisruptors = this.playerShip.weapons && this.playerShip.weapons.some(w => w instanceof Disruptor);
-            
-            if (hasDisruptors) {
-                // Fire disruptors instead of beams
-                for (const weapon of this.playerShip.weapons) {
-                    if (weapon instanceof Disruptor) {
-                        if (weapon.canFire(currentTime)) {
-                            weapon.fire(this.playerShip, worldPos.x, worldPos.y, currentTime);
-                        }
-                    }
+
+            // Start firing all continuous beam weapons with FIXED start points
+            for (const weapon of this.playerShip.weapons) {
+                if (weapon instanceof ContinuousBeam) {
+                    weapon.startFiring(currentTime, this.playerShip, worldPos.x, worldPos.y);
                 }
-            } else {
-                // Fire beams (Federation/other factions)
-                this.beamFiring = true;
-
-                // Start firing all continuous beam weapons with FIXED start points
-                for (const weapon of this.playerShip.weapons) {
-                    if (weapon instanceof ContinuousBeam) {
-                        weapon.startFiring(currentTime, this.playerShip, worldPos.x, worldPos.y);
-                    }
-                }
-
-                // Don't start sound here - let the update loop manage it based on actual firing
-                // Sound will only play when beams are actually firing (projectiles created)
-
-                console.log('✅ beamFiring set to TRUE with fixed start point');
             }
+
+            // Don't start sound here - let the update loop manage it based on actual firing
+            // Sound will only play when beams are actually firing (projectiles created)
+
+            console.log('✅ beamFiring set to TRUE with fixed start point');
         });
 
         eventBus.on('beam-fire-stop', (data) => {
@@ -657,6 +603,7 @@ class Engine {
                 this.torpedoCharging = true;
                 this.plasmaChargeStart = performance.now() / 1000;
                 this.plasmaChargeDamage = 0;
+                this.startPlasmaChargeAudio();
             } else {
                 // Standard torpedo - fire immediately on click
                 const worldPos = this.camera.screenToWorld(data.x, data.y);
@@ -676,6 +623,7 @@ class Engine {
             // Release plasma torpedo if charging
             if (this.torpedoCharging) {
                 this.torpedoCharging = false;
+                this.stopPlasmaChargeAudio();
 
                 // Fire plasma torpedo with accumulated charge
                 const worldPos = this.camera.screenToWorld(data.x, data.y);
@@ -972,13 +920,13 @@ class Engine {
         bindClick('btn-new-game', () => this.startNewGame());
         bindClick('btn-load-game', () => this.loadSavedGame());
         bindClick('btn-library', () => this.showLibrary());
-        bindClick('btn-options', () => this.showOptions());
+        bindClick('btn-options', highlightSelection);
 
         // Pause menu
         bindClick('btn-resume', () => this.stateManager.setState('PLAYING'));
         bindClick('btn-save', () => this.saveCurrentGame());
         bindClick('btn-load', () => this.loadSavedGame());
-        bindClick('btn-options-pause', () => this.showOptions());
+        bindClick('btn-options-pause', highlightSelection);
         bindClick('btn-main-menu', () => {
             if (confirm('Return to main menu? Unsaved progress will be lost.')) {
                 this.stateManager.setState('MAIN_MENU');
@@ -1048,11 +996,30 @@ class Engine {
                 this.audioManager.playSound('explosion-large');
             }
 
-            // Show mission failed screen AFTER explosion (2 second delay)
-            setTimeout(() => {
-                alert('Game Over! Your ship was destroyed.');
-                this.stateManager.setState('MAIN_MENU');
-            }, 2000);
+            // Wait for explosion to fade before going to main menu
+            // Explosion particles: life 1.0-1.8s with decay 0.5-0.8 = ~2-3.6s duration
+            // Debris particles: life 1.5-2.5s with decay 0.3-0.5 = ~3-8.3s duration
+            // Wait 9 seconds to ensure all particles have faded (longest debris: ~8.3s)
+            const explosionStartTime = performance.now();
+            const checkExplosionFade = () => {
+                const elapsed = (performance.now() - explosionStartTime) / 1000;
+                const particleCount = this.particleSystem.particles ? this.particleSystem.particles.length : 0;
+                
+                // Wait at least 9 seconds, or until particles are gone (whichever is longer)
+                if (elapsed >= 9.0 && particleCount === 0) {
+                    alert('Game Over! Your ship was destroyed.');
+                    this.stateManager.setState('MAIN_MENU');
+                } else if (elapsed < 9.0) {
+                    // Still waiting for minimum time
+                    setTimeout(checkExplosionFade, 100); // Check every 100ms
+                } else {
+                    // Minimum time passed but particles still active, keep checking
+                    setTimeout(checkExplosionFade, 100);
+                }
+            };
+            
+            // Start checking after initial delay
+            setTimeout(checkExplosionFade, 100);
         });
 
         // Ship-asteroid collision
@@ -1859,6 +1826,11 @@ class Engine {
 
             // Create AI controller for enemy ship
             enemyShip.aiController = new AIController(enemyShip);
+            
+            // Activate shields for enemy ships (they start with shields up)
+            if (enemyShip.shields) {
+                enemyShip.shields.active = true;
+            }
 
             this.entities.push(enemyShip);
             this.enemyShips.push(enemyShip);
@@ -1971,7 +1943,7 @@ class Engine {
 
             // Drain energy while firing beams
             if (this.playerShip.energy) {
-                const energyDrainRate = 2.4; // Energy per second per beam weapon (reduced 70% from 8)
+                const energyDrainRate = 8; // Energy per second per beam weapon
                 const activeBeams = this.playerShip.weapons.filter(w => 
                     w instanceof ContinuousBeam && w.isFiring
                 ).length;
@@ -1991,6 +1963,12 @@ class Engine {
             }
 
             const projectiles = this.playerShip.fireContinuousBeams(worldPos.x, worldPos.y, currentTime);
+            
+            // Also fire Disruptors (Trigon faction) - they use burst system
+            const disruptorShots = this.playerShip.getDisruptorBurstShots(worldPos.x, worldPos.y);
+            if (disruptorShots && disruptorShots.length > 0) {
+                projectiles.push(...disruptorShots);
+            }
             
             // Check if any beams are actually firing (projectiles created)
             const anyBeamsFiring = projectiles && projectiles.length > 0;
@@ -2065,7 +2043,7 @@ class Engine {
         }
 
         // Handle plasma charge accumulation
-        if (this.torpedoCharging && this.playerShip && !this.warpingOut) {
+        if (this.torpedoCharging && this.playerShip && !this.warpingOut && this.stateManager.isPlaying()) {
             const currentTime = performance.now() / 1000;
             const chargeTime = currentTime - this.plasmaChargeStart;
 
@@ -2077,7 +2055,19 @@ class Engine {
 
             // Calculate damage: damage/second * time, max 5 seconds
             const cappedTime = Math.min(chargeTime, CONFIG.PLASMA_MAX_CHARGE_TIME);
+            const oldChargeDamage = this.plasmaChargeDamage || 0;
             this.plasmaChargeDamage = chargeRate * cappedTime;
+            
+            // Calculate charge percentage for audio feedback
+            const chargePercent = Math.min(100, (chargeTime / CONFIG.PLASMA_MAX_CHARGE_TIME) * 100);
+            
+            // Update charging audio tone (rising pitch based on charge)
+            this.updatePlasmaChargeAudio(chargePercent);
+        } else {
+            // Stop charging audio when not charging or game paused
+            if (!this.stateManager.isPlaying() || !this.torpedoCharging) {
+                this.stopPlasmaChargeAudio();
+            }
         }
 
         // Update all entities
@@ -2282,6 +2272,97 @@ class Engine {
 
         for (const projectile of this.projectiles) {
             if (!projectile.active) continue;
+            
+            // Store previous position for path checking
+            const lastX = projectile.lastX !== undefined ? projectile.lastX : projectile.x;
+            const lastY = projectile.lastY !== undefined ? projectile.lastY : projectile.y;
+            
+            // For beam projectiles, use firing point to target path instead of last position
+            let pathStartX = lastX;
+            let pathStartY = lastY;
+            let pathEndX = projectile.x;
+            let pathEndY = projectile.y;
+            
+            if (projectile.projectileType === 'beam' && projectile.firingPointX !== undefined && projectile.targetX !== undefined) {
+                // Beams travel from firing point to target - check that entire path
+                pathStartX = projectile.firingPointX;
+                pathStartY = projectile.firingPointY;
+                pathEndX = projectile.targetX;
+                pathEndY = projectile.targetY;
+            } else {
+                // For other projectiles, check path from last position to current position
+                // Skip if projectile hasn't moved yet (zero-length path)
+                if (lastX === projectile.x && lastY === projectile.y) {
+                    // Projectile hasn't moved yet, skip obstacle check this frame
+                    pathStartX = null; // Signal to skip
+                }
+            }
+            
+            // Check if projectile path is blocked by asteroids (like planets/stars block attacks)
+            // This must happen BEFORE checking target collisions
+            let blockedByAsteroid = false;
+            
+            if (pathStartX !== null) {
+                for (const entity of this.entities) {
+                    if (!entity.active) continue;
+                    if (entity.type !== 'asteroid') continue;
+                    
+                    // Check if asteroid is in projectile's path
+                    const distance = MathUtils.distanceToLineSegment(
+                        pathStartX, pathStartY,
+                        pathEndX, pathEndY,
+                        entity.x, entity.y
+                    );
+                    
+                    if (distance <= entity.radius) {
+                        // Asteroid blocks the projectile
+                        // Calculate impact point on asteroid surface
+                        const dx = pathEndX - pathStartX;
+                        const dy = pathEndY - pathStartY;
+                        const length = Math.sqrt(dx * dx + dy * dy);
+                        let impactX = projectile.x;
+                        let impactY = projectile.y;
+                        
+                        if (length > 0) {
+                            // Find closest point on path to asteroid center
+                            const t = Math.max(0, Math.min(1, 
+                                ((entity.x - pathStartX) * dx + (entity.y - pathStartY) * dy) / (length * length)
+                            ));
+                            impactX = pathStartX + t * dx;
+                            impactY = pathStartY + t * dy;
+                        }
+                        
+                        // Damage the asteroid
+                        if (entity.takeDamage) {
+                            const impactPoint = { x: impactX, y: impactY };
+                            const fragments = entity.takeDamage(projectile.damage || 1, impactPoint);
+                            
+                            // Add fragments to entities if asteroid split
+                            if (fragments && fragments.length > 0) {
+                                this.entities.push(...fragments);
+                            }
+                        }
+                        
+                        // Create impact effect at impact point
+                        const impactAngle = Math.atan2(dy, dx);
+                        const color = projectile.projectileType === 'beam' ? '#00aaff' : '#ff6600';
+                        this.particleSystem.createImpact(impactX, impactY, impactAngle, {
+                            color: color,
+                            size: 0.6
+                        });
+                        
+                        // Destroy projectile (blocked by asteroid)
+                        projectile.destroy();
+                        blockedByAsteroid = true;
+                        break; // Only one asteroid can block per frame
+                    }
+                }
+            }
+            
+            // Skip collision checking if blocked by asteroid
+            if (blockedByAsteroid) {
+                continue;
+            }
 
             // Check collision with ships and asteroids
             for (const entity of this.entities) {
@@ -2302,11 +2383,29 @@ class Engine {
                 const graceTime = (projectile.projectileType === 'beam') ? 0.05 : 0.25;
                 if (projectileAge < graceTime) continue;
 
-                // Check if projectile is close to entity
-                const distance = MathUtils.distance(projectile.x, projectile.y, entity.x, entity.y);
-                const hitRadius = entity.radius || entity.getShipSize?.() || 20;
+                // Check if projectile hits entity
+                // For ships with PNG images, check if hit is within image bounds
+                let hit = false;
+                if (entity.type === 'ship' && entity.hasPNGImage && entity.pngImageWidth && entity.pngImageHeight) {
+                    // Convert projectile position to ship-local coordinates
+                    const dx = projectile.x - entity.x;
+                    const dy = projectile.y - entity.y;
+                    const rad = MathUtils.toRadians(-entity.rotation);
+                    const localX = dx * Math.cos(rad) - dy * Math.sin(rad);
+                    const localY = dx * Math.sin(rad) + dy * Math.cos(rad);
+                    
+                    // Check if within PNG image bounds
+                    const halfWidth = entity.pngImageWidth / 2;
+                    const halfHeight = entity.pngImageHeight / 2;
+                    hit = Math.abs(localX) <= halfWidth && Math.abs(localY) <= halfHeight;
+                } else {
+                    // Fallback to circular hit detection
+                    const distance = MathUtils.distance(projectile.x, projectile.y, entity.x, entity.y);
+                    const hitRadius = entity.radius || entity.getShipSize?.() || 20;
+                    hit = distance <= hitRadius;
+                }
 
-                if (distance <= hitRadius) {
+                if (hit) {
                     // Hit!
                     if (projectile.projectileType === 'beam' || projectile.projectileType === 'disruptor') {
                         // Beam/Disruptor hit - SYSTEM KILLERS (Shields → Single System → Hull overflow)
@@ -2321,9 +2420,8 @@ class Engine {
                             // Shields absorb first (only if shields are active/up)
                             let remainingDamage = projectile.damage;
                             if (entity.shields && !entity.isCloaked() && entity.shields.active) {
-                                const impactAngle = MathUtils.angleBetween(entity.x, entity.y, projectile.x, projectile.y);
                                 const currentTime = performance.now() / 1000;
-                                remainingDamage = entity.shields.applyDamage(entity.rotation, impactAngle, remainingDamage, currentTime);
+                                remainingDamage = entity.shields.applyDamage(remainingDamage, currentTime, entity);
                             }
 
                             // Apply to single nearest system (overflow automatically goes to hull)
@@ -2376,9 +2474,9 @@ class Engine {
 
                             // Shields absorb first
                             let remainingDamage = projectile.damage;
-                            if (entity.shields && !entity.isCloaked()) {
+                            if (entity.shields && !entity.isCloaked() && entity.shields.active) {
                                 const currentTime = performance.now() / 1000;
-                                remainingDamage = entity.shields.applyDamage(entity.rotation, impactAngle, remainingDamage, currentTime);
+                                remainingDamage = entity.shields.applyDamage(remainingDamage, currentTime, entity);
                             }
 
                             // Apply to 2-3 systems (overflow automatically goes to hull)
@@ -2419,10 +2517,14 @@ class Engine {
                         });
                         this.audioManager.playSound('torpedo-explosion');
 
-                        // Break asteroid if hit
+                        // Handle asteroid hit (damage already applied in collision check above)
                         if (entity.type === 'asteroid') {
-                            entity.shouldBreak = true;
-                            entity.breakPosition = { x: entity.x, y: entity.y };
+                            // Asteroid damage is handled in the collision check
+                            // Just mark for breaking if HP <= 0
+                            if (entity.hp <= 0) {
+                                entity.shouldBreak = true;
+                                entity.breakPosition = { x: entity.x, y: entity.y };
+                            }
                         }
 
                         projectile.destroy();
@@ -2452,10 +2554,14 @@ class Engine {
                             }
                         }
 
-                        // Break asteroid if hit
+                        // Handle asteroid hit (damage already applied in collision check above)
                         if (entity.type === 'asteroid') {
-                            entity.shouldBreak = true;
-                            entity.breakPosition = { x: entity.x, y: entity.y };
+                            // Asteroid damage is handled in the collision check
+                            // Just mark for breaking if HP <= 0
+                            if (entity.hp <= 0) {
+                                entity.shouldBreak = true;
+                                entity.breakPosition = { x: entity.x, y: entity.y };
+                            }
                         }
 
                         projectile.destroy();
@@ -2600,25 +2706,107 @@ class Engine {
         this.projectiles = this.projectiles.filter(p => p.active);
     }
 
+    /**
+     * Start plasma charge audio - rising tone
+     */
+    startPlasmaChargeAudio() {
+        try {
+            // Initialize audio context if needed
+            if (!this.plasmaChargeAudioContext) {
+                this.plasmaChargeAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            // Resume audio context if suspended (required after user interaction)
+            if (this.plasmaChargeAudioContext.state === 'suspended') {
+                this.plasmaChargeAudioContext.resume();
+            }
+
+            // Stop any existing oscillator
+            this.stopPlasmaChargeAudio();
+
+            // Create oscillator for rising tone
+            this.plasmaChargeOscillator = this.plasmaChargeAudioContext.createOscillator();
+            this.plasmaChargeGainNode = this.plasmaChargeAudioContext.createGain();
+
+            // Start at low frequency (200 Hz)
+            this.plasmaChargeOscillator.type = 'sine';
+            this.plasmaChargeOscillator.frequency.setValueAtTime(200, this.plasmaChargeAudioContext.currentTime);
+
+            // Set initial volume
+            this.plasmaChargeGainNode.gain.setValueAtTime(0.1, this.plasmaChargeAudioContext.currentTime);
+
+            // Connect nodes
+            this.plasmaChargeOscillator.connect(this.plasmaChargeGainNode);
+            this.plasmaChargeGainNode.connect(this.plasmaChargeAudioContext.destination);
+
+            // Start playing
+            this.plasmaChargeOscillator.start();
+        } catch (error) {
+            // Audio context might not be available (user interaction required)
+            console.warn('Could not start plasma charge audio:', error);
+        }
+    }
+
+    /**
+     * Update plasma charge audio pitch and volume based on charge percentage
+     */
+    updatePlasmaChargeAudio(chargePercent) {
+        if (!this.plasmaChargeOscillator || !this.plasmaChargeGainNode || !this.plasmaChargeAudioContext) {
+            return;
+        }
+
+        try {
+            const currentTime = this.plasmaChargeAudioContext.currentTime;
+            
+            // Frequency rises from 200 Hz to 800 Hz as charge increases
+            // When fully charged (100%), stay at 800 Hz
+            const minFreq = 200;
+            const maxFreq = 800;
+            const frequency = minFreq + (maxFreq - minFreq) * (chargePercent / 100);
+            
+            this.plasmaChargeOscillator.frequency.setValueAtTime(frequency, currentTime);
+            
+            // Volume increases slightly as charge increases (0.1 to 0.3)
+            const minVolume = 0.1;
+            const maxVolume = 0.3;
+            const volume = minVolume + (maxVolume - minVolume) * (chargePercent / 100);
+            
+            this.plasmaChargeGainNode.gain.setValueAtTime(volume, currentTime);
+        } catch (error) {
+            console.warn('Could not update plasma charge audio:', error);
+        }
+    }
+
+    /**
+     * Stop plasma charge audio
+     */
+    stopPlasmaChargeAudio() {
+        try {
+            if (this.plasmaChargeOscillator) {
+                this.plasmaChargeOscillator.stop();
+                this.plasmaChargeOscillator.disconnect();
+                this.plasmaChargeOscillator = null;
+            }
+            if (this.plasmaChargeGainNode) {
+                this.plasmaChargeGainNode.disconnect();
+                this.plasmaChargeGainNode = null;
+            }
+        } catch (error) {
+            // Ignore errors when stopping
+        }
+    }
+
+    /**
+     * Resume audio context if suspended (required after user interaction)
+     */
+    resumeAudioContext() {
+        if (this.plasmaChargeAudioContext && this.plasmaChargeAudioContext.state === 'suspended') {
+            this.plasmaChargeAudioContext.resume();
+        }
+    }
+
     handlePlayerInput(deltaTime) {
         const ship = this.playerShip;
-
-        // Check for tactical warp activation continuously while W is held (double-tap-and-hold)
-        if (this.inputManager.isKeyDown('w') && this.inputManager.wKeyDoubleTapped && 
-            !this.inputManager.tacticalWarpActive && ship && ship.energy) {
-            const currentTime = performance.now() / 1000;
-            // Check if tactical warp should activate
-            const allowedFactions = ['FEDERATION', 'SCINTILIAN', 'TRIGON', 'PIRATE', 'PLAYER'];
-            if (allowedFactions.includes(ship.faction)) {
-                if (currentTime >= ship.tacticalWarpCooldownEnd) {
-                    if (ship.activateTacticalWarp(currentTime)) {
-                        this.inputManager.tacticalWarpActive = true;
-                        this.inputManager.tacticalWarpStartTime = performance.now();
-                        eventBus.emit('tactical-warp-start', { time: this.inputManager.tacticalWarpStartTime });
-                    }
-                }
-            }
-        }
 
         // Movement (A/D for turning)
         // NOTE: W/S throttle adjustment now handled in keydown event listener (setupEventListeners)
@@ -2920,9 +3108,8 @@ class Engine {
     }
 
     render(deltaTime) {
-        // Don't render when paused or in menu - only render when actively playing
-        if (!this.stateManager.isPlaying()) {
-            return; // Don't render game when paused or in menu
+        if (!this.stateManager.isPlaying() && !this.stateManager.isPaused()) {
+            return; // Don't render game when in menu
         }
 
         const renderStart = Date.now();
@@ -3038,6 +3225,11 @@ class Engine {
 
                 // Render particle effects
                 this.particleSystem.render(this.ctx, this.camera);
+
+                // Render tractor beam (if active)
+                if (this.playerShip && this.playerShip.tractorBeam) {
+                    this.playerShip.tractorBeam.render(this.ctx, this.camera);
+                }
 
                 this.ctx.restore();
 
@@ -3203,6 +3395,16 @@ class Engine {
                     physicsWorld: this.physicsWorld
                 });
 
+                // Activate shields for enemy ships (they start with shields up)
+                if (enemyShip.shields) {
+                    enemyShip.shields.active = true;
+                }
+                
+                // Activate shields for enemy ships (they start with shields up)
+                if (enemyShip.shields) {
+                    enemyShip.shields.active = true;
+                }
+                
                 // Set cloak state if specified
                 if (config.cloaked && enemyShip.systems?.cloak) {
                     enemyShip.systems.cloak.activate();
@@ -3464,12 +3666,6 @@ class Engine {
     showLibrary() {
         if (this.librarySystem) {
             this.librarySystem.showLibrary();
-        }
-    }
-
-    showOptions() {
-        if (this.optionsSystem) {
-            this.optionsSystem.showOptions();
         }
     }
 

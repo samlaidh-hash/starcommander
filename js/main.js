@@ -21,20 +21,11 @@ window.addEventListener('DOMContentLoaded', () => {
         reticle.appendChild(rightLine);
     }
 
+    // Initialize AssetManager
+    window.assetManager = new AssetManager();
+
     // Create game engine
     const engine = new Engine();
-
-    // Preload ship images and weapon loadouts
-    Promise.all([
-        window.assetManager ? window.assetManager.preloadAllShips().catch(err => {
-            console.warn('⚠️ Some ship images failed to preload:', err);
-        }) : Promise.resolve(),
-        window.weaponLoadoutManager ? window.weaponLoadoutManager.preloadAllLoadouts().catch(err => {
-            console.warn('⚠️ Some weapon loadouts failed to preload:', err);
-        }) : Promise.resolve()
-    ]).then(() => {
-        console.log('✅ All ship images and weapon loadouts preloaded');
-    });
 
     // Start the game loop (menu will be shown first)
     engine.start();

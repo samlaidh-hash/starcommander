@@ -37,7 +37,7 @@ class TractorBeamSystem {
 
             // Play tractor beam sound
             if (window.audioManager) {
-                window.audioManager.playSound('tractor_beam');
+                window.audioManager.playSound('tractor-beam');
             }
 
             console.log(`Tractor beam activated on ${this.currentTarget.name || this.currentTarget.faction}`);

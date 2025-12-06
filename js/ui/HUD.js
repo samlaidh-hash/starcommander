@@ -28,6 +28,10 @@ class HUD {
         // Toggle panel visibility on button click
         toggleButton.addEventListener('click', () => {
             panel.classList.toggle('show');
+            // Update commands when panel is opened
+            if (panel.classList.contains('show')) {
+                this.updateKeyboardPanel();
+            }
         });
 
         // Close panel when clicking outside (optional enhancement)
@@ -37,6 +41,209 @@ class HUD {
                 panel.classList.remove('show');
             }
         });
+    }
+
+    /**
+     * Update keyboard panel with commands relevant to player ship
+     */
+    updateKeyboardPanel() {
+        const commandsContainer = document.getElementById('keyboard-panel-commands');
+        if (!commandsContainer || !this.playerShip) return;
+
+        const ship = this.playerShip;
+        const commands = [];
+
+        // Movement (always available)
+        commands.push({
+            category: 'Movement',
+            items: [
+                { key: 'W', desc: 'Thrust Forward' },
+                { key: 'S', desc: 'Thrust Reverse' },
+                { key: 'A', desc: 'Turn Left' },
+                { key: 'D', desc: 'Turn Right' },
+                { key: 'X', desc: 'Full Stop' },
+                { key: 'Double W/A/S/D', desc: 'Boost' }
+            ]
+        });
+
+        // Tactical Warp (Federation, Scintilian, Trigon, Pirate)
+        const allowedFactions = ['FEDERATION', 'SCINTILIAN', 'TRIGON', 'PIRATE', 'PLAYER'];
+        if (allowedFactions.includes(ship.faction)) {
+            commands[commands.length - 1].items.push({
+                key: 'Double-tap & Hold W',
+                desc: 'Tactical Warp'
+            });
+        }
+
+        // Weapons
+        const weaponCommands = [];
+        const hasBeams = ship.weapons && ship.weapons.some(w => 
+            w instanceof BeamWeapon || w instanceof PulseBeam || w instanceof Disruptor || w instanceof ContinuousBeam
+        );
+        const hasTorpedoes = ship.weapons && ship.weapons.some(w => 
+            w instanceof TorpedoLauncher || w instanceof DualTorpedoLauncher || w instanceof PlasmaTorpedo
+        );
+
+        if (hasBeams) {
+            if (ship.faction === 'SCINTILIAN') {
+                weaponCommands.push({ key: 'LMB Hold', desc: 'Fire Pulse Beams' });
+            } else if (ship.faction === 'TRIGON') {
+                weaponCommands.push({ key: 'LMB Hold', desc: 'Fire Disruptors' });
+            } else {
+                weaponCommands.push({ key: 'LMB Hold', desc: 'Fire Beams' });
+            }
+        }
+
+        if (hasTorpedoes) {
+            if (ship.faction === 'SCINTILIAN') {
+                weaponCommands.push({ key: 'RMB Hold', desc: 'Charge/Fire Plasma Torpedo' });
+            } else {
+                weaponCommands.push({ key: 'RMB Hold', desc: 'Fire Torpedo' });
+            }
+        }
+
+        // Cycle torpedo type (only if has multiple torpedo types available)
+        if (hasTorpedoes && ship.selectedTorpedoType !== undefined && ship.torpedoTypes && ship.torpedoTypes.length > 1) {
+            weaponCommands.push({ key: 'R', desc: 'Cycle Torpedo Type' });
+        }
+
+        // Target selection (lock-on is automatic based on reticle position)
+        weaponCommands.push({ key: 'TAB', desc: 'Cycle Target Selection' });
+
+        if (weaponCommands.length > 0) {
+            commands.push({ category: 'Weapons', items: weaponCommands });
+        }
+
+        // Defenses
+        const defenseCommands = [];
+        if (ship.deployDecoy) {
+            defenseCommands.push({ key: 'C', desc: 'Deploy Decoy' });
+        }
+        if (ship.deployMine) {
+            defenseCommands.push({ key: 'M', desc: 'Deploy Standard Mine' });
+            defenseCommands.push({ key: 'Shift+M', desc: 'Deploy Captor Mine' });
+            defenseCommands.push({ key: 'Alt+M', desc: 'Deploy Phaser Mine' });
+            defenseCommands.push({ key: 'Ctrl+M', desc: 'Deploy Transporter Mine' });
+        }
+        if (ship.deployInterceptor) {
+            defenseCommands.push({ key: 'I', desc: 'Launch Interceptor' });
+        }
+
+        if (defenseCommands.length > 0) {
+            commands.push({ category: 'Defenses', items: defenseCommands });
+        }
+
+        // Consumables (check if ship has consumables system and quantities > 0)
+        if (ship.consumables) {
+            const consumableCommands = [];
+            const consumables = ship.consumables.getLoadout ? ship.consumables.getLoadout() : {};
+            
+            // Only show consumables that are actually available (quantity > 0)
+            if (consumables.extraTorpedoes && consumables.extraTorpedoes > 0) {
+                consumableCommands.push({ key: '1', desc: 'Extra Torpedoes (+10)' });
+            }
+            if (consumables.extraDecoys && consumables.extraDecoys > 0) {
+                consumableCommands.push({ key: '2', desc: 'Extra Decoys (+3)' });
+            }
+            if (consumables.extraMines && consumables.extraMines > 0) {
+                consumableCommands.push({ key: '3', desc: 'Extra Mines (+3)' });
+            }
+            if (consumables.shieldBoost && consumables.shieldBoost > 0) {
+                consumableCommands.push({ key: '4', desc: 'Shield Boost (+20%)' });
+            }
+            if (consumables.hullRepairKit && consumables.hullRepairKit > 0) {
+                consumableCommands.push({ key: '5', desc: 'Hull Repair Kit (+50 HP)' });
+            }
+            if (consumables.energyCells && consumables.energyCells > 0) {
+                consumableCommands.push({ key: '6', desc: 'Energy Cells (+20% dmg)' });
+            }
+
+            if (consumableCommands.length > 0) {
+                commands.push({ category: 'Consumables', items: consumableCommands });
+            }
+        }
+
+        // Advanced Systems
+        const advancedCommands = [];
+        // Tractor beam is on ship.tractorBeam, not ship.systems.tractorBeam
+        if (ship.tractorBeam) {
+            advancedCommands.push({ key: 'Q', desc: 'Tractor Beam (Hold)' });
+        }
+        if (ship.systems && ship.systems.transporter) {
+            advancedCommands.push({ key: 'T', desc: 'Transporter' });
+        }
+        
+        // Check bay system for fighters/bombers - only show if ship has bay system and can launch
+        const baySystem = window.game && window.game.baySystem ? window.game.baySystem : null;
+        if (baySystem && ship.systems && ship.systems.bay) {
+            // Check default loadout to see if ship class typically has fighters/bombers
+            const faction = ship.faction || 'FEDERATION';
+            const shipClass = ship.shipClass || 'CA';
+            const defaultLoadout = baySystem.defaultLoadouts && baySystem.defaultLoadouts[faction] && 
+                                  baySystem.defaultLoadouts[faction][shipClass];
+            
+            // Show fighter launch if ship has fighters in default loadout or can launch fighters
+            const hasFightersInLoadout = defaultLoadout && defaultLoadout.fighters > 0;
+            const canLaunchFighter = baySystem.canLaunchFighter && typeof baySystem.canLaunchFighter === 'function' && baySystem.canLaunchFighter();
+            
+            if (hasFightersInLoadout || canLaunchFighter) {
+                advancedCommands.push({ key: '7', desc: 'Launch Fighter' });
+            }
+            
+            // Show bomber launch if ship has bombers in default loadout or can launch bombers
+            const hasBombersInLoadout = defaultLoadout && defaultLoadout.bombers > 0;
+            const canLaunchBomber = baySystem.canLaunchBomber && typeof baySystem.canLaunchBomber === 'function' && baySystem.canLaunchBomber();
+            
+            if (hasBombersInLoadout || canLaunchBomber) {
+                advancedCommands.push({ key: '8', desc: 'Launch Bomber' });
+            }
+        }
+        
+        if (ship.systems && ship.systems.warp) {
+            advancedCommands.push({ key: 'Space', desc: 'Warp Out' });
+        }
+
+        if (advancedCommands.length > 0) {
+            commands.push({ category: 'Advanced Systems', items: advancedCommands });
+        }
+
+        // Faction Abilities
+        const factionCommands = [];
+        if (ship.faction === 'DHOJAN' && ship.quantumDrive) {
+            factionCommands.push({ key: 'G', desc: 'Quantum Drive' });
+        }
+        if (ship.systems && ship.systems.cloak) {
+            factionCommands.push({ key: 'K', desc: 'Toggle Cloak' });
+        }
+        if (ship.faction === 'ANDROMEDAN' && ship.advancedSystems && ship.advancedSystems.phaseShift) {
+            factionCommands.push({ key: 'P', desc: 'Phase Shift' });
+        }
+
+        if (factionCommands.length > 0) {
+            commands.push({ category: 'Faction Abilities', items: factionCommands });
+        }
+
+        // System Controls (always available)
+        commands.push({
+            category: 'System Controls',
+            items: [
+                { key: 'ESC', desc: 'Pause Menu' },
+                { key: 'Mouse Wheel', desc: 'Zoom In/Out' }
+            ]
+        });
+
+        // Generate HTML
+        let html = '';
+        for (const section of commands) {
+            html += `<div class="controls-section">`;
+            html += `<div class="control-category">${section.category}</div>`;
+            for (const item of section.items) {
+                html += `<div class="control-line"><span class="key">${item.key}</span> ${item.desc}</div>`;
+            }
+            html += `</div>`;
+        }
+
+        commandsContainer.innerHTML = html;
     }
 
     update(playerShip, entities = [], selectedTarget = null) {
@@ -49,6 +256,10 @@ class HUD {
         this.playerShip = playerShip; // Store reference for updateTargetInfo distance calc
 
         this.updateShipHeader(playerShip);
+
+        // Update keyboard panel (always update when ship changes, not just when visible)
+        // This ensures panel shows correct commands when opened
+        this.updateKeyboardPanel();
 
         // Update shields
         this.updateShields(playerShip);
@@ -68,6 +279,9 @@ class HUD {
 
         // Update warp charge
         this.updateWarpCharge(playerShip);
+
+        // Update plasma charge (Scintilian)
+        this.updatePlasmaCharge(playerShip);
 
         // Update boost status
         this.updateBoostStatus(playerShip);
@@ -162,13 +376,19 @@ class HUD {
             const block = blockData[i];
             const blockElement = document.createElement('div');
             blockElement.className = 'energy-block';
+            
+            // Calculate percentages
+            const capacityPercent = (block.currentLength / block.maxLength) * 100; // Current capacity vs max
+            const energyPercent = block.currentLength > 0 ? (block.energy / block.currentLength) * 100 : 0; // Energy vs current capacity
+            const damagePercent = 100 - capacityPercent; // Damaged portion
+            
             blockElement.innerHTML = `
                 <div class="energy-block-label">Block ${i + 1}</div>
                 <div class="energy-block-bar">
-                    <div class="energy-block-fill" style="width: ${block.energyPercent * 100}%"></div>
-                    <div class="energy-block-capacity" style="width: ${(block.currentLength / block.maxLength) * 100}%"></div>
+                    <div class="energy-block-damage" style="width: ${damagePercent}%"></div>
+                    <div class="energy-block-fill" style="width: ${energyPercent}%"></div>
                 </div>
-                <div class="energy-block-info">${Math.round(block.energy)}/${Math.round(block.currentLength)}</div>
+                <div class="energy-block-info">${Math.round(block.energy)}/${Math.round(block.currentLength)} (max: ${Math.round(block.maxLength)})</div>
             `;
             container.appendChild(blockElement);
         }
@@ -239,7 +459,7 @@ class HUD {
             const bomberCountElement = document.getElementById('bomber-count');
             const bomberMaxElement = document.getElementById('bomber-max');
             const baySpaceElement = document.getElementById('bay-space');
-            const bayMaxElement = document.getElementById('bay-max');
+            const bayMaxElement = document.getElementById('bay-max-hud');
 
             if (shuttleCountElement) shuttleCountElement.textContent = baySystem.launchedShuttles.filter(s => s.active).length;
             if (fighterCountElement) fighterCountElement.textContent = baySystem.launchedFighters.filter(f => f.active).length;
@@ -299,6 +519,48 @@ class HUD {
 
         const warpCharge = ship.systems.warp.warpCharge || 0;
         fillElement.style.width = `${warpCharge}%`;
+    }
+
+    updatePlasmaCharge(ship) {
+        const groupElement = document.getElementById('plasma-charge-group');
+        const fillElement = document.getElementById('plasma-charge-fill');
+        const textElement = document.getElementById('plasma-charge-text');
+        
+        if (!groupElement || !fillElement || !textElement) return;
+
+        // Only show for Scintilian ships
+        if (ship.faction !== 'SCINTILIAN') {
+            groupElement.style.display = 'none';
+            return;
+        }
+
+        // Check if charging (get from engine)
+        const engine = window.game;
+        if (!engine || !engine.torpedoCharging) {
+            groupElement.style.display = 'none';
+            return;
+        }
+
+        // Show and update charge display
+        groupElement.style.display = 'block';
+        
+        const currentTime = performance.now() / 1000;
+        const chargeTime = currentTime - engine.plasmaChargeStart;
+        const maxChargeTime = CONFIG.PLASMA_MAX_CHARGE_TIME || 5;
+        const chargePercent = Math.min(100, (chargeTime / maxChargeTime) * 100);
+        
+        fillElement.style.width = `${chargePercent}%`;
+        
+        // Update text with damage potential
+        const chargeDamage = engine.plasmaChargeDamage || 0;
+        textElement.textContent = `${Math.round(chargeDamage)} DP`;
+        
+        // Add pulsing effect when fully charged
+        if (chargePercent >= 100) {
+            fillElement.style.animation = 'pulse-glow 0.5s ease-in-out infinite';
+        } else {
+            fillElement.style.animation = 'none';
+        }
     }
 
     updateBoostStatus(ship) {

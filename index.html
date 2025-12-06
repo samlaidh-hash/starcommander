@@ -136,7 +136,7 @@
                 <div class="inventory-line">Shuttles: <span id="shuttle-count">0</span>/<span id="shuttle-max">6</span></div>
                 <div class="inventory-line">Fighters: <span id="fighter-count">0</span>/<span id="fighter-max">4</span></div>
                 <div class="inventory-line">Bombers: <span id="bomber-count">0</span>/<span id="bomber-max">2</span></div>
-                <div class="inventory-line">Bay: <span id="bay-space">0</span>/<span id="bay-max">8</span></div>
+                <div class="inventory-line">Bay: <span id="bay-space">0</span>/<span id="bay-max-hud">8</span></div>
                 <div class="inventory-line">Torp: <span id="torpedo-storage">16</span> [<span id="torpedo-type">STD</span>]</div>
             </div>
 
@@ -152,6 +152,15 @@
                 <div id="warp-charge-bar">
                     <div id="warp-charge-fill"></div>
                 </div>
+            </div>
+
+            <!-- Plasma Charge (Scintilian) -->
+            <div class="system-group" id="plasma-charge-group" style="display: none;">
+                <div class="system-label">Plasma Charge</div>
+                <div id="plasma-charge-bar">
+                    <div id="plasma-charge-fill"></div>
+                </div>
+                <div id="plasma-charge-text" style="text-align: center; color: #00ff88; font-size: 11px; margin-top: 2px;">0 DP</div>
             </div>
 
             <!-- Boost Status -->
@@ -272,78 +281,10 @@
                 <span class="toggle-icon">?</span>
             </div>
 
-            <!-- Panel content (slides in from right) -->
+            <!-- Panel content (slides in from right) - Dynamically populated -->
             <div class="keyboard-panel-content">
-                <div class="panel-header">Keyboard Reference</div>
-
-                <!-- Movement -->
-                <div class="controls-section">
-                    <div class="control-category">Movement</div>
-                    <div class="control-line"><span class="key">W</span> Thrust Forward</div>
-                    <div class="control-line"><span class="key">S</span> Thrust Reverse</div>
-                    <div class="control-line"><span class="key">A</span> Turn Left</div>
-                    <div class="control-line"><span class="key">D</span> Turn Right</div>
-                    <div class="control-line"><span class="key">X</span> Full Stop</div>
-                    <div class="control-line"><span class="key">Double W/A/S/D</span> Boost</div>
-                    <div class="control-line"><span class="key">Double-tap & Hold W</span> Tactical Warp (Fed/Scint/Trigon/Pirate)</div>
-                </div>
-
-                <!-- Weapons -->
-                <div class="controls-section">
-                    <div class="control-category">Weapons</div>
-                    <div class="control-line"><span class="key">LMB Hold</span> Fire Beams</div>
-                    <div class="control-line"><span class="key">RMB Hold</span> Charge/Fire Torpedo</div>
-                    <div class="control-line"><span class="key">R</span> Cycle Torpedo Type</div>
-                    <div class="control-line"><span class="key">F</span> Toggle Lock Target</div>
-                    <div class="control-line"><span class="key">TAB</span> Cycle Target Selection</div>
-                </div>
-
-                <!-- Defenses -->
-                <div class="controls-section">
-                    <div class="control-category">Defenses</div>
-                    <div class="control-line"><span class="key">C</span> Deploy Decoy</div>
-                    <div class="control-line"><span class="key">M</span> Deploy Standard Mine</div>
-                    <div class="control-line"><span class="key">Shift+M</span> Deploy Captor Mine</div>
-                    <div class="control-line"><span class="key">Alt+M</span> Deploy Phaser Mine</div>
-                    <div class="control-line"><span class="key">Ctrl+M</span> Deploy Transporter Mine</div>
-                    <div class="control-line"><span class="key">I</span> Launch Interceptor</div>
-                </div>
-
-                <!-- Consumables -->
-                <div class="controls-section">
-                    <div class="control-category">Consumables</div>
-                    <div class="control-line"><span class="key">1</span> Extra Torpedoes (+10)</div>
-                    <div class="control-line"><span class="key">2</span> Extra Decoys (+3)</div>
-                    <div class="control-line"><span class="key">3</span> Extra Mines (+3)</div>
-                    <div class="control-line"><span class="key">4</span> Shield Boost (+20%)</div>
-                    <div class="control-line"><span class="key">5</span> Hull Repair Kit (+50 HP)</div>
-                    <div class="control-line"><span class="key">6</span> Energy Cells (+20% dmg)</div>
-                </div>
-
-                <!-- Advanced Systems -->
-                <div class="controls-section">
-                    <div class="control-category">Advanced Systems</div>
-                    <div class="control-line"><span class="key">Q</span> Tractor Beam</div>
-                    <div class="control-line"><span class="key">T</span> Transporter</div>
-                    <div class="control-line"><span class="key">7</span> Launch Fighter</div>
-                    <div class="control-line"><span class="key">8</span> Launch Bomber</div>
-                    <div class="control-line"><span class="key">Space</span> Warp Out</div>
-                </div>
-
-                <!-- Faction Abilities -->
-                <div class="controls-section">
-                    <div class="control-category">Faction Abilities</div>
-                    <div class="control-line"><span class="key">G</span> Quantum Drive (Dhojan)</div>
-                    <div class="control-line"><span class="key">K</span> Toggle Cloak (Andromedan)</div>
-                    <div class="control-line"><span class="key">P</span> Phase Shift (Andromedan)</div>
-                </div>
-
-                <!-- System Controls -->
-                <div class="controls-section">
-                    <div class="control-category">System Controls</div>
-                    <div class="control-line"><span class="key">ESC</span> Pause Menu</div>
-                    <div class="control-line"><span class="key">Mouse Wheel</span> Zoom In/Out</div>
-                </div>
+                <div class="panel-header">Ship Controls</div>
+                <div id="keyboard-panel-commands"></div>
             </div>
         </div>
     </div>
@@ -428,7 +369,7 @@
                                 <strong>Current Loadout:</strong> <span id="loadout-summary-text">None selected</span>
                             </div>
                             <div id="bay-capacity">
-                                Bay Capacity: <span id="bay-used">0</span> / <span id="bay-max">10</span>
+                                Bay Capacity: <span id="bay-used">0</span> / <span id="bay-max-loadout">8</span>
                             </div>
                             
                             <div class="default-loadout">
@@ -604,88 +545,6 @@
         </div>
     </div>
 
-    <!-- Options Screen -->
-    <div id="options-screen" class="menu-screen hidden">
-        <div class="options-container">
-            <div class="options-header">
-                <h2>OPTIONS</h2>
-                <button id="btn-options-close" class="library-close-btn">×</button>
-            </div>
-            <div class="options-content">
-                <div class="options-section">
-                    <h3>AUDIO</h3>
-                    <div class="options-item">
-                        <label>Master Volume</label>
-                        <input type="range" id="master-volume" min="0" max="100" value="100">
-                        <span id="master-volume-value">100%</span>
-                    </div>
-                    <div class="options-item">
-                        <label>Sound Effects</label>
-                        <input type="range" id="sfx-volume" min="0" max="100" value="100">
-                        <span id="sfx-volume-value">100%</span>
-                    </div>
-                    <div class="options-item">
-                        <label>Music</label>
-                        <input type="range" id="music-volume" min="0" max="100" value="100">
-                        <span id="music-volume-value">100%</span>
-                    </div>
-                </div>
-                <div class="options-section">
-                    <h3>GRAPHICS</h3>
-                    <div class="options-item">
-                        <label>Target FPS</label>
-                        <select id="target-fps">
-                            <option value="30" selected>30 FPS</option>
-                            <option value="60">60 FPS</option>
-                        </select>
-                    </div>
-                    <div class="options-item">
-                        <label>Particle Effects</label>
-                        <input type="checkbox" id="particles-enabled" checked>
-                    </div>
-                    <div class="options-item">
-                        <label>Performance Mode</label>
-                        <input type="checkbox" id="performance-mode">
-                        <span class="option-hint">Simplified rendering for better performance</span>
-                    </div>
-                </div>
-                <div class="options-section">
-                    <h3>CONTROLS</h3>
-                    <div class="options-item">
-                        <label>Mouse Sensitivity</label>
-                        <input type="range" id="mouse-sensitivity" min="0.5" max="2" step="0.1" value="1">
-                        <span id="mouse-sensitivity-value">1.0</span>
-                    </div>
-                    <div class="options-item">
-                        <label>Invert Mouse Y</label>
-                        <input type="checkbox" id="invert-mouse-y">
-                    </div>
-                </div>
-                <div class="options-section">
-                    <h3>GAMEPLAY</h3>
-                    <div class="options-item">
-                        <label>Auto-Save</label>
-                        <input type="checkbox" id="auto-save" checked>
-                        <span class="option-hint">Automatically save progress</span>
-                    </div>
-                    <div class="options-item">
-                        <label>Show Tutorial</label>
-                        <input type="checkbox" id="show-tutorial" checked>
-                    </div>
-                    <div class="options-item">
-                        <label>Debug Mode</label>
-                        <input type="checkbox" id="debug-mode">
-                        <span class="option-hint">Show debug information</span>
-                    </div>
-                </div>
-                <div class="options-footer">
-                    <button id="btn-options-reset" class="options-btn secondary">Reset to Defaults</button>
-                    <button id="btn-options-save" class="options-btn">Save & Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Library Screen -->
     <div id="library-screen" class="menu-screen hidden">
         <div class="library-container">
@@ -695,7 +554,6 @@
             </div>
             <div class="library-content">
                 <div class="library-sidebar">
-                    <div class="library-section-header">FACTIONS</div>
                     <div class="faction-tab active" data-faction="federation">FEDERATION</div>
                     <div class="faction-tab" data-faction="trigon">TRIGON</div>
                     <div class="faction-tab" data-faction="scintilian">SCINTILIAN</div>
@@ -703,10 +561,6 @@
                     <div class="faction-tab" data-faction="commonwealth">COMMONWEALTH</div>
                     <div class="faction-tab" data-faction="andromedan">ANDROMEDAN</div>
                     <div class="faction-tab" data-faction="pirate">PIRATE</div>
-                    <div class="library-section-header">SYSTEMS</div>
-                    <div class="faction-tab" data-faction="ship-systems">SHIP SYSTEMS</div>
-                    <div class="faction-tab" data-faction="weapons">WEAPONS</div>
-                    <div class="faction-tab" data-faction="consumables">CONSUMABLES</div>
                 </div>
                 <div class="library-main">
                     <div id="library-faction-content"></div>
@@ -725,7 +579,6 @@
     <script src="js/utils/MathUtils.js"></script>
     <script src="js/core/EventBus.js"></script>
     <script src="js/core/AssetManager.js"></script>
-    <script src="js/core/WeaponLoadoutManager.js"></script>
     <script src="js/core/InputManager.js"></script>
     <script src="js/core/Camera.js"></script>
     <script src="js/core/StateManager.js"></script>
@@ -791,7 +644,6 @@
     <script src="js/systems/ProgressionManager.js"></script>
     <script src="js/systems/AudioManager.js"></script>
     <script src="js/systems/LibrarySystem.js"></script>
-    <script src="js/systems/OptionsSystem.js"></script>
 
     <!-- Entities -->
     <script src="js/entities/Entity.js"></script>

@@ -43,6 +43,9 @@ class Asteroid extends Entity {
         // Breaking
         this.shouldBreak = false;
         this.breakPosition = null;
+        
+        // Visual damage tracking
+        this.damageFlashAlpha = 0; // Flash when hit
     }
 
     getRadius() {
@@ -94,12 +97,28 @@ class Asteroid extends Entity {
     }
 
     update(deltaTime) {
+        // Ensure velocity persists (in case it was reset)
+        const currentVel = this.physicsComponent.getVelocity();
+        const speed = Math.sqrt(currentVel.x * currentVel.x + currentVel.y * currentVel.y);
+        if (speed < 0.1) {
+            // Velocity was lost, restore it
+            const targetSpeed = this.getSpeed();
+            const angle = MathUtils.random(0, 360);
+            const vec = MathUtils.vectorFromAngle(angle, targetSpeed);
+            this.physicsComponent.setVelocity(vec.x, vec.y);
+        }
+
         // Sync position from physics
         this.physicsComponent.syncToEntity();
 
         // Rotate asteroid
         this.rotation += this.rotationSpeed * deltaTime;
         this.rotation = MathUtils.normalizeAngle(this.rotation);
+        
+        // Fade damage flash
+        if (this.damageFlashAlpha > 0) {
+            this.damageFlashAlpha = Math.max(0, this.damageFlashAlpha - deltaTime * 2); // Fade over 0.4 seconds
+        }
     }
 
     /**
@@ -110,6 +129,9 @@ class Asteroid extends Entity {
      */
     takeDamage(damage, impactPoint) {
         this.hp -= damage;
+        
+        // Visual damage flash
+        this.damageFlashAlpha = 0.8;
 
         if (this.hp <= 0) {
             this.breakPosition = impactPoint || { x: this.x, y: this.y };
@@ -117,6 +139,13 @@ class Asteroid extends Entity {
         }
 
         return null;
+    }
+    
+    /**
+     * Get damage percentage (0-1) for visual feedback
+     */
+    getDamagePercent() {
+        return this.maxHp > 0 ? 1 - (this.hp / this.maxHp) : 0;
     }
 
     /**

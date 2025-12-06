@@ -46,8 +46,16 @@ class BeamProjectile extends Projectile {
     }
 
     update(deltaTime) {
+        // Update last position BEFORE moving (for obstacle path checking)
+        this.lastX = this.x;
+        this.lastY = this.y;
+        
         // Move the beam
         this.transform.updatePosition(deltaTime);
+        
+        // Sync transform position to entity position
+        this.x = this.transform.x;
+        this.y = this.transform.y;
 
         // Call parent for lifetime check
         super.update(deltaTime);
