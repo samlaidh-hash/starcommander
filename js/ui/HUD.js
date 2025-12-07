@@ -306,6 +306,48 @@ class HUD {
         fillElement.style.width = `${warpCharge}%`;
     }
 
+    updatePlasmaCharge(ship) {
+        const groupElement = document.getElementById('plasma-charge-group');
+        const fillElement = document.getElementById('plasma-charge-fill');
+        const textElement = document.getElementById('plasma-charge-text');
+        
+        if (!groupElement || !fillElement || !textElement) return;
+
+        // Only show for Scintilian ships
+        if (ship.faction !== 'SCINTILIAN') {
+            groupElement.style.display = 'none';
+            return;
+        }
+
+        // Check if charging (get from engine)
+        const engine = window.game;
+        if (!engine || !engine.torpedoCharging) {
+            groupElement.style.display = 'none';
+            return;
+        }
+
+        // Show and update charge display
+        groupElement.style.display = 'block';
+        
+        const currentTime = performance.now() / 1000;
+        const chargeTime = currentTime - engine.plasmaChargeStart;
+        const maxChargeTime = CONFIG.PLASMA_MAX_CHARGE_TIME || 5;
+        const chargePercent = Math.min(100, (chargeTime / maxChargeTime) * 100);
+        
+        fillElement.style.width = `${chargePercent}%`;
+        
+        // Update text with damage potential
+        const chargeDamage = engine.plasmaChargeDamage || 0;
+        textElement.textContent = `${Math.round(chargeDamage)} DP`;
+        
+        // Add pulsing effect when fully charged
+        if (chargePercent >= 100) {
+            fillElement.style.animation = 'pulse-glow 0.5s ease-in-out infinite';
+        } else {
+            fillElement.style.animation = 'none';
+        }
+    }
+
     updateBoostStatus(ship) {
         if (!ship) return;
 

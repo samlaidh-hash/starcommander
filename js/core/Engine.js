@@ -2855,7 +2855,17 @@ class Engine {
     }
 
     render(deltaTime) {
+        // Allow rendering when PLAYING or PAUSED
+        // Also allow rendering when BRIEFING is closed but state hasn't updated yet
+        const currentState = this.stateManager.getState();
+        const briefingScreen = document.getElementById('briefing-screen');
+        const briefingVisible = briefingScreen && !briefingScreen.classList.contains('hidden');
+        
         if (!this.stateManager.isPlaying() && !this.stateManager.isPaused()) {
+            // Don't render if briefing screen is visible
+            if (briefingVisible || currentState === 'BRIEFING') {
+                return; // Don't render game when briefing is open
+            }
             return; // Don't render game when in menu
         }
 
@@ -2960,6 +2970,10 @@ class Engine {
                 const warpProgress = this.warpingOut ? (this.warpSequenceTime / this.warpSequenceDuration) : 0;
 
                 // Render game world
+                // Debug: Log entity count and player position on first few frames
+                if (this.updateCounter <= 5) {
+                    console.log(`🎨 Rendering: ${this.entities.length} entities, Player: (${Math.round(this.playerShip?.x || 0)}, ${Math.round(this.playerShip?.y || 0)}), Camera: (${Math.round(this.camera.x)}, ${Math.round(this.camera.y)})`);
+                }
                 this.renderer.render(this.entities, warpProgress);
 
                 // Render ping wave effect (if active)
@@ -3098,6 +3112,9 @@ class Engine {
             this.hud.showObjectives();
             this.hud.addCriticalMessage(`Mission Started: ${mission.title}`);
             console.log('✅ Mission start complete!');
+
+            // Ensure game state is PLAYING after mission starts
+            this.stateManager.setState('PLAYING');
 
         } catch (error) {
             console.error('❌ CRITICAL ERROR in startMission:', error);
