@@ -523,7 +523,12 @@ class LibrarySystem {
 
     showLibrary() {
         const libraryScreen = document.getElementById('library-screen');
+        const mainMenu = document.getElementById('main-menu');
         if (libraryScreen) {
+            // Hide main menu and show library
+            if (mainMenu) {
+                mainMenu.classList.add('hidden');
+            }
             libraryScreen.classList.remove('hidden');
             // Show first faction by default
             this.showFaction('federation');
@@ -532,8 +537,13 @@ class LibrarySystem {
 
     hideLibrary() {
         const libraryScreen = document.getElementById('library-screen');
+        const mainMenu = document.getElementById('main-menu');
         if (libraryScreen) {
             libraryScreen.classList.add('hidden');
+            // Show main menu again when closing library
+            if (mainMenu) {
+                mainMenu.classList.remove('hidden');
+            }
         }
     }
 }

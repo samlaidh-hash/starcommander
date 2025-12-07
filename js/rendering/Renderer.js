@@ -42,8 +42,10 @@ class Renderer {
             console.warn('Renderer: No entities to render');
             return;
         }
+        let renderedCount = 0;
         for (const entity of entities) {
             if (!entity.active) continue;
+            renderedCount++;
 
             switch (entity.type) {
                 case 'ship':
@@ -69,6 +71,10 @@ class Renderer {
                     }
                     break;
             }
+        }
+        // Debug: Log rendering stats on first few frames
+        if (window.game && window.game.updateCounter <= 10) {
+            console.log(`🎨 Renderer.renderEntities: ${renderedCount}/${entities.length} entities rendered`);
         }
     }
 

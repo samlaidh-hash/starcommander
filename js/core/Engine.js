@@ -919,12 +919,22 @@ class Engine {
         };
 
         const highlightSelection = () => this.highlightShipSelectionPanel();
+        const showOptions = () => {
+            // For now, just highlight the ship selection panel
+            // TODO: Create a proper options screen for game settings
+            this.highlightShipSelectionPanel();
+            // Also scroll to ship selection if needed
+            const panel = document.getElementById('ship-selection-panel');
+            if (panel) {
+                panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        };
 
         // Main menu
         bindClick('btn-new-game', () => this.startNewGame());
         bindClick('btn-load-game', () => this.loadSavedGame());
         bindClick('btn-library', () => this.showLibrary());
-        bindClick('btn-options', highlightSelection);
+        bindClick('btn-options', showOptions);
 
         // Pause menu
         bindClick('btn-resume', () => this.stateManager.setState('PLAYING'));
@@ -2971,8 +2981,11 @@ class Engine {
 
                 // Render game world
                 // Debug: Log entity count and player position on first few frames
-                if (this.updateCounter <= 5) {
-                    console.log(`🎨 Rendering: ${this.entities.length} entities, Player: (${Math.round(this.playerShip?.x || 0)}, ${Math.round(this.playerShip?.y || 0)}), Camera: (${Math.round(this.camera.x)}, ${Math.round(this.camera.y)})`);
+                if (this.updateCounter <= 10) {
+                    console.log(`🎨 Rendering Frame ${this.updateCounter}: ${this.entities.length} entities, Player: (${Math.round(this.playerShip?.x || 0)}, ${Math.round(this.playerShip?.y || 0)}), Camera: (${Math.round(this.camera.x)}, ${Math.round(this.camera.y)}), State: ${this.stateManager.getState()}`);
+                    if (this.entities.length > 0) {
+                        console.log(`   Entities:`, this.entities.map(e => `${e.type}@(${Math.round(e.x)},${Math.round(e.y)})`).join(', '));
+                    }
                 }
                 this.renderer.render(this.entities, warpProgress);
 

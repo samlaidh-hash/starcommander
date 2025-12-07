@@ -82,7 +82,9 @@ class HUD {
         this.updatePingStatus();
 
         // Update plasma charge (Scintilian ships only)
-        this.updatePlasmaCharge(playerShip);
+        if (typeof this.updatePlasmaCharge === 'function') {
+            this.updatePlasmaCharge(playerShip);
+        }
 
         // Update speed bar
         this.updateSpeedBar(playerShip);
