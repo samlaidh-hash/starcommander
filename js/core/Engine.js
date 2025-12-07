@@ -452,29 +452,63 @@ class Engine {
                 }
             }
 
-            // NEW THROTTLE SYSTEM - W/S adjust throttle in 10% increments (single press only)
+            // NEW THROTTLE SYSTEM - W/S move caret left/right on speed bar
+            // NOTE: Don't interfere with tactical warp (double-tap-and-hold W) or instant stop (double-tap S)
             if (this.playerShip && this.stateManager.isPlaying()) {
                 const inputManager = this.inputManager;
+                const CARET_MOVE_SPEED = 0.02; // 2% per key press
                 
-                // W key - increase throttle by 10% (only on single press, not hold)
-                if (data.key === 'w' && inputManager.keysPressed.get('w')) {
-                    this.playerShip.throttle = Math.min(1.0, this.playerShip.throttle + 0.1);
-                    console.log(`Throttle increased to ${(this.playerShip.throttle * 100).toFixed(0)}%`);
+                // W key - move caret right (increase throttle)
+                // Skip if this is a double-tap (tactical warp takes priority)
+                if (data.key === 'w' && inputManager.keysPressed.get('w') && !inputManager.wKeyDoubleTapped) {
+                    this.playerShip.throttleCaretPosition = Math.min(1.0, (this.playerShip.throttleCaretPosition || 0.5) + CARET_MOVE_SPEED);
+                    // Convert caret position to throttle: right side (1.0) = 100%, center (0.5) = 0%, left (0.0) = -100%
+                    if (this.playerShip.throttleCaretPosition >= 0.5) {
+                        // Right side: 0% to 100% throttle
+                        this.playerShip.throttle = (this.playerShip.throttleCaretPosition - 0.5) * 2; // 0.5->0, 1.0->1.0
+                    } else {
+                        // Left side: -100% to 0% throttle (max -50% speed)
+                        this.playerShip.throttle = (this.playerShip.throttleCaretPosition - 0.5) * 2; // 0.0->-1.0, 0.5->0
+                    }
                 }
 
-                // S key - decrease throttle by 10% (only on single press, not hold)
+                // S key - move caret left (decrease throttle)
+                // Skip if this is a double-tap (instant stop takes priority)
                 if (data.key === 's' && inputManager.keysPressed.get('s')) {
-                    this.playerShip.throttle = Math.max(0.0, this.playerShip.throttle - 0.1);
-                    console.log(`Throttle decreased to ${(this.playerShip.throttle * 100).toFixed(0)}%`);
+                    // Check if this was a double-tap (instant stop) - if so, skip throttle adjustment
+                    const currentTime = performance.now();
+                    const lastSPressTime = inputManager.lastKeyPressTimes.get('s') || 0;
+                    const timeSinceLastSPress = currentTime - lastSPressTime;
+                    if (timeSinceLastSPress >= inputManager.doubleTapThreshold) {
+                        // Not a double-tap, adjust throttle
+                        this.playerShip.throttleCaretPosition = Math.max(0.0, (this.playerShip.throttleCaretPosition || 0.5) - CARET_MOVE_SPEED);
+                        // Convert caret position to throttle
+                        if (this.playerShip.throttleCaretPosition >= 0.5) {
+                            this.playerShip.throttle = (this.playerShip.throttleCaretPosition - 0.5) * 2;
+                        } else {
+                            this.playerShip.throttle = (this.playerShip.throttleCaretPosition - 0.5) * 2;
+                        }
+                    }
                 }
 
-                // A/D keys - turn left/right (no energy cost for normal turns)
-                if ((data.key === 'a' || data.key === 'd') && inputManager.keysPressed.get(data.key)) {
-                    // Normal turning handled in update loop, no special action needed here
-                }
+            // A/D keys - turn left/right (no energy cost for normal turns)
+            if ((data.key === 'a' || data.key === 'd') && inputManager.keysPressed.get(data.key)) {
+                // Normal turning handled in update loop, no special action needed here
             }
 
-            // Consumable hotkeys (F1-F6) - keys 1-6 are used for bay operations
+            // X key - Emergency stop (resets caret to center)
+            if (data.key === 'x' || data.key === 'X') {
+                if (this.playerShip && this.stateManager.isPlaying()) {
+                    this.playerShip.emergencyStop();
+                    this.playerShip.throttleCaretPosition = 0.5; // Reset to center
+                    this.playerShip.throttle = 0;
+                    this.audioManager.playSound('shield-hit');
+                    this.hud.addCriticalMessage('EMERGENCY STOP');
+                }
+            }
+        }
+
+        // Consumable hotkeys (F1-F6) - keys 1-6 are used for bay operations
             if (!this.stateManager.isPlaying() || !this.playerShip) return;
 
             // F1-F6 for consumables
@@ -1089,6 +1123,20 @@ class Engine {
         // Mission events
         eventBus.on('mission-accepted', (data) => {
             this.startMission(data.mission.id);
+        });
+
+        // Pause game when briefing screen is shown
+        eventBus.on('game-paused', () => {
+            if (this.stateManager.isPlaying()) {
+                this.stateManager.setState('PAUSED');
+            }
+        });
+
+        // Resume game when briefing screen is closed
+        eventBus.on('game-resumed', () => {
+            if (this.stateManager.isPaused()) {
+                this.stateManager.setState('PLAYING');
+            }
         });
 
         eventBus.on('mission-completed', (data) => {
@@ -1855,7 +1903,15 @@ class Engine {
     }
 
     update(deltaTime) {
-        if (!this.stateManager.isPlaying()) return;
+        // Don't update if paused or if briefing screen is visible
+        if (!this.stateManager.isPlaying()) {
+            // Also check if briefing screen is visible (in case state wasn't set correctly)
+            const briefingScreen = document.getElementById('briefing-screen');
+            if (briefingScreen && !briefingScreen.classList.contains('hidden')) {
+                return; // Briefing screen is open, don't update
+            }
+            return;
+        }
 
         // Watchdog: detect infinite loops
         this.updateCounter++;

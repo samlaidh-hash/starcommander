@@ -80,27 +80,47 @@ class TorpedoProjectile extends Projectile {
         this.lastX = this.x;
         this.lastY = this.y;
         
-        // Lock-on target mode - home towards entity
+        // Lock-on target mode - home towards entity with limited course change
         if (this.lockOnTarget && this.lockOnTarget.active) {
             // Homing behavior
             const distanceToTarget = MathUtils.distance(this.x, this.y, this.lockOnTarget.x, this.lockOnTarget.y);
 
-            // Check if past halfway point (terminal homing)
+            // Check if past halfway point (terminal homing - more aggressive turning)
             if (distanceToTarget < this.initialDistance / 2) {
                 this.terminalHoming = true;
             }
 
-            // Check if target is within 90° forward arc
+            // Calculate desired angle to target
             const targetAngle = MathUtils.angleBetween(this.x, this.y, this.lockOnTarget.x, this.lockOnTarget.y);
-            const angleDiff = Math.abs(MathUtils.normalizeAngle(targetAngle - this.rotation));
-            const inArc = angleDiff <= 45 || angleDiff >= 315; // 90° forward arc (45° each side)
+            const angleDiff = MathUtils.normalizeAngle(targetAngle - this.rotation);
+            const absAngleDiff = Math.abs(angleDiff);
+            
+            // Check if target is within 90° forward arc (for initial lock requirement)
+            const inArc = absAngleDiff <= 45 || absAngleDiff >= 315; // 90° forward arc (45° each side)
 
             // Home in on target if locked and in arc (or in terminal phase)
             if ((this.lockOnTarget && inArc) || this.terminalHoming) {
-                const vec = MathUtils.vectorFromAngle(targetAngle, this.speed);
+                // Limited course change ability - gradual turn towards target
+                const turnRate = this.terminalHoming ? CONFIG.TORPEDO_TURN_RATE * 1.5 : CONFIG.TORPEDO_TURN_RATE; // Faster turning in terminal phase
+                const maxTurn = turnRate * deltaTime; // Maximum degrees we can turn this frame
+                
+                if (absAngleDiff < maxTurn) {
+                    // Can turn to exact target angle
+                    this.rotation = targetAngle;
+                } else {
+                    // Turn towards target at limited rate
+                    if (angleDiff > 0) {
+                        this.rotation += maxTurn;
+                    } else {
+                        this.rotation -= maxTurn;
+                    }
+                    this.rotation = MathUtils.normalizeAngle(this.rotation);
+                }
+                
+                // Update velocity based on new rotation
+                const vec = MathUtils.vectorFromAngle(this.rotation, this.speed);
                 this.vx = vec.x;
                 this.vy = vec.y;
-                this.rotation = targetAngle;
             } else if (this.lockOnTarget && !inArc && !this.terminalHoming) {
                 // Lose lock if outside arc (unless in terminal phase)
                 this.lockOnTarget = null;
@@ -296,7 +316,7 @@ class PlasmaTorpedoProjectile extends Projectile {
         // Degrade DP over time
         this.damagePotential = Math.max(10, this.damagePotential - (this.dpDecayRate * deltaTime));
 
-        // Lock-on target mode - home towards entity
+        // Lock-on target mode - home towards entity with limited course change
         if (this.lockOnTarget && this.lockOnTarget.active) {
             const distanceToTarget = MathUtils.distance(this.x, this.y, this.lockOnTarget.x, this.lockOnTarget.y);
 
@@ -305,11 +325,32 @@ class PlasmaTorpedoProjectile extends Projectile {
             }
 
             if (this.lockOnTarget || this.terminalHoming) {
+                // Calculate desired angle to target
                 const targetAngle = MathUtils.angleBetween(this.x, this.y, this.lockOnTarget.x, this.lockOnTarget.y);
-                const vec = MathUtils.vectorFromAngle(targetAngle, this.speed);
+                const angleDiff = MathUtils.normalizeAngle(targetAngle - this.rotation);
+                const absAngleDiff = Math.abs(angleDiff);
+                
+                // Limited course change ability - gradual turn towards target
+                const turnRate = this.terminalHoming ? CONFIG.TORPEDO_TURN_RATE * 1.5 : CONFIG.TORPEDO_TURN_RATE; // Faster turning in terminal phase
+                const maxTurn = turnRate * deltaTime; // Maximum degrees we can turn this frame
+                
+                if (absAngleDiff < maxTurn) {
+                    // Can turn to exact target angle
+                    this.rotation = targetAngle;
+                } else {
+                    // Turn towards target at limited rate
+                    if (angleDiff > 0) {
+                        this.rotation += maxTurn;
+                    } else {
+                        this.rotation -= maxTurn;
+                    }
+                    this.rotation = MathUtils.normalizeAngle(this.rotation);
+                }
+                
+                // Update velocity based on new rotation
+                const vec = MathUtils.vectorFromAngle(this.rotation, this.speed);
                 this.vx = vec.x;
                 this.vy = vec.y;
-                this.rotation = targetAngle;
             }
         }
 

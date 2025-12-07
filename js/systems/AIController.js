@@ -49,7 +49,13 @@ class AIController {
     }
 
     update(deltaTime, currentTime, playerShip, allEntities) {
-        if (!this.ship.active) return;
+        if (!this.ship || !this.ship.active) return;
+        
+        // Check if ship has valid position (prevent NaN errors)
+        if (typeof this.ship.x !== 'number' || typeof this.ship.y !== 'number' || 
+            isNaN(this.ship.x) || isNaN(this.ship.y)) {
+            return;
+        }
         
         // Check if ship is destroyed (handle both systems.hull and direct hull property)
         const hullHp = (this.ship.systems && this.ship.systems.hull) ? this.ship.systems.hull.hp : 
@@ -429,8 +435,16 @@ class AIController {
                         if (weapon.constructor.name === 'ContinuousBeam') {
                             hasContinuousBeams = true;
                             // Start firing if not already firing
-                            if (!weapon.isFiring) {
-                                weapon.startFiring(currentTime, targetX, targetY);
+                            // Validate ship has valid position before firing
+                            if (!weapon.isFiring && 
+                                this.ship && 
+                                typeof this.ship.x === 'number' && 
+                                typeof this.ship.y === 'number' && 
+                                !isNaN(this.ship.x) && 
+                                !isNaN(this.ship.y) &&
+                                this.ship.weaponPoints &&
+                                this.ship.weaponPoints.forwardBeamBand) {
+                                weapon.startFiring(currentTime, this.ship, targetX, targetY);
                             }
                         }
                     }

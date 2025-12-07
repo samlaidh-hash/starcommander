@@ -60,7 +60,8 @@ class StateManager {
                 pauseMenu.classList.remove('hidden');
                 break;
             case 'BRIEFING':
-                // TODO: Show briefing screen
+                // Briefing screen visibility is handled by MissionUI
+                // Game should be paused during briefing
                 break;
             case 'DEBRIEFING':
                 // TODO: Show debriefing screen

@@ -81,6 +81,19 @@
     gap: 4px;
 }
 
+/* Loadout Display */
+#loadout-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 9px;
+}
+
+.loadout-item {
+    color: #0ff;
+    padding: 2px 0;
+}
+
 .energy-block {
     display: flex;
     flex-direction: column;
@@ -467,7 +480,7 @@
     }
 }
 
-/* Speed Bar */
+/* Speed Bar with Caret */
 #speed-bar-container {
     position: absolute;
     top: 20px;
@@ -487,7 +500,7 @@
     background: rgba(255, 255, 255, 0.2);
     border: 1px solid #0f0;
     display: flex;
-    overflow: hidden;
+    overflow: visible;
 }
 
 #speed-bar-reverse {
@@ -508,6 +521,34 @@
     width: 0%;
     background: linear-gradient(90deg, #0a0, #0f0);
     transition: width 0.1s;
+}
+
+/* Speed bar caret (indicator) */
+#speed-bar-caret {
+    position: absolute;
+    top: -4px;
+    width: 4px;
+    height: 28px;
+    background: #0ff;
+    border: 1px solid #0f0;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: left 0.1s ease-out;
+    z-index: 10;
+    pointer-events: none;
+}
+
+#speed-bar-caret::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid #0ff;
 }
 
 /* Center line indicator */

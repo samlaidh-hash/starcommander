@@ -54,26 +54,27 @@ class HUD {
         const commands = [];
 
         // Movement (always available)
-        commands.push({
-            category: 'Movement',
-            items: [
-                { key: 'W', desc: 'Thrust Forward' },
-                { key: 'S', desc: 'Thrust Reverse' },
-                { key: 'A', desc: 'Turn Left' },
-                { key: 'D', desc: 'Turn Right' },
-                { key: 'X', desc: 'Full Stop' },
-                { key: 'Double W/A/S/D', desc: 'Boost' }
-            ]
-        });
-
-        // Tactical Warp (Federation, Scintilian, Trigon, Pirate)
+        const movementCommands = [
+            { key: 'W', desc: 'Move Caret Right (Increase Speed)' },
+            { key: 'S', desc: 'Move Caret Left (Decrease Speed)' },
+            { key: 'A', desc: 'Turn Left' },
+            { key: 'D', desc: 'Turn Right' },
+            { key: 'X', desc: 'Emergency Stop' }
+        ];
+        
+        // Add high energy turn (double-tap A/D) - always available
+        movementCommands.push({ key: 'Double-tap A/D', desc: 'High Energy Turn (3.5x turn rate)' });
+        
+        // Add tactical warp if faction allows it
         const allowedFactions = ['FEDERATION', 'SCINTILIAN', 'TRIGON', 'PIRATE', 'PLAYER'];
         if (allowedFactions.includes(ship.faction)) {
-            commands[commands.length - 1].items.push({
-                key: 'Double-tap & Hold W',
-                desc: 'Tactical Warp'
-            });
+            movementCommands.push({ key: 'Double-tap & Hold W', desc: 'Tactical Warp' });
         }
+        
+        commands.push({
+            category: 'Movement',
+            items: movementCommands
+        });
 
         // Weapons
         const weaponCommands = [];
@@ -267,35 +268,10 @@ class HUD {
         // Update energy blocks (replaces system damage display)
         this.updateEnergyBlocks(playerShip);
         
-        // Update throttle display
-        this.updateThrottle(playerShip);
+        // Update loadout display (condensed)
+        this.updateLoadoutDisplay(playerShip);
 
-
-        // Update countermeasures
-        this.updateCountermeasures(playerShip);
-
-        // Update consumables
-        this.updateConsumables(playerShip);
-
-        // Update warp charge
-        this.updateWarpCharge(playerShip);
-
-        // Update plasma charge (Scintilian)
-        this.updatePlasmaCharge(playerShip);
-
-        // Update boost status
-        this.updateBoostStatus(playerShip);
-
-        // Update tactical warp status
-        this.updateTacticalWarpStatus(playerShip);
-
-        // Update special ability status (quantum drive, cloak, phase shift, shields)
-        this.updateSpecialAbilitiesStatus(playerShip);
-
-        // Update ping status
-        this.updatePingStatus();
-
-        // Update speed bar
+        // Update speed bar with caret
         this.updateSpeedBar(playerShip);
 
         // Update target info (TAB-selected target)
@@ -417,6 +393,47 @@ class HUD {
         }
     }
 
+
+    updateLoadoutDisplay(ship) {
+        if (!ship) return;
+        
+        const loadoutList = document.getElementById('loadout-list');
+        if (!loadoutList) return;
+        
+        const items = [];
+        
+        // Get integral torpedoes (loaded + stored from all launchers)
+        let integralTorpedoes = 0;
+        if (ship.weapons) {
+            for (const weapon of ship.weapons) {
+                if (weapon instanceof TorpedoLauncher || weapon instanceof DualTorpedoLauncher) {
+                    integralTorpedoes += (weapon.getLoadedCount ? weapon.getLoadedCount() : 0);
+                    integralTorpedoes += (weapon.getStoredCount ? weapon.getStoredCount() : 0);
+                }
+            }
+        }
+        
+        // Get extra torpedoes from consumables
+        const extraTorpedoes = ship.consumables ? (ship.consumables.inventory?.extraTorpedoes || 0) : 0;
+        const totalTorpedoes = integralTorpedoes + extraTorpedoes;
+        
+        if (totalTorpedoes > 0) {
+            items.push(`Torpedoes: ${totalTorpedoes}`);
+        }
+        
+        // Add other consumables if they exist
+        if (ship.consumables && ship.consumables.inventory) {
+            const inv = ship.consumables.inventory;
+            if (inv.extraDecoys > 0) items.push(`Decoys: ${inv.extraDecoys}`);
+            if (inv.extraMines > 0) items.push(`Mines: ${inv.extraMines}`);
+            if (inv.hullRepairKit > 0) items.push(`Repair: ${inv.hullRepairKit}`);
+            if (inv.energyCells > 0) items.push(`Energy: ${inv.energyCells}`);
+        }
+        
+        loadoutList.innerHTML = items.length > 0 
+            ? items.map(item => `<div class="loadout-item">${item}</div>`).join('')
+            : '<div class="loadout-item">No items</div>';
+    }
 
     updateCountermeasures(ship) {
         if (!ship) return;
@@ -1174,24 +1191,36 @@ class HUD {
 
         const forwardBar = document.getElementById('speed-bar-forward');
         const reverseBar = document.getElementById('speed-bar-reverse');
+        const caret = document.getElementById('speed-bar-caret');
 
-        if (!forwardBar || !reverseBar) return;
+        if (!forwardBar || !reverseBar || !caret) return;
 
-        // Show throttle percentage instead of actual speed
-        // 50% throttle = 50% full bar
-        const throttlePercent = ship.throttle * 100;
+        // Get current speed as percentage of max speed
+        const currentSpeedPercent = Math.abs(ship.currentSpeed) / ship.maxSpeed;
+        const isForward = ship.currentSpeed >= 0;
         
-        // Forward bar shows throttle percentage (0-100%)
-        forwardBar.style.width = `${Math.min(throttlePercent, 100)}%`;
-        reverseBar.style.width = '0%';
-        
-        // Color based on energy drain/regeneration
-        // Orange when draining energy (throttle > 50%)
-        // Green when regenerating energy (throttle < 50%)
-        if (ship.throttle > 0.5) {
-            forwardBar.style.background = 'linear-gradient(90deg, #ff8800, #ffaa00)'; // Orange gradient
+        // Update bars based on actual speed
+        if (isForward) {
+            forwardBar.style.width = `${Math.min(currentSpeedPercent * 50, 50)}%`; // 0-50% of bar (right half)
+            reverseBar.style.width = '0%';
         } else {
-            forwardBar.style.background = 'linear-gradient(90deg, #0a0, #0f0)'; // Green gradient
+            forwardBar.style.width = '0%';
+            reverseBar.style.width = `${Math.min(currentSpeedPercent * 50, 50)}%`; // 0-50% of bar (left half)
+        }
+        
+        // Update caret position based on throttleCaretPosition
+        // caretPosition: 0.0 (left) = -100% throttle, 0.5 (center) = 0%, 1.0 (right) = 100% throttle
+        const caretPosition = ship.throttleCaretPosition || 0.5;
+        caret.style.left = `${caretPosition * 100}%`;
+        
+        // Color bars based on energy drain
+        if (ship.throttle > 0.5) {
+            forwardBar.style.background = 'linear-gradient(90deg, #ff8800, #ffaa00)'; // Orange when draining
+        } else if (ship.throttle < -0.5) {
+            reverseBar.style.background = 'linear-gradient(90deg, #00a, #00f)'; // Blue for reverse
+        } else {
+            forwardBar.style.background = 'linear-gradient(90deg, #0a0, #0f0)'; // Green when regenerating
+            reverseBar.style.background = 'linear-gradient(90deg, #00a, #00f)';
         }
     }
 

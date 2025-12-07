@@ -115,6 +115,17 @@ class MissionUI {
         // Show the screen
         this.briefingScreen.classList.remove('hidden');
         // Pause the game while briefing/loadout screen is open
+        if (window.game && window.game.stateManager) {
+            const currentState = window.game.stateManager.getState();
+            // Set state to PAUSED if currently playing, or BRIEFING if coming from menu
+            if (currentState === 'PLAYING') {
+                window.game.stateManager.setState('PAUSED');
+            } else if (currentState !== 'BRIEFING' && currentState !== 'MAIN_MENU') {
+                // If in any other state (like starting new game), set to BRIEFING
+                window.game.stateManager.setState('BRIEFING');
+            }
+        }
+        // Also emit event for any other systems that need to know
         eventBus.emit('game-paused');
     }
 
@@ -124,8 +135,8 @@ class MissionUI {
     hideBriefing() {
         if (this.briefingScreen) {
             this.briefingScreen.classList.add('hidden');
-            // Resume the game when briefing screen is closed
-            eventBus.emit('game-resumed');
+            // Resume the game when briefing screen is closed (only if we were paused for briefing)
+            // Don't auto-resume - let the mission start handler set state to PLAYING
         }
     }
 

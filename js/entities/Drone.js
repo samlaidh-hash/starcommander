@@ -31,7 +31,7 @@ class Drone extends Entity {
         this.target = null;
         this.lastStateChange = 0;
         this.weaponCooldown = 0;
-        this.beamRange = this.ownerShip.getBeamRange() * 0.25; // 25% of ship beam range
+        this.beamRange = CONFIG.BEAM_RANGE_PIXELS * 0.25; // 25% of ship beam range
         this.beamDamage = 0.5; // Weak damage
         this.beamCooldown = 0.5; // Fast firing rate
 

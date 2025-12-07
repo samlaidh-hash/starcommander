@@ -329,8 +329,9 @@ class Ship extends Entity {
         this.lastBoostTime = -this.boostCooldown; // Allow boost immediately
         this.boostDirection = null; // 'w', 'a', 's', 'd'
 
-        // Throttle system (NEW - replaces hold-to-accelerate)
-        this.throttle = 0;  // 0.0 to 1.0 (0% to 100% max speed, in 10% increments)
+        // Throttle system (NEW - caret-based)
+        this.throttle = 0;  // -1.0 to 1.0 (-100% to 100% throttle)
+        this.throttleCaretPosition = 0.5;  // 0.0 (left) to 1.0 (right), 0.5 = center (stationary)
         this.targetSpeed = 0;  // Speed ship is trying to reach based on throttle
         this.throttleBoost = {
             active: false,
@@ -340,11 +341,11 @@ class Ship extends Entity {
             rechargeDuration: 10  // 10 seconds
         };
         
-        // Fast rotation system (double-tap A/D)
+        // Fast rotation system (double-tap A/D) - High Energy Turn
         this.fastRotateActive = false;
         this.fastRotateMultiplier = 1.0;
         this.fastRotateEndTime = 0;
-
+        
         // Tactical warp system (double-tap-and-hold W)
         this.tacticalWarpActive = false;
         this.tacticalWarpSpeedMultiplier = 10;
@@ -1016,8 +1017,15 @@ class Ship extends Entity {
      * Called every frame from update()
      */
     updateThrottle(deltaTime) {
-        // Calculate target speed from throttle (0.0 to 1.0, in 10% increments)
-        this.targetSpeed = this.maxSpeed * this.throttle;
+        // Calculate target speed from throttle (-1.0 to 1.0)
+        // throttle > 0: forward speed (0% to 100% max speed)
+        // throttle = 0: stationary
+        // throttle < 0: reverse speed (0% to -50% max speed)
+        if (this.throttle >= 0) {
+            this.targetSpeed = this.maxSpeed * this.throttle; // Forward: 0 to maxSpeed
+        } else {
+            this.targetSpeed = this.maxReverseSpeed * Math.abs(this.throttle) * 0.5; // Reverse: 0 to -50% maxSpeed
+        }
 
         // Add boost if active
         const currentTime = performance.now() / 1000;
@@ -1045,12 +1053,12 @@ class Ship extends Entity {
 
         if (Math.abs(speedDiff) > 1) { // Only adjust if difference is significant
             if (speedDiff > 0) {
-                // Accelerate toward target
+                // Accelerate toward target (forward or reducing reverse)
                 const accel = this.acceleration * deltaTime;
                 this.currentSpeed += accel;
                 this.currentSpeed = Math.min(this.currentSpeed, this.targetSpeed);
             } else {
-                // Decelerate toward target
+                // Decelerate toward target (reverse or reducing forward)
                 const decel = this.deceleration * deltaTime;
                 this.currentSpeed -= decel;
                 this.currentSpeed = Math.max(this.currentSpeed, this.targetSpeed);
@@ -1072,8 +1080,9 @@ class Ship extends Entity {
     emergencyStop() {
         const currentTime = performance.now() / 1000;
 
-        // Set throttle to zero
+        // Set throttle to zero and reset caret position
         this.throttle = 0;
+        this.throttleCaretPosition = 0.5; // Center position
         this.targetSpeed = 0;
 
         // Rapid deceleration (90% speed reduction)

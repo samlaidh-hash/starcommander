@@ -91,6 +91,7 @@ const CONFIG = {
     TORPEDO_LIFETIME: 10,         // seconds before expiring
     TORPEDO_RELOAD_TIME: 5,       // seconds to reload all 4 torpedoes
     TORPEDO_SYSTEM_HIT_COUNT: 4,
+    TORPEDO_TURN_RATE: 90,        // degrees per second - limited course change ability for homing
     COLOR_TORPEDO: '#ffaa00',     // orange
 
     // Weapons - Disruptors (Trigon)

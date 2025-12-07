@@ -31,7 +31,7 @@ class Bomber extends Entity {
         this.lastStateChange = 0;
         this.weaponCooldown = 0;
         this.torpedoCooldown = 0;
-        this.beamRange = this.ownerShip.getBeamRange() * 0.4; // 40% of ship beam range
+        this.beamRange = CONFIG.BEAM_RANGE_PIXELS * 0.4; // 40% of ship beam range
         this.beamDamage = 1.0; // Full damage beams
         this.torpedoDamage = 2.0; // Heavy torpedo damage
         this.torpedoRange = 200; // Torpedo range

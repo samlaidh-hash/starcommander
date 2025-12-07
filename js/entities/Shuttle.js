@@ -38,7 +38,7 @@ class Shuttle extends Entity {
         this.target = null;
         this.lastStateChange = 0;
         this.weaponCooldown = 0;
-        this.beamRange = this.ownerShip.getBeamRange() * 0.2; // 20% of ship beam range
+        this.beamRange = CONFIG.BEAM_RANGE_PIXELS * 0.2; // 20% of ship beam range
         
         // Physics
         this.physicsWorld = config.physicsWorld;

@@ -15,169 +15,19 @@
 
     <!-- HUD Overlay -->
     <div id="hud">
-        <!-- Tactical Panel (Top Left) -->
+        <!-- Tactical Panel (Top Left) - Energy Blocks Only -->
         <div id="tactical-panel">
-            <div class="panel-header" id="player-ship-panel-title">Player Ship</div>
-
-            <!-- Shields (Unified) -->
-            <div class="system-group">
-                <div class="system-label">Shields</div>
-                <div class="shield-display">
-                    <div class="shield-bar" id="shield-fore">
-                        <span class="shield-label">SHIELD</span>
-                        <div class="bar-fill" data-quadrant="fore"></div>
-                    </div>
-                    <div id="shield-status" style="color: #0f0; font-size: 9px; margin-top: 2px;">UP</div>
-                </div>
-            </div>
+            <div class="panel-header" id="player-ship-panel-title">Energy Blocks</div>
 
             <!-- Energy Blocks -->
             <div class="system-group" id="energy-blocks-group">
-                <div class="system-label">Energy Blocks</div>
                 <div id="energy-blocks-container"></div>
             </div>
 
-            <!-- Throttle -->
-            <div class="system-group">
-                <div class="system-label">Throttle</div>
-                <div id="throttle-display">0%</div>
-                <div class="throttle-bar">
-                    <div class="throttle-bar-fill" id="throttle-bar-fill"></div>
-                </div>
-            </div>
-
-            <!-- Hull Integrity (DEPRECATED - kept for compatibility) -->
-            <div class="system-group" style="display: none;">
-                <div class="system-label">Hull Integrity</div>
-                <div id="hull-status">
-                    <div class="system-item" data-system="hull">HP: <span class="hp" id="ship-hp">100/100</span></div>
-                </div>
-            </div>
-
-            <!-- Systems -->
-            <div class="system-group">
-                <div class="system-label">Systems</div>
-                <div id="systems-status">
-                    <div class="system-item" data-system="impulse">
-                        <span class="system-name">Impulse</span>
-                        <div class="system-hp-bar"><div class="hp-fill"></div></div>
-                    </div>
-                    <div class="system-item" data-system="warp">
-                        <span class="system-name">Warp</span>
-                        <div class="system-hp-bar"><div class="hp-fill"></div></div>
-                    </div>
-                    <div class="system-item" data-system="sensors">
-                        <span class="system-name">Sensors</span>
-                        <div class="system-hp-bar"><div class="hp-fill"></div></div>
-                    </div>
-                    <div class="system-item" data-system="cnc">
-                        <span class="system-name">C&C</span>
-                        <div class="system-hp-bar"><div class="hp-fill"></div></div>
-                    </div>
-                    <div class="system-item" data-system="bay">
-                        <span class="system-name">Bay</span>
-                        <div class="system-hp-bar"><div class="hp-fill"></div></div>
-                    </div>
-                    <div class="system-item" data-system="power">
-                        <span class="system-name">Power</span>
-                        <div class="system-hp-bar"><div class="hp-fill"></div></div>
-                    </div>
-                    <!-- Weapons -->
-                    <div class="system-item" data-system="beam-forward">
-                        <span class="system-name">FWD Beam</span>
-                        <div class="system-hp-bar"><div class="hp-fill"></div></div>
-                    </div>
-                    <div class="system-item" data-system="beam-aft">
-                        <span class="system-name">AFT Beam</span>
-                        <div class="system-hp-bar"><div class="hp-fill"></div></div>
-                    </div>
-                    <div class="system-item" data-system="torpedo">
-                        <span class="system-name">Torpedo</span>
-                        <div class="system-hp-bar"><div class="hp-fill"></div></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Consumables (Loadout) -->
-            <div class="system-group" id="consumables-group">
-                <div class="system-label">Consumables [F1-F6]</div>
-                <div id="consumables-status">
-                    <div class="consumable-item" data-consumable="extraTorpedoes">
-                        <span class="consumable-name">[F1] Torpedoes</span>
-                        <span class="consumable-count" id="consumable-torpedoes">0</span>
-                    </div>
-                    <div class="consumable-item" data-consumable="extraDecoys">
-                        <span class="consumable-name">[F2] Decoys</span>
-                        <span class="consumable-count" id="consumable-decoys">0</span>
-                    </div>
-                    <div class="consumable-item" data-consumable="extraMines">
-                        <span class="consumable-name">[F3] Mines</span>
-                        <span class="consumable-count" id="consumable-mines">0</span>
-                    </div>
-                    <div class="consumable-item" data-consumable="hullRepairKit">
-                        <span class="consumable-name">[F4] Repair</span>
-                        <span class="consumable-count" id="consumable-repair">0</span>
-                    </div>
-                    <div class="consumable-item" data-consumable="energyCells">
-                        <span class="consumable-name">[F5] Energy</span>
-                        <span class="consumable-count" id="consumable-energy">0</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Inventory -->
-            <div class="system-group">
-                <div class="inventory-line">Decoys: <span id="decoy-count">6</span></div>
-                <div class="inventory-line">Mines: <span id="mine-count">6</span></div>
-                <div class="inventory-line">Captor: <span id="captor-mine-count">2</span></div>
-                <div class="inventory-line">Phaser: <span id="phaser-mine-count">2</span></div>
-                <div class="inventory-line">Transp: <span id="transporter-mine-count">2</span></div>
-                <div class="inventory-line">Intercept: <span id="interceptor-count">6</span></div>
-                <div class="inventory-line">Shuttles: <span id="shuttle-count">0</span>/<span id="shuttle-max">6</span></div>
-                <div class="inventory-line">Fighters: <span id="fighter-count">0</span>/<span id="fighter-max">4</span></div>
-                <div class="inventory-line">Bombers: <span id="bomber-count">0</span>/<span id="bomber-max">2</span></div>
-                <div class="inventory-line">Bay: <span id="bay-space">0</span>/<span id="bay-max-hud">8</span></div>
-                <div class="inventory-line">Torp: <span id="torpedo-storage">16</span> [<span id="torpedo-type">STD</span>]</div>
-            </div>
-
-            <!-- Critical Messages -->
-            <div id="critical-log">
-                <div class="log-header">Critical Events</div>
-                <div id="log-messages"></div>
-            </div>
-
-            <!-- Warp Drive -->
-            <div class="system-group">
-                <div class="system-label">Warp Drive</div>
-                <div id="warp-charge-bar">
-                    <div id="warp-charge-fill"></div>
-                </div>
-            </div>
-
-            <!-- Plasma Charge (Scintilian) -->
-            <div class="system-group" id="plasma-charge-group" style="display: none;">
-                <div class="system-label">Plasma Charge</div>
-                <div id="plasma-charge-bar">
-                    <div id="plasma-charge-fill"></div>
-                </div>
-                <div id="plasma-charge-text" style="text-align: center; color: #00ff88; font-size: 11px; margin-top: 2px;">0 DP</div>
-            </div>
-
-            <!-- Boost Status -->
-            <div class="system-group" id="boost-status-group" style="display: none;">
-                <div class="system-label" id="boost-label">BOOST</div>
-                <div id="boost-bar">
-                    <div id="boost-fill"></div>
-                </div>
-            </div>
-
-            <!-- Ping Status -->
-            <div class="system-group" id="ping-status-group" style="display: none;">
-                <div class="system-label" id="ping-label">PING</div>
-                <div id="ping-bar">
-                    <div id="ping-fill"></div>
-                </div>
-                <div id="ping-text" style="text-align: center; color: #00ffff; font-size: 12px; margin-top: 2px;"></div>
+            <!-- Loadout Items (Condensed) -->
+            <div class="system-group" id="loadout-group">
+                <div class="system-label">Loadout</div>
+                <div id="loadout-list"></div>
             </div>
         </div>
 
@@ -218,12 +68,13 @@
             <div class="tooltip-systems"></div>
         </div>
 
-        <!-- Speed Bar -->
+        <!-- Speed Bar with Caret -->
         <div id="speed-bar-container">
             <div class="system-label">Speed</div>
             <div id="speed-bar">
                 <div id="speed-bar-reverse"></div>
                 <div id="speed-bar-forward"></div>
+                <div id="speed-bar-caret"></div>
             </div>
         </div>
 
