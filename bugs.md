@@ -1,9 +1,32 @@
 # Star Sea - Bug Tracking
 
 **Date:** 2025-10-04
-**Last Updated:** 2025-10-04 (Critical Fix: Weapon Alignment)
+**Last Updated:** 2025-01-29 (Trigon Weapons Fix)
 
 ## Recently Fixed Bugs
+
+### ✅ Trigon Disruptor Weapons Not Firing (2025-01-29)
+**Status:** FIXED
+**Priority:** HIGH
+**Description:** Trigon disruptor weapons were not firing when player held LMB. Disruptors use a burst-fire system that requires `weapon.fire()` to be called to initiate the burst, but this was never happening for the player.
+
+**Root Cause:**
+- Disruptors use a burst-fire system: `weapon.fire()` starts a burst (`isBursting = true`), then `getNextBurstShot()` generates projectiles during the burst
+- Engine.js was calling `getDisruptorBurstShots()` which only gets shots from active bursts
+- But `weapon.fire()` was never called for the player to start the burst
+- AI correctly calls `weapon.fire()` in AIController.js (line 423), but player code was missing this step
+
+**Fix Applied:**
+- Added disruptor burst initiation logic in Engine.js before calling `getDisruptorBurstShots()`
+- When player holds LMB (`beamFiring` is true), check for disruptors that are ready to fire (not in cooldown, not already bursting, in arc)
+- Call `weapon.fire()` to start the burst, then `getDisruptorBurstShots()` will generate projectiles correctly
+
+**Files Modified:**
+- `js/core/Engine.js` (lines 2032-2061) - Added disruptor burst initiation for player when holding LMB
+
+**Testing:** Player should now be able to fire disruptors by holding LMB, same as beams. Disruptors fire in 3-shot bursts with 2-second cooldown between bursts.
+
+---
 
 ### ✅ Consumables Loadout Now Varies by Ship Class (2025-10-28)
 **Status:** FIXED

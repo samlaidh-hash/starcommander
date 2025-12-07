@@ -45,6 +45,7 @@ class WeaponLoadoutLoader {
         const promise = (async () => {
             try {
                 const filename = `${faction}_${shipClass}_weapons.json`;
+                console.log(`📥 Loading weapon JSON: ${filename}`);
                 const response = await fetch(filename);
                 
                 if (!response.ok) {
@@ -52,6 +53,7 @@ class WeaponLoadoutLoader {
                 }
                 
                 const data = await response.json();
+                console.log(`✅ Loaded JSON data for ${faction}_${shipClass}:`, data);
                 
                 // Validate data structure
                 if (!data.weapons || !Array.isArray(data.weapons)) {
@@ -60,10 +62,11 @@ class WeaponLoadoutLoader {
                 
                 // Store loaded data
                 this.loadouts.set(key, data);
+                console.log(`💾 Cached JSON loadout for ${faction}_${shipClass}`);
                 
                 return data;
             } catch (error) {
-                console.warn(`Failed to load weapon loadout ${faction}_${shipClass}:`, error);
+                console.warn(`❌ Failed to load weapon loadout ${faction}_${shipClass}:`, error.message || error);
                 // Return null on error - will fall back to hardcoded loadouts
                 return null;
             } finally {
@@ -100,3 +103,4 @@ class WeaponLoadoutLoader {
 
 // Create global instance
 window.weaponLoadoutLoader = new WeaponLoadoutLoader();
+

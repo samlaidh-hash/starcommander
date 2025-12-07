@@ -63,11 +63,33 @@ class TorpedoProjectile extends Projectile {
         this.hitsToDestroy = 1; // Standard torpedoes destroyed in 1 hit
 
         // Calculate initial velocity
-        const angle = MathUtils.angleBetween(this.x, this.y, this.targetX, this.targetY);
+        // Ensure target coordinates are valid (not NaN, not same as origin)
+        const validTargetX = (isNaN(this.targetX) || this.targetX === undefined) ? this.x + Math.cos(MathUtils.toRadians(this.rotation || 0)) * 100 : this.targetX;
+        const validTargetY = (isNaN(this.targetY) || this.targetY === undefined) ? this.y + Math.sin(MathUtils.toRadians(this.rotation || 0)) * 100 : this.targetY;
+        
+        // Check if target is same as origin (would cause zero velocity)
+        const distToTarget = MathUtils.distance(this.x, this.y, validTargetX, validTargetY);
+        let angle;
+        if (distToTarget > 0.1) {
+            angle = MathUtils.angleBetween(this.x, this.y, validTargetX, validTargetY);
+        } else {
+            // Fallback: use rotation or ship rotation
+            angle = this.rotation || (this.sourceShip ? this.sourceShip.rotation : 0);
+        }
+        
         const vec = MathUtils.vectorFromAngle(angle, this.speed);
-        this.vx = vec.x;
-        this.vy = vec.y;
-        this.rotation = angle;
+        this.vx = (isNaN(vec.x) || vec.x === undefined) ? Math.cos(MathUtils.toRadians(angle)) * this.speed : vec.x;
+        this.vy = (isNaN(vec.y) || vec.y === undefined) ? Math.sin(MathUtils.toRadians(angle)) * this.speed : vec.y;
+        this.rotation = isNaN(angle) ? 0 : angle;
+        
+        // Ensure velocity is not zero
+        if ((this.vx === 0 && this.vy === 0) || isNaN(this.vx) || isNaN(this.vy)) {
+            // Fallback: use rotation or ship rotation
+            const fallbackAngle = this.rotation || (this.sourceShip ? this.sourceShip.rotation : 0);
+            this.vx = Math.cos(MathUtils.toRadians(fallbackAngle)) * this.speed;
+            this.vy = Math.sin(MathUtils.toRadians(fallbackAngle)) * this.speed;
+            this.rotation = fallbackAngle;
+        }
 
         // Track distance to target at creation
         this.initialDistance = this.lockOnTarget ?

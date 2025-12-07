@@ -28,6 +28,10 @@ class HUD {
         // Toggle panel visibility on button click
         toggleButton.addEventListener('click', () => {
             panel.classList.toggle('show');
+            // Update commands when panel is opened
+            if (panel.classList.contains('show')) {
+                this.updateKeyboardPanel();
+            }
         });
 
         // Close panel when clicking outside (optional enhancement)
@@ -37,6 +41,141 @@ class HUD {
                 panel.classList.remove('show');
             }
         });
+    }
+
+    /**
+     * Update keyboard panel commands based on player ship capabilities
+     */
+    updateKeyboardPanel() {
+        const commandsDiv = document.getElementById('keyboard-panel-commands');
+        if (!commandsDiv || !this.playerShip) return;
+
+        const ship = this.playerShip;
+        const commands = [];
+
+        // Movement commands (always shown)
+        commands.push('<div class="controls-section"><div class="control-category">Movement</div>');
+        commands.push('<div class="control-line"><span class="key">W</span> Thrust Forward</div>');
+        commands.push('<div class="control-line"><span class="key">S</span> Thrust Reverse</div>');
+        commands.push('<div class="control-line"><span class="key">A</span> Turn Left</div>');
+        commands.push('<div class="control-line"><span class="key">D</span> Turn Right</div>');
+        commands.push('<div class="control-line"><span class="key">X</span> Emergency Stop</div>');
+        commands.push('</div>');
+
+        // Weapons (only if ship has them)
+        const hasBeams = ship.weapons && ship.weapons.some(w => w instanceof BeamWeapon || w instanceof ContinuousBeam || w instanceof PulseBeam);
+        const hasTorpedoes = ship.weapons && ship.weapons.some(w => w instanceof TorpedoLauncher || w instanceof DualTorpedoLauncher || w instanceof PlasmaTorpedo);
+        
+        if (hasBeams || hasTorpedoes) {
+            commands.push('<div class="controls-section"><div class="control-category">Weapons</div>');
+            if (hasBeams) {
+                commands.push('<div class="control-line"><span class="key">LMB</span> Fire Beams</div>');
+            }
+            if (hasTorpedoes) {
+                commands.push('<div class="control-line"><span class="key">RMB</span> Fire Torpedo</div>');
+                if (ship.torpedoTypes && ship.torpedoTypes.length > 1) {
+                    commands.push('<div class="control-line"><span class="key">R</span> Cycle Torpedo Type</div>');
+                }
+            }
+            commands.push('<div class="control-line"><span class="key">TAB</span> Cycle Target</div>');
+            commands.push('</div>');
+        }
+
+        // Defenses (only if ship has them)
+        const hasDecoys = (ship.decoys || 0) > 0 || (ship.consumables && ship.consumables.inventory.extraDecoys > 0);
+        const hasMines = (ship.mines || 0) > 0 || (ship.consumables && ship.consumables.inventory.extraMines > 0);
+        const hasInterceptors = (ship.interceptors || 0) > 0;
+        
+        if (hasDecoys || hasMines || hasInterceptors) {
+            commands.push('<div class="controls-section"><div class="control-category">Defenses</div>');
+            if (hasDecoys) {
+                commands.push('<div class="control-line"><span class="key">C</span> Deploy Decoy</div>');
+            }
+            if (hasMines) {
+                commands.push('<div class="control-line"><span class="key">M</span> Deploy Mine</div>');
+            }
+            if (hasInterceptors) {
+                commands.push('<div class="control-line"><span class="key">I</span> Launch Interceptor</div>');
+            }
+            commands.push('</div>');
+        }
+
+        // Consumables (only if ship has them)
+        if (ship.consumables && ship.consumables.inventory) {
+            const inv = ship.consumables.inventory;
+            const hasConsumables = (inv.extraTorpedoes || 0) > 0 || (inv.extraDecoys || 0) > 0 || 
+                                  (inv.extraMines || 0) > 0 || (inv.hullRepairKit || 0) > 0 || 
+                                  (inv.energyCells || 0) > 0;
+            
+            if (hasConsumables) {
+                commands.push('<div class="controls-section"><div class="control-category">Consumables</div>');
+                if ((inv.extraTorpedoes || 0) > 0) {
+                    commands.push(`<div class="control-line"><span class="key">1</span> Extra Torpedoes (${inv.extraTorpedoes})</div>`);
+                }
+                if ((inv.extraDecoys || 0) > 0) {
+                    commands.push(`<div class="control-line"><span class="key">2</span> Extra Decoys (${inv.extraDecoys})</div>`);
+                }
+                if ((inv.extraMines || 0) > 0) {
+                    commands.push(`<div class="control-line"><span class="key">3</span> Extra Mines (${inv.extraMines})</div>`);
+                }
+                if ((inv.hullRepairKit || 0) > 0) {
+                    commands.push(`<div class="control-line"><span class="key">5</span> Hull Repair Kit (${inv.hullRepairKit})</div>`);
+                }
+                if ((inv.energyCells || 0) > 0) {
+                    commands.push(`<div class="control-line"><span class="key">6</span> Energy Cells (${inv.energyCells})</div>`);
+                }
+                commands.push('</div>');
+            }
+        }
+
+        // Advanced systems (only if ship has them)
+        const hasTractor = ship.tractorBeam && typeof ship.tractorBeam.activate === 'function';
+        const hasTransporter = ship.transporter && typeof ship.transporter.toggle === 'function';
+        const hasBaySystem = window.game && window.game.baySystem;
+        
+        if (hasTractor || hasTransporter || hasBaySystem) {
+            commands.push('<div class="controls-section"><div class="control-category">Advanced</div>');
+            if (hasTractor) {
+                commands.push('<div class="control-line"><span class="key">Q</span> Tractor Beam</div>');
+            }
+            if (hasTransporter) {
+                commands.push('<div class="control-line"><span class="key">T</span> Transporter</div>');
+            }
+            if (hasBaySystem) {
+                commands.push('<div class="control-line"><span class="key">1-6</span> Shuttle Missions</div>');
+                commands.push('<div class="control-line"><span class="key">7</span> Launch Fighter</div>');
+                commands.push('<div class="control-line"><span class="key">8</span> Launch Bomber</div>');
+            }
+            commands.push('</div>');
+        }
+
+        // Faction abilities (only for appropriate factions)
+        if (ship.faction === 'DHOJAN' && ship.advancedSystems && ship.advancedSystems.quantumDrive) {
+            commands.push('<div class="controls-section"><div class="control-category">Faction Abilities</div>');
+            commands.push('<div class="control-line"><span class="key">G</span> Quantum Drive</div>');
+            commands.push('</div>');
+        }
+        if (ship.faction === 'ANDROMEDAN') {
+            commands.push('<div class="controls-section"><div class="control-category">Faction Abilities</div>');
+            if (ship.systems && ship.systems.cloak) {
+                commands.push('<div class="control-line"><span class="key">K</span> Toggle Cloak</div>');
+            }
+            if (ship.advancedSystems && ship.advancedSystems.phaseShift) {
+                commands.push('<div class="control-line"><span class="key">P</span> Phase Shift</div>');
+            }
+            commands.push('</div>');
+        }
+
+        // Systems (always shown)
+        commands.push('<div class="controls-section"><div class="control-category">Systems</div>');
+        if (ship.shields) {
+            commands.push('<div class="control-line"><span class="key">Space</span> Toggle Shields</div>');
+        }
+        commands.push('<div class="control-line"><span class="key">V</span> Warp Out</div>');
+        commands.push('<div class="control-line"><span class="key">ESC</span> Pause Menu</div>');
+        commands.push('</div>');
+
+        commandsDiv.innerHTML = commands.join('');
     }
 
     update(playerShip, entities = [], selectedTarget = null) {
@@ -297,6 +436,84 @@ class HUD {
         if (energyElement) {
             energyElement.textContent = consumables.energyCells || 0;
             energyElement.classList.toggle('depleted', (consumables.energyCells || 0) === 0);
+        }
+    }
+
+    /**
+     * Update loadout list in left-hand HUD panel
+     * Shows consumables and weapons on the ship
+     */
+    updateLoadoutList(ship) {
+        if (!ship) return;
+
+        const loadoutList = document.getElementById('loadout-list');
+        if (!loadoutList) return;
+
+        const items = [];
+
+        // Add consumables
+        if (ship.consumables && ship.consumables.inventory) {
+            const inv = ship.consumables.inventory;
+            
+            if ((inv.extraTorpedoes || 0) > 0) {
+                items.push(`Torpedoes: ${inv.extraTorpedoes}`);
+            }
+            if ((inv.extraDecoys || 0) > 0) {
+                items.push(`Decoys: ${inv.extraDecoys}`);
+            }
+            if ((inv.extraMines || 0) > 0) {
+                items.push(`Mines: ${inv.extraMines}`);
+            }
+            if ((inv.hullRepairKit || 0) > 0) {
+                items.push(`Repair: ${inv.hullRepairKit}`);
+            }
+            if ((inv.energyCells || 0) > 0) {
+                items.push(`Energy: ${inv.energyCells}`);
+            }
+            if ((inv.extraShuttles || 0) > 0) {
+                items.push(`Shuttles: ${inv.extraShuttles}`);
+            }
+            if ((inv.extraFighters || 0) > 0) {
+                items.push(`Fighters: ${inv.extraFighters}`);
+            }
+            if ((inv.extraBombers || 0) > 0) {
+                items.push(`Bombers: ${inv.extraBombers}`);
+            }
+            if ((inv.extraDrones || 0) > 0) {
+                items.push(`Drones: ${inv.extraDrones}`);
+            }
+            if ((inv.extraProbes || 0) > 0) {
+                items.push(`Probes: ${inv.extraProbes}`);
+            }
+        }
+
+        // Add torpedo counts from weapons
+        if (ship.weapons && ship.weapons.length > 0) {
+            for (const weapon of ship.weapons) {
+                if (weapon instanceof TorpedoLauncher || weapon instanceof DualTorpedoLauncher || weapon instanceof PlasmaTorpedo) {
+                    const loaded = weapon.getLoadedCount ? weapon.getLoadedCount() : 0;
+                    const stored = weapon.stored ? weapon.stored : 0;
+                    if (loaded > 0 || stored > 0) {
+                        items.push(`Torpedoes: ${loaded}/${stored}`);
+                        break; // Only show once
+                    }
+                }
+            }
+        }
+
+        // Add countermeasures
+        if ((ship.decoys || 0) > 0) {
+            items.push(`Decoys: ${ship.decoys}`);
+        }
+        if ((ship.mines || 0) > 0) {
+            items.push(`Mines: ${ship.mines}`);
+        }
+
+        // Update HTML
+        if (items.length === 0) {
+            loadoutList.innerHTML = '<div class="loadout-item" style="color: #666;">Empty</div>';
+        } else {
+            loadoutList.innerHTML = items.map(item => `<div class="loadout-item">${item}</div>`).join('');
         }
     }
 

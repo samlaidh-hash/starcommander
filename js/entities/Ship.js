@@ -141,9 +141,13 @@ const WEAPON_BUILDERS = {
     streakBeam: spec => new StreakBeam(spec)
 };
 
-function cloneWeaponPosition(positionKey, explicitPosition, shipSize) {
+function cloneWeaponPosition(positionKey, explicitPosition, shipSize, scaleFactor = 1, shipImageData = null) {
     if (explicitPosition) {
-        return { x: explicitPosition.x, y: explicitPosition.y };
+        // Apply scaleFactor to explicit positions from JSON
+        return { 
+            x: explicitPosition.x * scaleFactor, 
+            y: explicitPosition.y * scaleFactor 
+        };
     }
     if (positionKey && WEAPON_POSITIONS[positionKey]) {
         const base = WEAPON_POSITIONS[positionKey];
@@ -481,9 +485,14 @@ class Ship extends Entity {
             const specs = await getShipLoadoutSpecs(this.faction, this.shipClass);
             
             // Check if we got JSON data (has _scaleFactor property)
-            const hasJSONData = specs.length > 0 && specs[0]._scaleFactor !== undefined;
+            // Also check if any weapon has explicit position (indicates JSON data)
+            const hasJSONData = specs.length > 0 && (
+                specs[0]._scaleFactor !== undefined || 
+                specs.some(spec => spec.position && typeof spec.position === 'object')
+            );
             
             if (hasJSONData) {
+                console.log(`✅ Loaded JSON weapon loadout for ${this.faction}_${this.shipClass}`, specs);
                 // Replace weapons with JSON-loaded ones
                 const weapons = [];
                 const shipSize = this.getShipSize();
@@ -496,6 +505,9 @@ class Ship extends Entity {
                 }
 
                 this.weapons = weapons;
+                console.log(`✅ Replaced weapons with JSON-loaded weapons (${weapons.length} weapons)`);
+            } else {
+                console.log(`⚠️ No JSON data found for ${this.faction}_${this.shipClass}, using hardcoded loadout`);
             }
         } catch (error) {
             console.warn(`Failed to load JSON loadout for ${this.faction}_${this.shipClass}, using hardcoded:`, error);
@@ -1158,15 +1170,19 @@ class Ship extends Entity {
         }
 
         // Energy drain/refill based on throttle
+        // Below 50% throttle (throttleCaretPosition < 0.5) = reverse/stationary = refill energy
+        // Above 50% throttle (throttleCaretPosition > 0.5) = forward = drain energy
         if (this.energy) {
-            if (this.throttle > 0) {
-                // Forward throttle: Drain energy
+            const throttlePosition = this.throttleCaretPosition !== undefined ? this.throttleCaretPosition : 0.5;
+            
+            if (throttlePosition > 0.5) {
+                // Forward throttle (>50%): Drain energy
                 this.energy.drainEnergy(0, deltaTime);
-            } else if (this.throttle < 0) {
-                // Reverse throttle: Drain energy (less than forward)
-                this.energy.drainEnergy(0, deltaTime * 0.5); // Half drain for reverse
+            } else if (throttlePosition < 0.5) {
+                // Reverse throttle (<50%): Refill energy (stationary/reverse doesn't drain)
+                this.energy.refillEnergy(0, deltaTime);
             } else {
-                // Throttle = 0: Refill energy
+                // Exactly 50% (stationary): Refill energy
                 this.energy.refillEnergy(0, deltaTime);
             }
         }

@@ -43,6 +43,10 @@ class TargetingSystem {
         // Find target under reticle
         const target = this.getTargetUnderReticle(worldPos.x, worldPos.y, entities);
 
+        if (CONFIG.DEBUG_MODE && target) {
+            console.log(`🎯 Target under reticle: ${target.name || target.faction + ' ' + target.shipClass}, lockProgress: ${this.lockProgress.toFixed(2)}/${this.currentLockTime.toFixed(2)}`);
+        }
+
         if (target) {
             // Reset lock loss tracking when reticle is back on target
             this.isLosingLock = false;
@@ -62,6 +66,9 @@ class TargetingSystem {
                     this.isLocked = true;
                     this.playLockSound();
                     eventBus.emit('lock-acquired', { target });
+                    if (CONFIG.DEBUG_MODE) {
+                        console.log('🔒 Lock acquired on target:', target.name || target.faction + ' ' + target.shipClass);
+                    }
                 }
             } else {
                 // New target, reset lock
@@ -121,10 +128,13 @@ class TargetingSystem {
 
             // Check if reticle is within entity bounds (with generous detection radius)
             const distance = MathUtils.distance(worldX, worldY, entity.x, entity.y);
-            const baseRadius = entity.radius || entity.getShipSize?.() || 50;
-            const detectionRadius = baseRadius * 4; // 4x the radius for easier targeting
+            const baseRadius = entity.radius || (entity.getShipSize ? entity.getShipSize() : 50) || 50;
+            const detectionRadius = baseRadius * 6; // 6x the radius for easier targeting (increased from 4x)
 
             if (distance <= detectionRadius) {
+                if (CONFIG.DEBUG_MODE) {
+                    console.log(`🎯 Target detected: ${entity.name || entity.faction + ' ' + entity.shipClass}, distance: ${distance.toFixed(1)}, radius: ${detectionRadius.toFixed(1)}`);
+                }
                 return entity;
             }
         }

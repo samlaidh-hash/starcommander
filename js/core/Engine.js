@@ -625,6 +625,9 @@ class Engine {
                 // Standard torpedo - fire immediately on click
                 const worldPos = this.camera.screenToWorld(data.x, data.y);
                 const lockOnTarget = this.targetingSystem.getLockedTarget();
+                if (CONFIG.DEBUG_MODE && lockOnTarget) {
+                    console.log('🚀 Firing torpedo with lock-on target:', lockOnTarget.name || lockOnTarget.faction + ' ' + lockOnTarget.shipClass);
+                }
                 const projectiles = this.playerShip.fireTorpedoes(worldPos.x, worldPos.y, lockOnTarget);
                 if (projectiles && projectiles.length > 0) {
                     this.projectiles.push(...projectiles);
@@ -2041,6 +2044,26 @@ class Engine {
                     targetY = entity.target.y;
                 } else {
                     continue; // No target, skip
+                }
+
+                // For player: initiate disruptor bursts when holding LMB (beamFiring)
+                if (entity.isPlayer && this.beamFiring && !this.warpingOut) {
+                    const currentTime = performance.now() / 1000;
+                    const targetAngle = MathUtils.angleBetween(entity.x, entity.y, targetX, targetY);
+                    
+                    // Fire disruptors that are ready and in arc
+                    if (entity.weapons) {
+                        for (const weapon of entity.weapons) {
+                            if (weapon instanceof Disruptor) {
+                                // Check if weapon is in arc and ready to fire
+                                if (weapon.isInArc(targetAngle, entity.rotation) && 
+                                    weapon.canFire(currentTime) && 
+                                    !weapon.isBursting) {
+                                    weapon.fire(entity, targetX, targetY, currentTime);
+                                }
+                            }
+                        }
+                    }
                 }
 
                 const burstShots = entity.getDisruptorBurstShots(targetX, targetY);
