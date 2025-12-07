@@ -156,16 +156,27 @@ function cloneWeaponPosition(positionKey, explicitPosition, shipSize) {
     return undefined;
 }
 
-function buildWeaponFromSpec(spec, shipSize) {
+/**
+ * Build weapon from spec with JSON scaling support
+ * @param {Object} spec - Weapon specification
+ * @param {number} shipSize - Ship size from getShipSize()
+ * @param {Object} shipImageData - Ship image data {width, height, scale} (optional)
+ * @returns {Weapon|null} - Constructed weapon or null
+ */
+function buildWeaponFromSpec(spec, shipSize, shipImageData = null) {
     const builder = WEAPON_BUILDERS[spec.type];
     if (!builder) {
         console.warn(`Unknown weapon type in loadout: ${spec.type}`);
         return null;
     }
 
-    const { type, positionKey, position, ...rest } = spec;
+    const { type, positionKey, position, _scaleFactor, ...rest } = spec;
     const config = { ...rest };
-    const finalPosition = cloneWeaponPosition(positionKey, position, shipSize);
+    
+    // Use scaleFactor from JSON if available, otherwise default to 1
+    const scaleFactor = _scaleFactor !== undefined ? _scaleFactor : 1;
+    
+    const finalPosition = cloneWeaponPosition(positionKey, position, shipSize, scaleFactor, shipImageData);
     if (finalPosition) {
         config.position = finalPosition;
     }
@@ -257,13 +268,38 @@ function generatePirateLoadout(shipClass) {
     return loadout;
 }
 
-function getShipLoadoutSpecs(faction, shipClass) {
+/**
+ * Get ship loadout specs - tries to load from JSON first, falls back to hardcoded
+ * @param {string} faction - Faction name
+ * @param {string} shipClass - Ship class
+ * @returns {Promise<Array>|Array} - Array of weapon specs (async if loading JSON)
+ */
+async function getShipLoadoutSpecs(faction, shipClass) {
     // Pirates get random loadouts for variety
     if (faction === 'PIRATE') {
         return generatePirateLoadout(shipClass);
     }
 
     const factionKey = resolveLoadoutFaction(faction);
+    
+    // Try to load from JSON file
+    if (window.weaponLoadoutLoader) {
+        try {
+            const loadoutData = await window.weaponLoadoutLoader.loadLoadout(factionKey, shipClass);
+            if (loadoutData && loadoutData.weapons) {
+                // Return weapons array with scaleFactor attached for later use
+                return loadoutData.weapons.map(weapon => ({
+                    ...weapon,
+                    _scaleFactor: loadoutData.scaleFactor || 1,
+                    _loadoutData: loadoutData
+                }));
+            }
+        } catch (error) {
+            console.warn(`Failed to load JSON loadout for ${factionKey}_${shipClass}, using fallback:`, error);
+        }
+    }
+
+    // Fallback to hardcoded loadouts
     const factionLoadouts = SHIP_WEAPON_LOADOUTS[factionKey];
     if (factionLoadouts && factionLoadouts[shipClass]) {
         return factionLoadouts[shipClass];
@@ -329,8 +365,9 @@ class Ship extends Entity {
         this.lastBoostTime = -this.boostCooldown; // Allow boost immediately
         this.boostDirection = null; // 'w', 'a', 's', 'd'
 
-        // Throttle system (NEW - replaces hold-to-accelerate)
-        this.throttle = 0;  // 0.0 to 1.0 (0% to 100% max speed, in 10% increments)
+        // Throttle system (NEW - caret-based)
+        this.throttleCaretPosition = 0.5;  // 0.0 (left/reverse) to 1.0 (right/forward), 0.5 = center (stationary)
+        this.throttle = 0;  // -1.0 to 1.0 (-100% reverse to +100% forward, derived from caret position)
         this.targetSpeed = 0;  // Speed ship is trying to reach based on throttle
         this.throttleBoost = {
             active: false,
@@ -369,8 +406,9 @@ class Ship extends Entity {
         // Shields
         this.shields = this.createShields();
 
-        // Weapons
+        // Weapons - initialize synchronously first, then load from JSON async
         this.weapons = this.createWeapons();
+        this._initializeWeaponsFromJSON(); // Async JSON loading happens in background
 
         // Crew Skills System - affects ship performance
         this.crewSkills = new CrewSkillSystem(this);
@@ -394,8 +432,93 @@ class Ship extends Entity {
         this.transporter = new TransporterSystem(this);
     }
 
+    /**
+     * Initialize weapons from JSON asynchronously (updates weapons if JSON available)
+     * This runs in the background after synchronous initialization
+     */
+    async _initializeWeaponsFromJSON() {
+        // Skip if pirates (they use random loadouts)
+        if (this.faction === 'PIRATE') {
+            return;
+        }
+
+        // Get ship image data for proper scaling
+        let shipImageData = null;
+        if (window.assetManager && this.faction && this.shipClass) {
+            const normalizedFaction = typeof this.faction === 'string' ? this.faction.toLowerCase() : this.faction;
+            const factionForImage = normalizedFaction === 'player' ? 'federation' : normalizedFaction;
+            const img = window.assetManager.getShipImage(factionForImage, this.shipClass);
+            
+            if (img && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
+                const shipSize = this.getShipSize();
+                const scale = shipSize / Math.max(img.naturalWidth, img.naturalHeight) * 2;
+                shipImageData = {
+                    width: img.naturalWidth,
+                    height: img.naturalHeight,
+                    scale: scale
+                };
+            } else {
+                // Wait for image to load
+                try {
+                    await window.assetManager.loadShipImage(factionForImage, this.shipClass);
+                    const loadedImg = window.assetManager.getShipImage(factionForImage, this.shipClass);
+                    if (loadedImg && loadedImg.complete && loadedImg.naturalWidth > 0) {
+                        const shipSize = this.getShipSize();
+                        const scale = shipSize / Math.max(loadedImg.naturalWidth, loadedImg.naturalHeight) * 2;
+                        shipImageData = {
+                            width: loadedImg.naturalWidth,
+                            height: loadedImg.naturalHeight,
+                            scale: scale
+                        };
+                    }
+                } catch (error) {
+                    console.warn(`Failed to load ship image for ${factionForImage}_${this.shipClass}:`, error);
+                }
+            }
+        }
+
+        try {
+            const specs = await getShipLoadoutSpecs(this.faction, this.shipClass);
+            
+            // Check if we got JSON data (has _scaleFactor property)
+            const hasJSONData = specs.length > 0 && specs[0]._scaleFactor !== undefined;
+            
+            if (hasJSONData) {
+                // Replace weapons with JSON-loaded ones
+                const weapons = [];
+                const shipSize = this.getShipSize();
+
+                for (const spec of specs) {
+                    const weapon = buildWeaponFromSpec(spec, shipSize, shipImageData);
+                    if (weapon) {
+                        weapons.push(weapon);
+                    }
+                }
+
+                this.weapons = weapons;
+            }
+        } catch (error) {
+            console.warn(`Failed to load JSON loadout for ${this.faction}_${this.shipClass}, using hardcoded:`, error);
+            // Keep existing hardcoded weapons
+        }
+    }
+
+    /**
+     * Create weapons synchronously (uses hardcoded loadouts)
+     * This is called immediately in constructor, then JSON loads async and updates if available
+     */
     createWeapons() {
-        const specs = getShipLoadoutSpecs(this.faction, this.shipClass);
+        const factionKey = resolveLoadoutFaction(this.faction);
+        const factionLoadouts = SHIP_WEAPON_LOADOUTS[factionKey];
+        let specs = [];
+        
+        if (factionLoadouts && factionLoadouts[this.shipClass]) {
+            specs = factionLoadouts[this.shipClass];
+        } else {
+            const defaultLoadouts = SHIP_WEAPON_LOADOUTS.DEFAULT || {};
+            specs = defaultLoadouts[this.shipClass] || [];
+        }
+
         const weapons = [];
         const shipSize = this.getShipSize();
 
@@ -1016,8 +1139,15 @@ class Ship extends Entity {
      * Called every frame from update()
      */
     updateThrottle(deltaTime) {
-        // Calculate target speed from throttle (0.0 to 1.0, in 10% increments)
-        this.targetSpeed = this.maxSpeed * this.throttle;
+        // Calculate target speed from throttle (-1.0 to 1.0)
+        // throttle > 0: forward speed (0% to 100% max speed)
+        // throttle = 0: stationary
+        // throttle < 0: reverse speed (0% to -50% max speed)
+        if (this.throttle >= 0) {
+            this.targetSpeed = this.maxSpeed * this.throttle; // Forward: 0 to maxSpeed
+        } else {
+            this.targetSpeed = this.maxReverseSpeed * Math.abs(this.throttle) * 0.5; // Reverse: 0 to -50% maxSpeed
+        }
 
         // Add boost if active
         const currentTime = performance.now() / 1000;
@@ -1029,28 +1159,29 @@ class Ship extends Entity {
 
         // Energy drain/refill based on throttle
         if (this.energy) {
-            if (this.throttle > 0.5) {
-                // Throttle > 50%: Drain energy
+            if (this.throttle > 0) {
+                // Forward throttle: Drain energy
                 this.energy.drainEnergy(0, deltaTime);
-            } else if (this.throttle < 0.5) {
-                // Throttle < 50%: Refill energy
+            } else if (this.throttle < 0) {
+                // Reverse throttle: Drain energy (less than forward)
+                this.energy.drainEnergy(0, deltaTime * 0.5); // Half drain for reverse
+            } else {
+                // Throttle = 0: Refill energy
                 this.energy.refillEnergy(0, deltaTime);
             }
-            // Throttle = 50%: No energy change
         }
 
         // Accelerate/decelerate toward target speed
-        const currentSpeed = Math.abs(this.currentSpeed);
-        const speedDiff = this.targetSpeed - currentSpeed;
+        const speedDiff = this.targetSpeed - this.currentSpeed;
 
         if (Math.abs(speedDiff) > 1) { // Only adjust if difference is significant
             if (speedDiff > 0) {
-                // Accelerate toward target
+                // Accelerate toward target (forward or reducing reverse)
                 const accel = this.acceleration * deltaTime;
                 this.currentSpeed += accel;
                 this.currentSpeed = Math.min(this.currentSpeed, this.targetSpeed);
             } else {
-                // Decelerate toward target
+                // Decelerate toward target (reverse or reducing forward)
                 const decel = this.deceleration * deltaTime;
                 this.currentSpeed -= decel;
                 this.currentSpeed = Math.max(this.currentSpeed, this.targetSpeed);
@@ -1072,8 +1203,9 @@ class Ship extends Entity {
     emergencyStop() {
         const currentTime = performance.now() / 1000;
 
-        // Set throttle to zero
+        // Set throttle to zero and reset caret position
         this.throttle = 0;
+        this.throttleCaretPosition = 0.5; // Center position
         this.targetSpeed = 0;
 
         // Rapid deceleration (90% speed reduction)
@@ -1726,9 +1858,12 @@ class Ship extends Entity {
 
         // Calculate impact angle if contact point provided
         // NO SHIELDS while cloaked or in nebula!
+        let shieldAbsorbed = false;
         if (contactPoint && this.shields && this.shields.isUp() && !this.isCloaked() && !this.inNebula) {
             // Unified shield - doesn't care about angle
+            const beforeDamage = remainingDamage;
             remainingDamage = this.shields.applyDamage(remainingDamage, currentTime, this);
+            shieldAbsorbed = (beforeDamage > remainingDamage);
 
             if (this.isPlayer && remainingDamage < damage) {
                 const shieldDamage = damage - remainingDamage;
@@ -1744,8 +1879,13 @@ class Ship extends Entity {
         if (remainingDamage > 0 && this.energy) {
             this.energy.takeDamage(remainingDamage);
 
-            // Add damage flash effect for ALL ships (not just player)
-            this.damageFlashAlpha = 0.8;
+            // Create debris burst effect when hull takes damage (unshielded hit)
+            if (!shieldAbsorbed && contactPoint && window.game && window.game.particleSystem) {
+                window.game.particleSystem.createDebrisBurst(contactPoint.x || this.x, contactPoint.y || this.y, {
+                    particleCount: 15,
+                    color: '#ff9900'
+                });
+            }
 
             if (this.isPlayer) {
                 eventBus.emit('player-damage', {
@@ -1800,26 +1940,31 @@ class Ship extends Entity {
         
         // Calculate ship rear position for particle trails
         const rearOffset = size * 0.6;
-        const trailX = this.x + Math.cos(MathUtils.toRadians(this.rotation + 180)) * rearOffset;
-        const trailY = this.y + Math.sin(MathUtils.toRadians(this.rotation + 180)) * rearOffset;
+        const trailAngle = MathUtils.toRadians(this.rotation + 180);
+        const trailX = this.x + Math.cos(trailAngle) * rearOffset;
+        const trailY = this.y + Math.sin(trailAngle) * rearOffset;
         
-        // 75% or less: Particle trails (smoke)
+        // Calculate ship velocity for trail positioning
+        const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+        
+        // 75% or less: Continuous smoke trails
         if (damageState <= 0.75) {
             const smokeIntensity = 1.0 - (damageState / 0.75); // More smoke as damage increases
-            if (Math.random() < smokeIntensity * 0.3) { // 30% chance per frame at 0% capacity
-                particleSystem.createEngineTrail(trailX, trailY, MathUtils.toRadians(this.rotation + 180), {
-                    color: '#666666', // Gray smoke
-                    size: 1.5,
+            // Create smoke trail particles more frequently
+            if (Math.random() < smokeIntensity * 0.5) { // Up to 50% chance per frame
+                particleSystem.createSmokeTrail(trailX, trailY, trailAngle, {
+                    particleCount: Math.floor(2 + smokeIntensity * 2),
                     intensity: smokeIntensity
                 });
             }
         }
         
-        // 50% or less: Flames onboard + particle trails
+        // 50% or less: Flames onboard + enhanced smoke trails
         if (damageState <= 0.50) {
-            // Create flames on ship (small fire particles)
             const flameIntensity = (0.50 - damageState) / 0.50; // 0 to 1
-            const flameCount = Math.floor(flameIntensity * 3);
+            
+            // Create flames on ship (enhanced fire particles)
+            const flameCount = Math.floor(flameIntensity * 4);
             
             for (let i = 0; i < flameCount; i++) {
                 const offsetX = (Math.random() - 0.5) * size * 0.8;
@@ -1827,34 +1972,66 @@ class Ship extends Entity {
                 const flameX = this.x + Math.cos(MathUtils.toRadians(this.rotation)) * offsetX - Math.sin(MathUtils.toRadians(this.rotation)) * offsetY;
                 const flameY = this.y + Math.sin(MathUtils.toRadians(this.rotation)) * offsetX + Math.cos(MathUtils.toRadians(this.rotation)) * offsetY;
                 
-                if (Math.random() < 0.15) { // 15% chance per flame per frame
-                    particleSystem.addParticle(new Particle({
-                        x: flameX,
-                        y: flameY,
-                        vx: (Math.random() - 0.5) * 20,
-                        vy: (Math.random() - 0.5) * 20,
-                        size: 2 + Math.random() * 3,
-                        color: Math.random() > 0.5 ? '#ff6600' : '#ff3300',
-                        life: 0.3 + Math.random() * 0.2,
-                        decay: 2 + Math.random(),
-                        glow: true,
-                        type: 'circle'
-                    }));
+                // More frequent flame particles
+                if (Math.random() < 0.25) { // 25% chance per flame per frame
+                    particleSystem.createFlame(flameX, flameY, {
+                        intensity: flameIntensity
+                    });
                 }
+            }
+            
+            // Enhanced smoke trails with occasional flame particles mixed in
+            if (Math.random() < flameIntensity * 0.3) {
+                particleSystem.createSmokeTrail(trailX, trailY, trailAngle, {
+                    particleCount: Math.floor(3 + flameIntensity * 2),
+                    intensity: flameIntensity
+                });
+            }
+            
+            // Add occasional flame particles to trail
+            if (Math.random() < flameIntensity * 0.2) {
+                particleSystem.createFlame(trailX, trailY, {
+                    intensity: flameIntensity * 0.5
+                });
             }
         }
         
-        // 25% or less: Flames + particle trails + random small explosions
+        // 25% or less: Intense flames + heavy smoke trails + random small explosions
         if (damageState <= 0.25) {
+            const criticalIntensity = (0.25 - damageState) / 0.25;
+            
+            // More intense flames
+            const intenseFlameCount = Math.floor(criticalIntensity * 6);
+            for (let i = 0; i < intenseFlameCount; i++) {
+                const offsetX = (Math.random() - 0.5) * size * 0.9;
+                const offsetY = (Math.random() - 0.5) * size * 0.7;
+                const flameX = this.x + Math.cos(MathUtils.toRadians(this.rotation)) * offsetX - Math.sin(MathUtils.toRadians(this.rotation)) * offsetY;
+                const flameY = this.y + Math.sin(MathUtils.toRadians(this.rotation)) * offsetX + Math.cos(MathUtils.toRadians(this.rotation)) * offsetY;
+                
+                if (Math.random() < 0.4) { // 40% chance per flame per frame
+                    particleSystem.createFlame(flameX, flameY, {
+                        intensity: criticalIntensity
+                    });
+                }
+            }
+            
+            // Heavy smoke trails
+            if (Math.random() < criticalIntensity * 0.6) {
+                particleSystem.createSmokeTrail(trailX, trailY, trailAngle, {
+                    particleCount: Math.floor(4 + criticalIntensity * 3),
+                    intensity: criticalIntensity
+                });
+            }
+            
             // Random small explosions
-            if (Math.random() < 0.01) { // 1% chance per frame
+            if (Math.random() < 0.015) { // 1.5% chance per frame
                 const explosionX = this.x + (Math.random() - 0.5) * size;
                 const explosionY = this.y + (Math.random() - 0.5) * size;
                 particleSystem.createExplosion(explosionX, explosionY, {
-                    particleCount: 10,
-                    size: 0.5,
+                    particleCount: 12,
+                    size: 0.6,
                     color: '#ff3300',
-                    speed: 50
+                    speed: 60
                 });
             }
         }

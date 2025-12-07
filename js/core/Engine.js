@@ -447,29 +447,41 @@ class Engine {
                 }
             }
 
-            // NEW THROTTLE SYSTEM - W/S adjust throttle in 10% increments (single press only)
+            // NEW THROTTLE SYSTEM - W/S move caret left/right on speed bar
+            // NOTE: Don't interfere with tactical warp (double-tap-and-hold W) or instant stop (double-tap S)
             if (this.playerShip && this.stateManager.isPlaying()) {
                 const inputManager = this.inputManager;
-                
-                // W key - increase throttle by 10% (only on single press, not hold)
-                if (data.key === 'w' && inputManager.keysPressed.get('w')) {
-                    this.playerShip.throttle = Math.min(1.0, this.playerShip.throttle + 0.1);
-                    console.log(`Throttle increased to ${(this.playerShip.throttle * 100).toFixed(0)}%`);
+                const CARET_MOVE_SPEED = 0.02; // 2% per key press
+
+                // W key - move caret right (increase throttle toward forward)
+                // Skip if this is a double-tap (tactical warp takes priority)
+                if (data.key === 'w' && inputManager.keysPressed.get('w') && !inputManager.wKeyDoubleTapped) {
+                    this.playerShip.throttleCaretPosition = Math.min(1.0, (this.playerShip.throttleCaretPosition || 0.5) + CARET_MOVE_SPEED);
+                    // Convert caret position to throttle: right side (1.0) = 100%, center (0.5) = 0%, left (0.0) = -100%
+                    if (this.playerShip.throttleCaretPosition >= 0.5) {
+                        // Right side: 0% to 100% throttle
+                        this.playerShip.throttle = (this.playerShip.throttleCaretPosition - 0.5) * 2; // 0.5->0, 1.0->1.0
+                    } else {
+                        // Left side: -100% to 0% throttle (max -50% speed)
+                        this.playerShip.throttle = (this.playerShip.throttleCaretPosition - 0.5) * 2; // 0.0->-1.0, 0.5->0
+                    }
                 }
 
-                // S key - decrease throttle by 10% (only on single press, not hold)
-                // Skip throttle adjustment if this was a double-tap (instant-stop takes priority)
+                // S key - move caret left (decrease throttle toward reverse)
+                // Skip if this is a double-tap (instant stop takes priority)
                 if (data.key === 's' && inputManager.keysPressed.get('s')) {
-                    // Check if this was a double-tap by checking if lastKeyPressTimes['s'] is 0
-                    // When InputManager detects a double-tap, it sets lastKeyPressTimes to 0 (line 102)
+                    // Check if this was a double-tap (instant stop) - if so, skip throttle adjustment
                     const lastSPressTime = inputManager.lastKeyPressTimes.get('s');
-                    
                     // If lastSPressTime is 0, it means a double-tap was just detected (instant-stop triggered)
-                    // Skip throttle adjustment in this case
-                    if (lastSPressTime !== 0 && lastSPressTime !== undefined) {
-                        // Not a double-tap, safe to adjust throttle
-                        this.playerShip.throttle = Math.max(0.0, this.playerShip.throttle - 0.1);
-                        console.log(`Throttle decreased to ${(this.playerShip.throttle * 100).toFixed(0)}%`);
+                    if (lastSPressTime !== 0) {
+                        // Not a double-tap, adjust throttle
+                        this.playerShip.throttleCaretPosition = Math.max(0.0, (this.playerShip.throttleCaretPosition || 0.5) - CARET_MOVE_SPEED);
+                        // Convert caret position to throttle
+                        if (this.playerShip.throttleCaretPosition >= 0.5) {
+                            this.playerShip.throttle = (this.playerShip.throttleCaretPosition - 0.5) * 2;
+                        } else {
+                            this.playerShip.throttle = (this.playerShip.throttleCaretPosition - 0.5) * 2;
+                        }
                     }
                     // If lastSPressTime is 0, skip throttle adjustment (double-tap detected = instant-stop)
                 }
@@ -958,8 +970,12 @@ class Engine {
         // Shield hit
         eventBus.on('shield-hit', (data) => {
             this.hud.addCriticalMessage(`Shields absorbed ${Math.round(data.damage)} damage!`);
-            // Shield impact effect
-            if (data.position) {
+            // Shield impact effect (flare)
+            if (data.point) {
+                this.particleSystem.createShieldImpact(data.point.x || data.point.x, data.point.y || data.point.y, {
+                    color: data.ship?.isPlayer ? '#00ffff' : '#ff6600'
+                });
+            } else if (data.position) {
                 this.particleSystem.createShieldImpact(data.position.x, data.position.y, {
                     color: data.ship?.isPlayer ? '#00ffff' : '#ff6600'
                 });
@@ -1128,6 +1144,21 @@ class Engine {
                 } else {
                     this.audioManager.playSound('explosion-small');
                 }
+            }
+        });
+
+        // Mine detonation explosion effect
+        eventBus.on('mine-detonated', (data) => {
+            if (data.mine) {
+                // Create explosion effect at mine position
+                this.particleSystem.createExplosion(data.mine.x, data.mine.y, {
+                    particleCount: 40,
+                    size: 1.2,
+                    color: data.mine.color || '#ff4400',
+                    speed: 120
+                });
+                // Play explosion sound
+                this.audioManager.playSound('explosion-medium');
             }
         });
     }
@@ -2282,16 +2313,32 @@ class Engine {
 
                             // Shields absorb first (only if shields are active/up)
                             let remainingDamage = projectile.damage;
+                            let shieldAbsorbed = false;
                             if (entity.shields && !entity.isCloaked() && entity.shields.active) {
                                 const impactAngle = MathUtils.angleBetween(entity.x, entity.y, projectile.x, projectile.y);
                                 const currentTime = performance.now() / 1000;
+                                const beforeDamage = remainingDamage;
                                 remainingDamage = entity.shields.applyDamage(entity.rotation, impactAngle, remainingDamage, currentTime);
+                                shieldAbsorbed = (beforeDamage > remainingDamage);
+                                
+                                // Create shield flare effect when shield absorbs damage
+                                if (shieldAbsorbed) {
+                                    this.particleSystem.createShieldImpact(projectile.x, projectile.y, {
+                                        color: entity.isPlayer ? '#00ffff' : '#ff6600'
+                                    });
+                                }
                             }
 
                             // Apply to single nearest system (overflow automatically goes to hull)
                             if (remainingDamage > 0) {
                                 const systemDamage = entity.systems.applyDamageToNearestSystem(localX, localY, remainingDamage);
-                                entity.damageFlashAlpha = 0.8;
+                                // Create debris burst effect when hull/system takes damage (unshielded hit)
+                                if (!shieldAbsorbed) {
+                                    this.particleSystem.createDebrisBurst(projectile.x, projectile.y, {
+                                        particleCount: 15,
+                                        color: '#ff9900'
+                                    });
+                                }
 
                                 // Emit system damage event for player
                                 if (entity.isPlayer && systemDamage.system) {

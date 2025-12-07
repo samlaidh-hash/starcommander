@@ -981,9 +981,8 @@ class HUD {
         
         // Caret shows THROTTLE SETTING (intent) - independent from actual speed
         if (caret) {
-            // throttle: 0.0 to 1.0 (0% to 100%)
-            // Map to caret position: 0.0 = left edge (0%), 0.5 = center (50%), 1.0 = right edge (100%)
-            const caretPosition = ship.throttle || 0;
+            // throttleCaretPosition: 0.0 (left/reverse) to 1.0 (right/forward), 0.5 = center (stationary)
+            const caretPosition = ship.throttleCaretPosition !== undefined ? ship.throttleCaretPosition : 0.5;
             caret.style.left = `${caretPosition * 100}%`;
         }
         

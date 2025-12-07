@@ -336,6 +336,122 @@ class ParticleSystem {
     }
 
     /**
+     * Create smoke trail effect (for damaged ships)
+     */
+    createSmokeTrail(x, y, angle, config = {}) {
+        const particleCount = config.particleCount || 3;
+        const intensity = config.intensity || 1.0;
+        
+        // Dark gray/black smoke particles
+        for (let i = 0; i < particleCount; i++) {
+            const spread = (Math.random() - 0.5) * 0.4;
+            const backwardSpeed = -15 * intensity;
+            const sideSpread = (Math.random() - 0.5) * 20;
+            
+            this.addParticle(new Particle({
+                x: x + (Math.random() - 0.5) * 8,
+                y: y + (Math.random() - 0.5) * 8,
+                vx: Math.cos(angle + spread) * backwardSpeed + sideSpread * 0.3,
+                vy: Math.sin(angle + spread) * backwardSpeed + sideSpread * 0.3,
+                size: (2 + Math.random() * 3) * intensity,
+                color: i % 2 === 0 ? '#333333' : '#222222',
+                life: 1.0 + Math.random() * 0.5,
+                decay: 0.4 + Math.random() * 0.2,
+                glow: false,
+                type: 'circle'
+            }));
+        }
+    }
+
+    /**
+     * Create flame effect (for damaged ships)
+     */
+    createFlame(x, y, config = {}) {
+        const intensity = config.intensity || 1.0;
+        const particleCount = Math.floor(2 * intensity);
+        
+        // Orange/red/yellow flame particles
+        for (let i = 0; i < particleCount; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const velocity = 10 + Math.random() * 30;
+            
+            const colorChoices = ['#ff6600', '#ff3300', '#ff9900', '#ffaa00'];
+            const color = colorChoices[Math.floor(Math.random() * colorChoices.length)];
+            
+            this.addParticle(new Particle({
+                x: x + (Math.random() - 0.5) * 5,
+                y: y + (Math.random() - 0.5) * 5,
+                vx: Math.cos(angle) * velocity * 0.3,
+                vy: Math.sin(angle) * velocity * 0.3 - 10, // Upward bias
+                size: (1.5 + Math.random() * 2.5) * intensity,
+                color: color,
+                life: 0.3 + Math.random() * 0.3,
+                decay: 2 + Math.random() * 1,
+                glow: true,
+                type: 'circle'
+            }));
+        }
+    }
+
+    /**
+     * Create debris burst effect (for unshielded hull hits)
+     */
+    createDebrisBurst(x, y, config = {}) {
+        const particleCount = config.particleCount || 20;
+        const color = config.color || '#ff9900';
+
+        // Metal debris particles (gray/brown chunks)
+        for (let i = 0; i < particleCount; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const velocity = 40 + Math.random() * 60;
+
+            this.addParticle(new Particle({
+                x, y,
+                vx: Math.cos(angle) * velocity,
+                vy: Math.sin(angle) * velocity,
+                size: 2 + Math.random() * 3,
+                color: i % 3 === 0 ? '#999999' : (i % 3 === 1 ? '#666666' : '#cc6600'),
+                life: 0.8 + Math.random() * 0.4,
+                decay: 0.8 + Math.random() * 0.4,
+                glow: false,
+                type: Math.random() > 0.5 ? 'circle' : 'square',
+                rotation: Math.random() * Math.PI * 2,
+                rotationSpeed: (Math.random() - 0.5) * 8
+            }));
+        }
+
+        // Impact sparks (orange/yellow)
+        for (let i = 0; i < particleCount / 2; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const velocity = 50 + Math.random() * 70;
+
+            this.addParticle(new Particle({
+                x, y,
+                vx: Math.cos(angle) * velocity,
+                vy: Math.sin(angle) * velocity,
+                size: 1 + Math.random() * 2,
+                color: i % 2 === 0 ? color : '#ffaa00',
+                life: 0.4 + Math.random() * 0.3,
+                decay: 1.5 + Math.random() * 0.5,
+                glow: true,
+                type: 'circle'
+            }));
+        }
+
+        // Small impact flash
+        this.addParticle(new Particle({
+            x, y,
+            vx: 0, vy: 0,
+            size: 8,
+            color: '#ffffff',
+            life: 0.15,
+            decay: 8,
+            glow: true,
+            type: 'circle'
+        }));
+    }
+
+    /**
      * Create ship destruction explosion
      */
     createShipExplosion(x, y, shipSize, config = {}) {

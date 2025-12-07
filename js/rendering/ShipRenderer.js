@@ -70,21 +70,8 @@ class ShipRenderer {
             this.drawInternalSystems(ship);
         }
 
-        // Draw damage flash effect if ship was recently hit
-        // Only flash PNG images, not fallback vector shapes
-        if (ship.damageFlashAlpha && ship.damageFlashAlpha > 0 && ship.hasPNGImage && ship.pngImageWidth && ship.pngImageHeight) {
-            this.ctx.globalAlpha = ship.damageFlashAlpha;
-            this.ctx.strokeStyle = '#f00';
-            this.ctx.lineWidth = 4;
-            this.ctx.beginPath();
-            
-            // Draw red outline around PNG image bounds only
-            const halfWidth = ship.pngImageWidth / 2;
-            const halfHeight = ship.pngImageHeight / 2;
-            this.ctx.rect(-halfWidth, -halfHeight, ship.pngImageWidth, ship.pngImageHeight);
-            this.ctx.stroke();
-            this.ctx.globalAlpha = 1.0;
-        }
+        // Damage flash effect removed - replaced with debris bursts and shield flares
+        // (handled in Engine.js event handlers)
 
         this.ctx.restore();
 
@@ -790,23 +777,108 @@ class ShipRenderer {
         
         const damageState = ship.energy.getDamageState();
         const size = ship.getShipSize();
+        const currentTime = performance.now() / 1000;
         
-        // 50% or less: Draw flame indicators on ship
+        // 75% or less: Draw smoke wisps on ship
+        if (damageState <= 0.75) {
+            const smokeIntensity = (0.75 - damageState) / 0.75;
+            const smokeCount = Math.floor(smokeIntensity * 3);
+            
+            for (let i = 0; i < smokeCount; i++) {
+                const offsetX = (Math.random() - 0.5) * size * 0.7;
+                const offsetY = (Math.random() - 0.5) * size * 0.5;
+                
+                // Animated smoke wisp
+                const animPhase = (currentTime * 2 + i) % (Math.PI * 2);
+                const alpha = 0.3 + Math.sin(animPhase) * 0.2;
+                const scale = 1.0 + Math.sin(animPhase * 1.5) * 0.3;
+                
+                this.ctx.save();
+                this.ctx.globalAlpha = alpha * smokeIntensity;
+                this.ctx.fillStyle = '#444444';
+                this.ctx.shadowBlur = 8;
+                this.ctx.shadowColor = '#222222';
+                
+                // Draw wispy smoke cloud
+                const wispSize = (3 + Math.random() * 2) * scale;
+                this.ctx.beginPath();
+                this.ctx.arc(offsetX, offsetY, wispSize, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                // Inner darker core
+                this.ctx.globalAlpha = alpha * 0.5 * smokeIntensity;
+                this.ctx.fillStyle = '#222222';
+                this.ctx.beginPath();
+                this.ctx.arc(offsetX, offsetY, wispSize * 0.6, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                this.ctx.restore();
+            }
+        }
+        
+        // 50% or less: Draw enhanced flame indicators on ship
         if (damageState <= 0.50) {
             const flameIntensity = (0.50 - damageState) / 0.50; // 0 to 1
-            const flameCount = Math.floor(flameIntensity * 5);
+            const flameCount = Math.floor(flameIntensity * 6);
             
             for (let i = 0; i < flameCount; i++) {
                 const offsetX = (Math.random() - 0.5) * size * 0.6;
                 const offsetY = (Math.random() - 0.5) * size * 0.4;
                 
+                // Animated flame
+                const animPhase = (currentTime * 3 + i) % (Math.PI * 2);
+                const alpha = 0.7 + Math.sin(animPhase) * 0.3;
+                const flicker = 0.8 + Math.sin(animPhase * 2) * 0.2;
+                
                 this.ctx.save();
-                this.ctx.globalAlpha = 0.6 + Math.random() * 0.4;
-                this.ctx.fillStyle = Math.random() > 0.5 ? '#ff6600' : '#ff3300';
-                this.ctx.shadowBlur = 5;
+                this.ctx.globalAlpha = alpha * flameIntensity;
+                
+                // Outer flame (orange/yellow)
+                const outerSize = (3 + Math.random() * 2) * flicker;
+                const gradient = this.ctx.createRadialGradient(offsetX, offsetY, 0, offsetX, offsetY, outerSize);
+                gradient.addColorStop(0, '#ffaa00');
+                gradient.addColorStop(0.5, '#ff6600');
+                gradient.addColorStop(1, '#ff3300');
+                
+                this.ctx.fillStyle = gradient;
+                this.ctx.shadowBlur = 10;
                 this.ctx.shadowColor = '#ff3300';
                 this.ctx.beginPath();
-                this.ctx.arc(offsetX, offsetY, 2 + Math.random() * 2, 0, Math.PI * 2);
+                this.ctx.arc(offsetX, offsetY, outerSize, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                // Inner core (bright white/yellow)
+                const innerSize = outerSize * 0.4;
+                const innerGradient = this.ctx.createRadialGradient(offsetX, offsetY, 0, offsetX, offsetY, innerSize);
+                innerGradient.addColorStop(0, '#ffffff');
+                innerGradient.addColorStop(1, '#ffaa00');
+                
+                this.ctx.globalAlpha = alpha * 0.9 * flameIntensity;
+                this.ctx.fillStyle = innerGradient;
+                this.ctx.beginPath();
+                this.ctx.arc(offsetX, offsetY, innerSize, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                this.ctx.restore();
+            }
+        }
+        
+        // 25% or less: Intense flames and sparks
+        if (damageState <= 0.25) {
+            const criticalIntensity = (0.25 - damageState) / 0.25;
+            const sparkCount = Math.floor(criticalIntensity * 4);
+            
+            for (let i = 0; i < sparkCount; i++) {
+                const offsetX = (Math.random() - 0.5) * size * 0.8;
+                const offsetY = (Math.random() - 0.5) * size * 0.6;
+                
+                this.ctx.save();
+                this.ctx.globalAlpha = 0.8 + Math.random() * 0.2;
+                this.ctx.fillStyle = Math.random() > 0.5 ? '#ffff00' : '#ffaa00';
+                this.ctx.shadowBlur = 6;
+                this.ctx.shadowColor = '#ffaa00';
+                this.ctx.beginPath();
+                this.ctx.arc(offsetX, offsetY, 1 + Math.random(), 0, Math.PI * 2);
                 this.ctx.fill();
                 this.ctx.restore();
             }
