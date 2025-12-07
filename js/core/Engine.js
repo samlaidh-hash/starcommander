@@ -332,11 +332,6 @@ class Engine {
         this.torpedoCharging = false;
         this.plasmaChargeStart = 0;
         this.plasmaChargeDamage = 0;
-        
-        // Plasma charge audio
-        this.plasmaChargeAudioContext = null;
-        this.plasmaChargeOscillator = null;
-        this.plasmaChargeGainNode = null;
 
         // Mission system
         this.missionManager = new MissionManager();
@@ -452,63 +447,40 @@ class Engine {
                 }
             }
 
-            // NEW THROTTLE SYSTEM - W/S move caret left/right on speed bar
-            // NOTE: Don't interfere with tactical warp (double-tap-and-hold W) or instant stop (double-tap S)
+            // NEW THROTTLE SYSTEM - W/S adjust throttle in 10% increments (single press only)
             if (this.playerShip && this.stateManager.isPlaying()) {
                 const inputManager = this.inputManager;
-                const CARET_MOVE_SPEED = 0.02; // 2% per key press
                 
-                // W key - move caret right (increase throttle)
-                // Skip if this is a double-tap (tactical warp takes priority)
-                if (data.key === 'w' && inputManager.keysPressed.get('w') && !inputManager.wKeyDoubleTapped) {
-                    this.playerShip.throttleCaretPosition = Math.min(1.0, (this.playerShip.throttleCaretPosition || 0.5) + CARET_MOVE_SPEED);
-                    // Convert caret position to throttle: right side (1.0) = 100%, center (0.5) = 0%, left (0.0) = -100%
-                    if (this.playerShip.throttleCaretPosition >= 0.5) {
-                        // Right side: 0% to 100% throttle
-                        this.playerShip.throttle = (this.playerShip.throttleCaretPosition - 0.5) * 2; // 0.5->0, 1.0->1.0
-                    } else {
-                        // Left side: -100% to 0% throttle (max -50% speed)
-                        this.playerShip.throttle = (this.playerShip.throttleCaretPosition - 0.5) * 2; // 0.0->-1.0, 0.5->0
-                    }
+                // W key - increase throttle by 10% (only on single press, not hold)
+                if (data.key === 'w' && inputManager.keysPressed.get('w')) {
+                    this.playerShip.throttle = Math.min(1.0, this.playerShip.throttle + 0.1);
+                    console.log(`Throttle increased to ${(this.playerShip.throttle * 100).toFixed(0)}%`);
                 }
 
-                // S key - move caret left (decrease throttle)
-                // Skip if this is a double-tap (instant stop takes priority)
+                // S key - decrease throttle by 10% (only on single press, not hold)
+                // Skip throttle adjustment if this was a double-tap (instant-stop takes priority)
                 if (data.key === 's' && inputManager.keysPressed.get('s')) {
-                    // Check if this was a double-tap (instant stop) - if so, skip throttle adjustment
-                    const currentTime = performance.now();
-                    const lastSPressTime = inputManager.lastKeyPressTimes.get('s') || 0;
-                    const timeSinceLastSPress = currentTime - lastSPressTime;
-                    if (timeSinceLastSPress >= inputManager.doubleTapThreshold) {
-                        // Not a double-tap, adjust throttle
-                        this.playerShip.throttleCaretPosition = Math.max(0.0, (this.playerShip.throttleCaretPosition || 0.5) - CARET_MOVE_SPEED);
-                        // Convert caret position to throttle
-                        if (this.playerShip.throttleCaretPosition >= 0.5) {
-                            this.playerShip.throttle = (this.playerShip.throttleCaretPosition - 0.5) * 2;
-                        } else {
-                            this.playerShip.throttle = (this.playerShip.throttleCaretPosition - 0.5) * 2;
-                        }
+                    // Check if this was a double-tap by checking if lastKeyPressTimes['s'] is 0
+                    // When InputManager detects a double-tap, it sets lastKeyPressTimes to 0 (line 102)
+                    const lastSPressTime = inputManager.lastKeyPressTimes.get('s');
+                    
+                    // If lastSPressTime is 0, it means a double-tap was just detected (instant-stop triggered)
+                    // Skip throttle adjustment in this case
+                    if (lastSPressTime !== 0 && lastSPressTime !== undefined) {
+                        // Not a double-tap, safe to adjust throttle
+                        this.playerShip.throttle = Math.max(0.0, this.playerShip.throttle - 0.1);
+                        console.log(`Throttle decreased to ${(this.playerShip.throttle * 100).toFixed(0)}%`);
                     }
+                    // If lastSPressTime is 0, skip throttle adjustment (double-tap detected = instant-stop)
                 }
 
-            // A/D keys - turn left/right (no energy cost for normal turns)
-            if ((data.key === 'a' || data.key === 'd') && inputManager.keysPressed.get(data.key)) {
-                // Normal turning handled in update loop, no special action needed here
-            }
-
-            // X key - Emergency stop (resets caret to center)
-            if (data.key === 'x' || data.key === 'X') {
-                if (this.playerShip && this.stateManager.isPlaying()) {
-                    this.playerShip.emergencyStop();
-                    this.playerShip.throttleCaretPosition = 0.5; // Reset to center
-                    this.playerShip.throttle = 0;
-                    this.audioManager.playSound('shield-hit');
-                    this.hud.addCriticalMessage('EMERGENCY STOP');
+                // A/D keys - turn left/right (no energy cost for normal turns)
+                if ((data.key === 'a' || data.key === 'd') && inputManager.keysPressed.get(data.key)) {
+                    // Normal turning handled in update loop, no special action needed here
                 }
             }
-        }
 
-        // Consumable hotkeys (F1-F6) - keys 1-6 are used for bay operations
+            // Consumable hotkeys (F1-F6) - keys 1-6 are used for bay operations
             if (!this.stateManager.isPlaying() || !this.playerShip) return;
 
             // F1-F6 for consumables
@@ -637,7 +609,6 @@ class Engine {
                 this.torpedoCharging = true;
                 this.plasmaChargeStart = performance.now() / 1000;
                 this.plasmaChargeDamage = 0;
-                this.startPlasmaChargeAudio();
             } else {
                 // Standard torpedo - fire immediately on click
                 const worldPos = this.camera.screenToWorld(data.x, data.y);
@@ -657,7 +628,6 @@ class Engine {
             // Release plasma torpedo if charging
             if (this.torpedoCharging) {
                 this.torpedoCharging = false;
-                this.stopPlasmaChargeAudio();
 
                 // Fire plasma torpedo with accumulated charge
                 const worldPos = this.camera.screenToWorld(data.x, data.y);
@@ -1030,30 +1000,11 @@ class Engine {
                 this.audioManager.playSound('explosion-large');
             }
 
-            // Wait for explosion to fade before going to main menu
-            // Explosion particles: life 1.0-1.8s with decay 0.5-0.8 = ~2-3.6s duration
-            // Debris particles: life 1.5-2.5s with decay 0.3-0.5 = ~3-8.3s duration
-            // Wait 9 seconds to ensure all particles have faded (longest debris: ~8.3s)
-            const explosionStartTime = performance.now();
-            const checkExplosionFade = () => {
-                const elapsed = (performance.now() - explosionStartTime) / 1000;
-                const particleCount = this.particleSystem.particles ? this.particleSystem.particles.length : 0;
-                
-                // Wait at least 9 seconds, or until particles are gone (whichever is longer)
-                if (elapsed >= 9.0 && particleCount === 0) {
-                    alert('Game Over! Your ship was destroyed.');
-                    this.stateManager.setState('MAIN_MENU');
-                } else if (elapsed < 9.0) {
-                    // Still waiting for minimum time
-                    setTimeout(checkExplosionFade, 100); // Check every 100ms
-                } else {
-                    // Minimum time passed but particles still active, keep checking
-                    setTimeout(checkExplosionFade, 100);
-                }
-            };
-            
-            // Start checking after initial delay
-            setTimeout(checkExplosionFade, 100);
+            // Show mission failed screen AFTER explosion (2 second delay)
+            setTimeout(() => {
+                alert('Game Over! Your ship was destroyed.');
+                this.stateManager.setState('MAIN_MENU');
+            }, 2000);
         });
 
         // Ship-asteroid collision
@@ -1123,20 +1074,6 @@ class Engine {
         // Mission events
         eventBus.on('mission-accepted', (data) => {
             this.startMission(data.mission.id);
-        });
-
-        // Pause game when briefing screen is shown
-        eventBus.on('game-paused', () => {
-            if (this.stateManager.isPlaying()) {
-                this.stateManager.setState('PAUSED');
-            }
-        });
-
-        // Resume game when briefing screen is closed
-        eventBus.on('game-resumed', () => {
-            if (this.stateManager.isPaused()) {
-                this.stateManager.setState('PLAYING');
-            }
         });
 
         eventBus.on('mission-completed', (data) => {
@@ -1874,11 +1811,6 @@ class Engine {
 
             // Create AI controller for enemy ship
             enemyShip.aiController = new AIController(enemyShip);
-            
-            // Activate shields for enemy ships (they start with shields up)
-            if (enemyShip.shields) {
-                enemyShip.shields.active = true;
-            }
 
             this.entities.push(enemyShip);
             this.enemyShips.push(enemyShip);
@@ -1903,15 +1835,7 @@ class Engine {
     }
 
     update(deltaTime) {
-        // Don't update if paused or if briefing screen is visible
-        if (!this.stateManager.isPlaying()) {
-            // Also check if briefing screen is visible (in case state wasn't set correctly)
-            const briefingScreen = document.getElementById('briefing-screen');
-            if (briefingScreen && !briefingScreen.classList.contains('hidden')) {
-                return; // Briefing screen is open, don't update
-            }
-            return;
-        }
+        if (!this.stateManager.isPlaying()) return;
 
         // Watchdog: detect infinite loops
         this.updateCounter++;
@@ -2020,12 +1944,6 @@ class Engine {
 
             const projectiles = this.playerShip.fireContinuousBeams(worldPos.x, worldPos.y, currentTime);
             
-            // Also fire Disruptors (Trigon faction) - they use burst system
-            const disruptorShots = this.playerShip.getDisruptorBurstShots(worldPos.x, worldPos.y);
-            if (disruptorShots && disruptorShots.length > 0) {
-                projectiles.push(...disruptorShots);
-            }
-            
             // Check if any beams are actually firing (projectiles created)
             const anyBeamsFiring = projectiles && projectiles.length > 0;
             
@@ -2099,7 +2017,7 @@ class Engine {
         }
 
         // Handle plasma charge accumulation
-        if (this.torpedoCharging && this.playerShip && !this.warpingOut && this.stateManager.isPlaying()) {
+        if (this.torpedoCharging && this.playerShip && !this.warpingOut) {
             const currentTime = performance.now() / 1000;
             const chargeTime = currentTime - this.plasmaChargeStart;
 
@@ -2111,19 +2029,7 @@ class Engine {
 
             // Calculate damage: damage/second * time, max 5 seconds
             const cappedTime = Math.min(chargeTime, CONFIG.PLASMA_MAX_CHARGE_TIME);
-            const oldChargeDamage = this.plasmaChargeDamage || 0;
             this.plasmaChargeDamage = chargeRate * cappedTime;
-            
-            // Calculate charge percentage for audio feedback
-            const chargePercent = Math.min(100, (chargeTime / CONFIG.PLASMA_MAX_CHARGE_TIME) * 100);
-            
-            // Update charging audio tone (rising pitch based on charge)
-            this.updatePlasmaChargeAudio(chargePercent);
-        } else {
-            // Stop charging audio when not charging or game paused
-            if (!this.stateManager.isPlaying() || !this.torpedoCharging) {
-                this.stopPlasmaChargeAudio();
-            }
         }
 
         // Update all entities
@@ -2328,97 +2234,6 @@ class Engine {
 
         for (const projectile of this.projectiles) {
             if (!projectile.active) continue;
-            
-            // Store previous position for path checking
-            const lastX = projectile.lastX !== undefined ? projectile.lastX : projectile.x;
-            const lastY = projectile.lastY !== undefined ? projectile.lastY : projectile.y;
-            
-            // For beam projectiles, use firing point to target path instead of last position
-            let pathStartX = lastX;
-            let pathStartY = lastY;
-            let pathEndX = projectile.x;
-            let pathEndY = projectile.y;
-            
-            if (projectile.projectileType === 'beam' && projectile.firingPointX !== undefined && projectile.targetX !== undefined) {
-                // Beams travel from firing point to target - check that entire path
-                pathStartX = projectile.firingPointX;
-                pathStartY = projectile.firingPointY;
-                pathEndX = projectile.targetX;
-                pathEndY = projectile.targetY;
-            } else {
-                // For other projectiles, check path from last position to current position
-                // Skip if projectile hasn't moved yet (zero-length path)
-                if (lastX === projectile.x && lastY === projectile.y) {
-                    // Projectile hasn't moved yet, skip obstacle check this frame
-                    pathStartX = null; // Signal to skip
-                }
-            }
-            
-            // Check if projectile path is blocked by asteroids (like planets/stars block attacks)
-            // This must happen BEFORE checking target collisions
-            let blockedByAsteroid = false;
-            
-            if (pathStartX !== null) {
-                for (const entity of this.entities) {
-                    if (!entity.active) continue;
-                    if (entity.type !== 'asteroid') continue;
-                    
-                    // Check if asteroid is in projectile's path
-                    const distance = MathUtils.distanceToLineSegment(
-                        pathStartX, pathStartY,
-                        pathEndX, pathEndY,
-                        entity.x, entity.y
-                    );
-                    
-                    if (distance <= entity.radius) {
-                        // Asteroid blocks the projectile
-                        // Calculate impact point on asteroid surface
-                        const dx = pathEndX - pathStartX;
-                        const dy = pathEndY - pathStartY;
-                        const length = Math.sqrt(dx * dx + dy * dy);
-                        let impactX = projectile.x;
-                        let impactY = projectile.y;
-                        
-                        if (length > 0) {
-                            // Find closest point on path to asteroid center
-                            const t = Math.max(0, Math.min(1, 
-                                ((entity.x - pathStartX) * dx + (entity.y - pathStartY) * dy) / (length * length)
-                            ));
-                            impactX = pathStartX + t * dx;
-                            impactY = pathStartY + t * dy;
-                        }
-                        
-                        // Damage the asteroid
-                        if (entity.takeDamage) {
-                            const impactPoint = { x: impactX, y: impactY };
-                            const fragments = entity.takeDamage(projectile.damage || 1, impactPoint);
-                            
-                            // Add fragments to entities if asteroid split
-                            if (fragments && fragments.length > 0) {
-                                this.entities.push(...fragments);
-                            }
-                        }
-                        
-                        // Create impact effect at impact point
-                        const impactAngle = Math.atan2(dy, dx);
-                        const color = projectile.projectileType === 'beam' ? '#00aaff' : '#ff6600';
-                        this.particleSystem.createImpact(impactX, impactY, impactAngle, {
-                            color: color,
-                            size: 0.6
-                        });
-                        
-                        // Destroy projectile (blocked by asteroid)
-                        projectile.destroy();
-                        blockedByAsteroid = true;
-                        break; // Only one asteroid can block per frame
-                    }
-                }
-            }
-            
-            // Skip collision checking if blocked by asteroid
-            if (blockedByAsteroid) {
-                continue;
-            }
 
             // Check collision with ships and asteroids
             for (const entity of this.entities) {
@@ -2439,29 +2254,11 @@ class Engine {
                 const graceTime = (projectile.projectileType === 'beam') ? 0.05 : 0.25;
                 if (projectileAge < graceTime) continue;
 
-                // Check if projectile hits entity
-                // For ships with PNG images, check if hit is within image bounds
-                let hit = false;
-                if (entity.type === 'ship' && entity.hasPNGImage && entity.pngImageWidth && entity.pngImageHeight) {
-                    // Convert projectile position to ship-local coordinates
-                    const dx = projectile.x - entity.x;
-                    const dy = projectile.y - entity.y;
-                    const rad = MathUtils.toRadians(-entity.rotation);
-                    const localX = dx * Math.cos(rad) - dy * Math.sin(rad);
-                    const localY = dx * Math.sin(rad) + dy * Math.cos(rad);
-                    
-                    // Check if within PNG image bounds
-                    const halfWidth = entity.pngImageWidth / 2;
-                    const halfHeight = entity.pngImageHeight / 2;
-                    hit = Math.abs(localX) <= halfWidth && Math.abs(localY) <= halfHeight;
-                } else {
-                    // Fallback to circular hit detection
-                    const distance = MathUtils.distance(projectile.x, projectile.y, entity.x, entity.y);
-                    const hitRadius = entity.radius || entity.getShipSize?.() || 20;
-                    hit = distance <= hitRadius;
-                }
+                // Check if projectile is close to entity
+                const distance = MathUtils.distance(projectile.x, projectile.y, entity.x, entity.y);
+                const hitRadius = entity.radius || entity.getShipSize?.() || 20;
 
-                if (hit) {
+                if (distance <= hitRadius) {
                     // Hit!
                     if (projectile.projectileType === 'beam' || projectile.projectileType === 'disruptor') {
                         // Beam/Disruptor hit - SYSTEM KILLERS (Shields → Single System → Hull overflow)
@@ -2476,8 +2273,9 @@ class Engine {
                             // Shields absorb first (only if shields are active/up)
                             let remainingDamage = projectile.damage;
                             if (entity.shields && !entity.isCloaked() && entity.shields.active) {
+                                const impactAngle = MathUtils.angleBetween(entity.x, entity.y, projectile.x, projectile.y);
                                 const currentTime = performance.now() / 1000;
-                                remainingDamage = entity.shields.applyDamage(remainingDamage, currentTime, entity);
+                                remainingDamage = entity.shields.applyDamage(entity.rotation, impactAngle, remainingDamage, currentTime);
                             }
 
                             // Apply to single nearest system (overflow automatically goes to hull)
@@ -2530,9 +2328,9 @@ class Engine {
 
                             // Shields absorb first
                             let remainingDamage = projectile.damage;
-                            if (entity.shields && !entity.isCloaked() && entity.shields.active) {
+                            if (entity.shields && !entity.isCloaked()) {
                                 const currentTime = performance.now() / 1000;
-                                remainingDamage = entity.shields.applyDamage(remainingDamage, currentTime, entity);
+                                remainingDamage = entity.shields.applyDamage(entity.rotation, impactAngle, remainingDamage, currentTime);
                             }
 
                             // Apply to 2-3 systems (overflow automatically goes to hull)
@@ -2573,14 +2371,10 @@ class Engine {
                         });
                         this.audioManager.playSound('torpedo-explosion');
 
-                        // Handle asteroid hit (damage already applied in collision check above)
+                        // Break asteroid if hit
                         if (entity.type === 'asteroid') {
-                            // Asteroid damage is handled in the collision check
-                            // Just mark for breaking if HP <= 0
-                            if (entity.hp <= 0) {
-                                entity.shouldBreak = true;
-                                entity.breakPosition = { x: entity.x, y: entity.y };
-                            }
+                            entity.shouldBreak = true;
+                            entity.breakPosition = { x: entity.x, y: entity.y };
                         }
 
                         projectile.destroy();
@@ -2610,14 +2404,10 @@ class Engine {
                             }
                         }
 
-                        // Handle asteroid hit (damage already applied in collision check above)
+                        // Break asteroid if hit
                         if (entity.type === 'asteroid') {
-                            // Asteroid damage is handled in the collision check
-                            // Just mark for breaking if HP <= 0
-                            if (entity.hp <= 0) {
-                                entity.shouldBreak = true;
-                                entity.breakPosition = { x: entity.x, y: entity.y };
-                            }
+                            entity.shouldBreak = true;
+                            entity.breakPosition = { x: entity.x, y: entity.y };
                         }
 
                         projectile.destroy();
@@ -2760,105 +2550,6 @@ class Engine {
         this.enemyShips = this.enemyShips.filter(e => e.active);
         this.environmentalHazards = this.environmentalHazards.filter(e => e.active);
         this.projectiles = this.projectiles.filter(p => p.active);
-    }
-
-    /**
-     * Start plasma charge audio - rising tone
-     */
-    startPlasmaChargeAudio() {
-        try {
-            // Initialize audio context if needed
-            if (!this.plasmaChargeAudioContext) {
-                this.plasmaChargeAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-            }
-
-            // Resume audio context if suspended (required after user interaction)
-            if (this.plasmaChargeAudioContext.state === 'suspended') {
-                this.plasmaChargeAudioContext.resume();
-            }
-
-            // Stop any existing oscillator
-            this.stopPlasmaChargeAudio();
-
-            // Create oscillator for rising tone
-            this.plasmaChargeOscillator = this.plasmaChargeAudioContext.createOscillator();
-            this.plasmaChargeGainNode = this.plasmaChargeAudioContext.createGain();
-
-            // Start at low frequency (200 Hz)
-            this.plasmaChargeOscillator.type = 'sine';
-            this.plasmaChargeOscillator.frequency.setValueAtTime(200, this.plasmaChargeAudioContext.currentTime);
-
-            // Set initial volume
-            this.plasmaChargeGainNode.gain.setValueAtTime(0.1, this.plasmaChargeAudioContext.currentTime);
-
-            // Connect nodes
-            this.plasmaChargeOscillator.connect(this.plasmaChargeGainNode);
-            this.plasmaChargeGainNode.connect(this.plasmaChargeAudioContext.destination);
-
-            // Start playing
-            this.plasmaChargeOscillator.start();
-        } catch (error) {
-            // Audio context might not be available (user interaction required)
-            console.warn('Could not start plasma charge audio:', error);
-        }
-    }
-
-    /**
-     * Update plasma charge audio pitch and volume based on charge percentage
-     */
-    updatePlasmaChargeAudio(chargePercent) {
-        if (!this.plasmaChargeOscillator || !this.plasmaChargeGainNode || !this.plasmaChargeAudioContext) {
-            return;
-        }
-
-        try {
-            const currentTime = this.plasmaChargeAudioContext.currentTime;
-            
-            // Frequency rises from 200 Hz to 800 Hz as charge increases
-            // When fully charged (100%), stay at 800 Hz
-            const minFreq = 200;
-            const maxFreq = 800;
-            const frequency = minFreq + (maxFreq - minFreq) * (chargePercent / 100);
-            
-            this.plasmaChargeOscillator.frequency.setValueAtTime(frequency, currentTime);
-            
-            // Volume increases slightly as charge increases (0.1 to 0.3)
-            const minVolume = 0.1;
-            const maxVolume = 0.3;
-            const volume = minVolume + (maxVolume - minVolume) * (chargePercent / 100);
-            
-            this.plasmaChargeGainNode.gain.setValueAtTime(volume, currentTime);
-        } catch (error) {
-            console.warn('Could not update plasma charge audio:', error);
-        }
-    }
-
-    /**
-     * Stop plasma charge audio
-     */
-    stopPlasmaChargeAudio() {
-        try {
-            if (this.plasmaChargeOscillator) {
-                this.plasmaChargeOscillator.stop();
-                this.plasmaChargeOscillator.disconnect();
-                this.plasmaChargeOscillator = null;
-            }
-            if (this.plasmaChargeGainNode) {
-                this.plasmaChargeGainNode.disconnect();
-                this.plasmaChargeGainNode = null;
-            }
-        } catch (error) {
-            // Ignore errors when stopping
-        }
-    }
-
-    /**
-     * Resume audio context if suspended (required after user interaction)
-     */
-    resumeAudioContext() {
-        if (this.plasmaChargeAudioContext && this.plasmaChargeAudioContext.state === 'suspended') {
-            this.plasmaChargeAudioContext.resume();
-        }
     }
 
     handlePlayerInput(deltaTime) {
@@ -3282,11 +2973,6 @@ class Engine {
                 // Render particle effects
                 this.particleSystem.render(this.ctx, this.camera);
 
-                // Render tractor beam (if active)
-                if (this.playerShip && this.playerShip.tractorBeam) {
-                    this.playerShip.tractorBeam.render(this.ctx, this.camera);
-                }
-
                 this.ctx.restore();
 
                 // Render waypoint arrows (after screen shake is removed)
@@ -3451,16 +3137,6 @@ class Engine {
                     physicsWorld: this.physicsWorld
                 });
 
-                // Activate shields for enemy ships (they start with shields up)
-                if (enemyShip.shields) {
-                    enemyShip.shields.active = true;
-                }
-                
-                // Activate shields for enemy ships (they start with shields up)
-                if (enemyShip.shields) {
-                    enemyShip.shields.active = true;
-                }
-                
                 // Set cloak state if specified
                 if (config.cloaked && enemyShip.systems?.cloak) {
                     enemyShip.systems.cloak.activate();
@@ -3729,7 +3405,6 @@ class Engine {
         this.gameLoop.start();
     }
 }
-
 
 
 

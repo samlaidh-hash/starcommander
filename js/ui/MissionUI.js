@@ -30,7 +30,7 @@ class MissionUI {
             fighters: 0,  // 1 fighter for Trigons only
             mines: 1      // 1 mine for all ships
         };
-        this.bayMax = 5; // Default (CA), will be updated from ship class
+        this.bayMax = 8; // Default (CA), will be updated from ship class
 
         this.setupEventListeners();
     }
@@ -108,24 +108,10 @@ class MissionUI {
 
         // Setup loadout selection
         this.setupLoadoutSelection();
-        
-        // Update loadout display to ensure bay capacity is shown correctly
-        this.updateLoadoutDisplay();
 
         // Show the screen
         this.briefingScreen.classList.remove('hidden');
         // Pause the game while briefing/loadout screen is open
-        if (window.game && window.game.stateManager) {
-            const currentState = window.game.stateManager.getState();
-            // Set state to PAUSED if currently playing, or BRIEFING if coming from menu
-            if (currentState === 'PLAYING') {
-                window.game.stateManager.setState('PAUSED');
-            } else if (currentState !== 'BRIEFING' && currentState !== 'MAIN_MENU') {
-                // If in any other state (like starting new game), set to BRIEFING
-                window.game.stateManager.setState('BRIEFING');
-            }
-        }
-        // Also emit event for any other systems that need to know
         eventBus.emit('game-paused');
     }
 
@@ -135,8 +121,8 @@ class MissionUI {
     hideBriefing() {
         if (this.briefingScreen) {
             this.briefingScreen.classList.add('hidden');
-            // Resume the game when briefing screen is closed (only if we were paused for briefing)
-            // Don't auto-resume - let the mission start handler set state to PLAYING
+            // Resume the game when briefing screen is closed
+            eventBus.emit('game-resumed');
         }
     }
 
@@ -314,29 +300,28 @@ class MissionUI {
      */
     setupLoadoutSelection() {
         // Get bay size - prioritize baySystem, then ship systems, then ship class
-        // Always recalculate from ship class if BaySystem not initialized yet
-        if (this.playerShip && this.playerShip.shipClass) {
-            // Use ship class mapping matching BaySystem.calculateMaxBaySpace() values
-            const bayByClass = {
-                'FG': 2,
-                'DD': 3,
-                'CL': 4,
-                'CS': 5, // Strike Cruiser same as CA
-                'CA': 5,
-                'BC': 6,
-                'BB': 7,
-                'DN': 8,
-                'SD': 9
-            };
-            this.bayMax = bayByClass[this.playerShip.shipClass] || 5;
-        } else if (window.game && window.game.baySystem && window.game.baySystem.maxBaySpace > 0) {
-            // Use baySystem.maxBaySpace if available (fallback)
+        if (window.game && window.game.baySystem && window.game.baySystem.maxBaySpace > 0) {
+            // Use baySystem.maxBaySpace if available (most accurate)
             this.bayMax = window.game.baySystem.maxBaySpace;
         } else if (this.playerShip && this.playerShip.systems && this.playerShip.systems.bay && this.playerShip.systems.bay.maxHp > 0) {
-            // Use ship's bay system maxHp if available (fallback)
+            // Use ship's bay system maxHp if available
             this.bayMax = this.playerShip.systems.bay.maxHp;
+        } else if (this.playerShip && this.playerShip.shipClass) {
+            // Fallback to ship class mapping
+            const bayByClass = {
+                'FG': 2,
+                'DD': 4,
+                'CL': 6,
+                'CS': 8, // Strike Cruiser same as CA
+                'CA': 8,
+                'BC': 10,
+                'BB': 12,
+                'DN': 14,
+                'SD': 16
+            };
+            this.bayMax = bayByClass[this.playerShip.shipClass] || 8;
         } else {
-            this.bayMax = 5; // Default bay capacity (CA)
+            this.bayMax = 8; // Default bay capacity
         }
 
         // Set default loadout based on faction
@@ -515,29 +500,29 @@ class MissionUI {
      * Update loadout display
      */
     updateLoadoutDisplay() {
-        // Ensure bayMax is set correctly - prioritize ship class (most reliable)
-        // Values must match BaySystem.calculateMaxBaySpace()
-        if (this.playerShip && this.playerShip.shipClass) {
-            const bayByClass = {
-                'FG': 2,
-                'DD': 3,
-                'CL': 4,
-                'CS': 5, // Strike Cruiser same as CA
-                'CA': 5,
-                'BC': 6,
-                'BB': 7,
-                'DN': 8,
-                'SD': 9
-            };
-            this.bayMax = bayByClass[this.playerShip.shipClass] || 5;
-        } else if (window.game && window.game.baySystem && window.game.baySystem.maxBaySpace > 0) {
-            // Use baySystem.maxBaySpace if available (fallback)
+        // Ensure bayMax is set correctly - prioritize baySystem, then ship systems, then ship class
+        if (window.game && window.game.baySystem && window.game.baySystem.maxBaySpace > 0) {
+            // Use baySystem.maxBaySpace if available (most accurate)
             this.bayMax = window.game.baySystem.maxBaySpace;
         } else if (this.playerShip && this.playerShip.systems && this.playerShip.systems.bay && this.playerShip.systems.bay.maxHp > 0) {
-            // Use ship's bay system maxHp if available (fallback)
+            // Use ship's bay system maxHp if available
             this.bayMax = this.playerShip.systems.bay.maxHp;
+        } else if (this.playerShip && this.playerShip.shipClass) {
+            // Fallback to ship class mapping
+            const bayByClass = {
+                'FG': 2,
+                'DD': 4,
+                'CL': 6,
+                'CS': 8,
+                'CA': 8,
+                'BC': 10,
+                'BB': 12,
+                'DN': 14,
+                'SD': 16
+            };
+            this.bayMax = bayByClass[this.playerShip.shipClass] || 8;
         } else {
-            this.bayMax = 5; // Default fallback (CA)
+            this.bayMax = 8; // Default fallback
         }
         
         // Ensure default loadout is set
@@ -548,7 +533,7 @@ class MissionUI {
         const playerUsage = this.getPlayerBayUsage();
         const bayUsed = defaultUsage + playerUsage;
         const bayUsedElement = document.getElementById('bay-used');
-        const bayMaxElement = document.getElementById('bay-max-loadout'); // Use unique ID for loadout panel
+        const bayMaxElement = document.getElementById('bay-max');
 
         if (bayUsedElement) bayUsedElement.textContent = bayUsed;
         if (bayMaxElement) bayMaxElement.textContent = this.bayMax;
