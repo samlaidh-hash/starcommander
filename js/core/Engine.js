@@ -449,28 +449,23 @@ class Engine {
 
             // NOTE: Throttle adjustment moved to handlePlayerInput() for smooth movement
             // W/S keys now handled in update loop for continuous smooth movement
-
-                // A/D keys - turn left/right (no energy cost for normal turns)
-                if ((data.key === 'a' || data.key === 'd') && inputManager.keysPressed.get(data.key)) {
-                    // Normal turning handled in update loop, no special action needed here
-                }
-            }
+            // A/D keys - turn left/right (handled in handlePlayerInput() update loop)
 
             // Consumable hotkeys (F1-F6) - keys 1-6 are used for bay operations
-            if (!this.stateManager.isPlaying() || !this.playerShip) return;
+            if (this.stateManager.isPlaying() && this.playerShip) {
+                // F1-F6 for consumables
+                const consumableKeyMap = {
+                    'f1': 'extraTorpedoes',
+                    'f2': 'extraDecoys',
+                    'f3': 'extraMines',
+                    'f5': 'hullRepairKit',
+                    'f6': 'energyCells'
+                };
 
-            // F1-F6 for consumables
-            const consumableKeyMap = {
-                'f1': 'extraTorpedoes',
-                'f2': 'extraDecoys',
-                'f3': 'extraMines',
-                'f5': 'hullRepairKit',
-                'f6': 'energyCells'
-            };
-
-            if (consumableKeyMap[data.key]) {
-                if (this.playerShip.consumables) {
-                    this.playerShip.consumables.useConsumable(consumableKeyMap[data.key]);
+                if (consumableKeyMap[data.key]) {
+                    if (this.playerShip.consumables) {
+                        this.playerShip.consumables.useConsumable(consumableKeyMap[data.key]);
+                    }
                 }
             }
 
@@ -1813,7 +1808,7 @@ class Engine {
         const enemyConfigs = [
             { x: -400, y: -300, shipClass: 'CL', faction: 'TRIGON', name: 'IKS Kahless' },
             { x: 500, y: 400, shipClass: 'CA', faction: 'SCINTILIAN', name: 'IRW Valdore' },
-            { x: -600, y: 500, shipClass: 'FG', faction: 'PIRATE', name: 'ITS Raider' }
+            { x: -600, y: 500, shipClass: 'DD', faction: 'PIRATE', name: 'ITS Raider' } // Changed FG to DD (FG not supported)
         ];
 
         for (const config of enemyConfigs) {
