@@ -1,0 +1,37 @@
+{
+  "faction": "TRIGON",
+  "shipClass": "CA",
+  "scaleFactor": 0.3,
+  "weapons": [
+    {
+      "type": "disruptor",
+      "name": "Nose Disruptor Cannon",
+      "arc": 120,
+      "arcCenter": 0,
+      "position": {
+        "x": 0,
+        "y": -95.22222222222223
+      }
+    },
+    {
+      "type": "disruptor",
+      "name": "Port Wing Disruptor",
+      "arc": 120,
+      "arcCenter": 0,
+      "position": {
+        "x": -67.44444444444444,
+        "y": 42
+      }
+    },
+    {
+      "type": "disruptor",
+      "name": "Starboard Wing Disruptor",
+      "arc": 120,
+      "arcCenter": 0,
+      "position": {
+        "x": 67.44444444444444,
+        "y": 42.888888888888886
+      }
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "faction": "SCINTILIAN",
+  "shipClass": "DD",
+  "scaleFactor": 0.27,
+  "weapons": [
+    {
+      "type": "pulseBeam",
+      "name": "Nose Disruptor Cannon",
+      "arc": 120,
+      "arcCenter": 0,
+      "position": {
+        "x": 0,
+        "y": -30
+      }
+    },
+    {
+      "type": "plasma",
+      "name": "Nose Disruptor Cannon",
+      "arc": 120,
+      "arcCenter": 0,
+      "position": {
+        "x": 0,
+        "y": 6
+      }
+    }
+  ]
+}

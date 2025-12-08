@@ -1,28 +1,18 @@
 {
   "faction": "FEDERATION",
   "shipClass": "BC",
-  "scaleFactor": 1,
+  "scaleFactor": 0.3,
   "weapons": [
     {
-      "type": "continuousBeam",
-      "name": "Port Forward Beam Array",
+      "type": "heavyBeam",
+      "name": "Fore Heavy Beam Battery",
       "arc": 270,
       "arcCenter": 0,
       "position": {
-        "x": 2,
-        "y": -168
+        "x": 1.2545454545454544,
+        "y": -51.58181818181819
       },
-      "beamArrayExtension": 220
-    },
-    {
-      "type": "continuousBeam",
-      "name": "Starboard Forward Beam Array",
-      "arc": 270,
-      "arcCenter": 0,
-      "position": {
-        "x": 6,
-        "y": -14
-      }
+      "beamArrayExtension": 65
     },
     {
       "type": "continuousBeam",
@@ -31,9 +21,9 @@
       "arcCenter": 180,
       "position": {
         "x": 0,
-        "y": 355
+        "y": 98.56363636363636
       },
-      "beamArrayExtension": 100
+      "beamArrayExtension": 30
     },
     {
       "type": "dualTorpedo",
@@ -46,7 +36,7 @@
       ],
       "position": {
         "x": 0,
-        "y": 20
+        "y": 2.036363636363636
       }
     }
   ]

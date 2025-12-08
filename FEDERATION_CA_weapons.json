@@ -1,7 +1,7 @@
 {
   "faction": "FEDERATION",
   "shipClass": "CA",
-  "scaleFactor": 1,
+  "scaleFactor": 0.2,
   "weapons": [
     {
       "type": "continuousBeam",
@@ -10,9 +10,8 @@
       "arcCenter": 0,
       "position": {
         "x": 0,
-        "y": -50
-      },
-      "beamArrayExtension": 250
+        "y": -8.652380952380952
+      }
     },
     {
       "type": "continuousBeam",
@@ -21,9 +20,9 @@
       "arcCenter": 180,
       "position": {
         "x": 0,
-        "y": 301
+        "y": 55.72857142857143
       },
-      "beamArrayExtension": 90
+      "beamArrayExtension": 20
     },
     {
       "type": "dualTorpedo",
@@ -36,8 +35,10 @@
       ],
       "position": {
         "x": 0,
-        "y": 123
-      }
+        "y": 28.004761904761907
+      },
+      "readyMagSize": 0,
+      "maxLoaded": 0
     }
   ]
 }
