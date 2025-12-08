@@ -1,0 +1,17 @@
+{
+  "faction": "TRIGON",
+  "shipClass": "DD",
+  "scaleFactor": 3.3,
+  "weapons": [
+    {
+      "type": "disruptor",
+      "name": "Port Wing Disruptor",
+      "arc": 120,
+      "arcCenter": 0,
+      "position": {
+        "x": 2,
+        "y": -49
+      }
+    }
+  ]
+}

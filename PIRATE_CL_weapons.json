@@ -1,0 +1,27 @@
+{
+  "faction": "PIRATE",
+  "shipClass": "CL",
+  "scaleFactor": 3.3,
+  "weapons": [
+    {
+      "type": "randomLight",
+      "name": "Weapon 1",
+      "arc": 120,
+      "arcCenter": 0,
+      "position": {
+        "x": -71,
+        "y": 32
+      }
+    },
+    {
+      "type": "randomLight",
+      "name": "Weapon 1",
+      "arc": 120,
+      "arcCenter": 0,
+      "position": {
+        "x": 72,
+        "y": 32
+      }
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "faction": "TRIGON",
+  "shipClass": "CL",
+  "scaleFactor": 0.3,
+  "weapons": [
+    {
+      "type": "disruptor",
+      "name": "Port Wing Disruptor",
+      "arc": 120,
+      "arcCenter": 0,
+      "position": {
+        "x": -18.515151515151516,
+        "y": 27.606060606060606
+      }
+    },
+    {
+      "type": "disruptor",
+      "name": "Starboard Wing Disruptor",
+      "arc": 120,
+      "arcCenter": 0,
+      "position": {
+        "x": 17.515151515151516,
+        "y": 26.606060606060606
+      }
+    }
+  ]
+}

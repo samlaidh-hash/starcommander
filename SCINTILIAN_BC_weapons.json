@@ -1,0 +1,77 @@
+{
+  "faction": "SCINTILIAN",
+  "shipClass": "BC",
+  "scaleFactor": 0.11,
+  "weapons": [
+    {
+      "type": "plasma",
+      "name": "Plasma Torpedo",
+      "arc": 120,
+      "arcCenter": 180,
+      "position": {
+        "x": 0,
+        "y": 141
+      }
+    },
+    {
+      "type": "plasma",
+      "name": "Plasma Torpedo",
+      "arc": 120,
+      "arcCenter": 0,
+      "position": {
+        "x": 0,
+        "y": -2
+      }
+    },
+    {
+      "type": "pulseBeam",
+      "name": "Pulse Beam",
+      "arc": 120,
+      "arcCenter": 0,
+      "position": {
+        "x": -125,
+        "y": -30
+      }
+    },
+    {
+      "type": "pulseBeam",
+      "name": "Pulse Beam",
+      "arc": 120,
+      "arcCenter": 0,
+      "position": {
+        "x": 126,
+        "y": -30
+      }
+    },
+    {
+      "type": "pulseBeam",
+      "name": "Pulse Beam",
+      "arc": 120,
+      "arcCenter": 0,
+      "position": {
+        "x": 1,
+        "y": -162
+      }
+    },
+    {
+      "type": "pulseBeam",
+      "name": "Pulse Beam",
+      "arc": 120,
+      "arcCenter": 0,
+      "position": {
+        "x": -55,
+        "y": -5
+      }
+    },
+    {
+      "type": "pulseBeam",
+      "name": "Pulse Beam",
+      "arc": 120,
+      "arcCenter": 0,
+      "position": {
+        "x": 54,
+        "y": -5
+      }
+    }
+  ]
+}
