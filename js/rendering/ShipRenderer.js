@@ -42,6 +42,11 @@ class ShipRenderer {
             this.drawWeaponPoints(ship);
         }
 
+        // Draw individual weapon firing point indicators (for all ships with energy-using weapons)
+        if (ship.weapons && ship.weapons.length > 0) {
+            this.drawWeaponIndicators(ship);
+        }
+
         // Draw shields (only if not cloaked) - ALL SHIPS
         if (!ship.isCloaked()) {
             this.drawShields(ship);
@@ -690,6 +695,153 @@ class ShipRenderer {
         }
 
         return false;
+    }
+
+    /**
+     * Draw individual weapon firing point indicators
+     * Shows visual feedback: dim when fired, dim when insufficient energy, bright when ready
+     * @param {Ship} ship - The ship
+     */
+    drawWeaponIndicators(ship) {
+        if (!ship.weapons || ship.weapons.length === 0) return;
+
+        const currentTime = performance.now() / 1000;
+        this.ctx.save();
+
+        for (const weapon of ship.weapons) {
+            // Skip destroyed weapons
+            if (!weapon || weapon.hp <= 0) continue;
+
+            // Only draw indicators for energy-using weapons
+            if (!(weapon instanceof Disruptor || 
+                  weapon instanceof BeamWeapon || 
+                  weapon instanceof ContinuousBeam ||
+                  weapon instanceof StreakBeam ||
+                  weapon instanceof PulseBeam)) {
+                continue;
+            }
+
+            // Skip weapons without position
+            if (!weapon.position) continue;
+
+            // Calculate weapon position (rotate with ship)
+            const rad = MathUtils.toRadians(ship.rotation);
+            const cos = Math.cos(rad);
+            const sin = Math.sin(rad);
+            const wx = weapon.position.x * cos - weapon.position.y * sin;
+            const wy = weapon.position.x * sin + weapon.position.y * cos;
+
+            // Determine weapon state
+            let isReady = false;
+            let isFiring = false;
+            let isOnCooldown = false;
+            let hasInsufficientEnergy = false;
+            let weaponColor = '#4169E1'; // Default blue for disruptors
+            let shadowColor = '#1E90FF';
+
+            // Check weapon type and state
+            if (weapon instanceof Disruptor) {
+                weaponColor = '#4169E1'; // Royal blue
+                shadowColor = '#1E90FF'; // Dodger blue
+                isReady = weapon.canFire(currentTime);
+                isOnCooldown = !isReady && (currentTime - weapon.lastFireTime < weapon.cooldown);
+                isFiring = weapon.isBursting;
+                
+                // Check energy (need 9 energy for full burst)
+                const burstEnergyCost = CONFIG.DISRUPTOR_ENERGY_COST * CONFIG.DISRUPTOR_BURST_COUNT;
+                if (ship.energy && ship.energy.getTotalEnergy() < burstEnergyCost) {
+                    hasInsufficientEnergy = true;
+                }
+            } else if (weapon instanceof ContinuousBeam) {
+                weaponColor = '#FFA500'; // Orange
+                shadowColor = '#FF8C00'; // Dark orange
+                isReady = !weapon.isRecharging(currentTime);
+                isFiring = weapon.isFiring;
+                isOnCooldown = weapon.isRecharging(currentTime);
+                
+                // Check energy (beams drain 8 energy/sec per weapon)
+                if (ship.energy && ship.energy.getTotalEnergy() <= 0) {
+                    hasInsufficientEnergy = true;
+                }
+            } else if (weapon instanceof BeamWeapon || weapon instanceof StreakBeam) {
+                weaponColor = '#FFA500'; // Orange
+                shadowColor = '#FF8C00'; // Dark orange
+                isReady = weapon.canFire(currentTime);
+                isOnCooldown = !isReady && weapon.getCooldownPercentage && weapon.getCooldownPercentage(currentTime) < 1;
+                
+                // Check energy
+                if (ship.energy && ship.energy.getTotalEnergy() <= 0) {
+                    hasInsufficientEnergy = true;
+                }
+            } else if (weapon instanceof PulseBeam) {
+                weaponColor = '#00FF00'; // Green
+                shadowColor = '#00CC00'; // Dark green
+                isReady = weapon.canFire(currentTime);
+                isOnCooldown = !isReady && weapon.getCooldownPercentage && weapon.getCooldownPercentage(currentTime) < 1;
+                
+                // Check energy
+                if (ship.energy && ship.energy.getTotalEnergy() <= 0) {
+                    hasInsufficientEnergy = true;
+                }
+            }
+
+            // Determine visual state
+            let opacity = 1.0;
+            let useGlow = false;
+            
+            if (isFiring || isOnCooldown || hasInsufficientEnergy) {
+                // Dim when firing, on cooldown, or insufficient energy
+                opacity = 0.3; // Dim
+                useGlow = false;
+            } else if (isReady) {
+                // Bright when ready with sufficient energy
+                opacity = 1.0; // Full brightness
+                useGlow = true;
+            } else {
+                // Default state (shouldn't happen, but safety)
+                opacity = 0.5;
+                useGlow = false;
+            }
+
+            // Draw weapon firing point circle
+            const radius = 4;
+            const fillColor = this.hexToRgba(weaponColor, opacity * 0.6);
+            const strokeColor = this.hexToRgba(weaponColor, opacity * 0.9);
+
+            this.ctx.fillStyle = fillColor;
+            this.ctx.strokeStyle = strokeColor;
+            this.ctx.lineWidth = 2;
+
+            if (useGlow) {
+                this.ctx.shadowColor = this.hexToRgba(shadowColor, 0.8);
+                this.ctx.shadowBlur = 8;
+            } else {
+                this.ctx.shadowBlur = 0;
+            }
+
+            this.ctx.beginPath();
+            this.ctx.arc(wx, wy, radius, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.stroke();
+
+            // Reset shadow
+            this.ctx.shadowBlur = 0;
+        }
+
+        this.ctx.restore();
+    }
+
+    /**
+     * Helper: Convert hex color to rgba string
+     * @param {string} hex - Hex color (e.g., '#FFA500')
+     * @param {number} alpha - Alpha value (0-1)
+     * @returns {string} rgba string
+     */
+    hexToRgba(hex, alpha) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     }
 
     /**

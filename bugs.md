@@ -160,7 +160,112 @@
 
 ## Active Bugs
 
-### 1. New Game Not Starting (2025-10-28) → FIXED
+### 1. Trigon Ship Disruptors Not Working Properly (2025-01-29) → FIXED
+**Status:** FIXED
+**Priority:** HIGH
+**Description:** Trigon ship disruptors were not firing when player clicked/held left mouse button.
+
+**Root Cause:**
+- Disruptors use a burst fire system (3 shots over 1 second, 2 second cooldown)
+- When player clicked/held left mouse button, only `ContinuousBeam` weapons were started
+- Disruptor `fire()` method was never called to initiate bursts
+- Burst shot handler ran every frame but found no active bursts
+- Missing CONFIG values: `DISRUPTOR_BURST_COUNT`, `DISRUPTOR_BURST_DURATION`, `DISRUPTOR_COOLDOWN` were undefined
+
+**Fix Applied:**
+1. Added missing CONFIG values to `js/config.js`:
+   - `DISRUPTOR_BURST_COUNT: 3` (3 shots per burst)
+   - `DISRUPTOR_BURST_DURATION: 1.0` (1 second burst duration)
+   - `DISRUPTOR_COOLDOWN: 2.0` (2 seconds between bursts)
+
+2. Modified `beam-fire-start` event handler in `Engine.js` (lines 591-599):
+   - Added code to start disruptor bursts when player clicks/holds left mouse button
+   - Checks if disruptor is in arc and cooldown is ready
+   - Calls `weapon.fire()` to initiate burst
+
+3. Modified continuous beam firing loop in `Engine.js` (lines 2002-2008):
+   - Added code to start new disruptor bursts while button is held
+   - Respects cooldown timing (won't spam bursts)
+   - Allows continuous disruptor fire while holding button
+
+**Files Modified:**
+- `js/config.js` - Added disruptor burst configuration values
+- `js/core/Engine.js` - Added disruptor firing logic to beam-fire-start handler and continuous firing loop
+
+**Testing:** User should test Trigon ships (DD, CL, CA, BB) and verify disruptors fire in bursts when left mouse button is held.
+
+**Follow-up Fix 1 (2025-01-29):**
+- Increased disruptor speed from 975 to 1200 pixels/sec to ensure bolts are faster than ship max speeds
+  - Fastest ship (DD with Trigon multiplier): 390 * 1.1 = 429 pixels/sec
+  - Disruptor speed (1200) is now 2.8x faster than fastest ship
+- Added disruptor to grace period collision check (50ms like beams) to prevent bolts from colliding with firing ship
+- Source ship collision check already prevents self-collision
+
+**Files Modified:**
+- `js/config.js` - Increased DISRUPTOR_SPEED to 1200
+- `js/core/Engine.js` - Added disruptor to grace period check
+
+**Follow-up Fix 2 (2025-01-29):**
+- **Smooth Throttle Movement**: Changed W/S keys from step-based movement (2% per key press) to smooth continuous movement (1.5 per second while key held)
+- **Speed-Based Energy System**: Changed energy drain/recharge from throttle position to actual speed:
+  - Below 1/3 max speed: constantly recharge energy
+  - Above 2/3 max speed: constantly drain energy
+  - Between 1/3 and 2/3: energy not affected by speed
+
+**Files Modified:**
+- `js/core/Engine.js` - Moved throttle adjustment to handlePlayerInput() for smooth movement
+- `js/entities/Ship.js` - Updated energy system to use actual speed instead of throttle position
+
+**Follow-up Fix 3 (2025-01-29):**
+- **Disruptor Energy Drain**: Added energy cost when disruptors fire
+  - Each disruptor shot costs 3 energy (CONFIG.DISRUPTOR_ENERGY_COST)
+  - Full burst (3 shots) costs 9 energy total
+  - Prevents starting a burst if insufficient energy (< 9 energy)
+  - Stops firing if energy runs out during burst
+
+**Files Modified:**
+- `js/config.js` - Added DISRUPTOR_ENERGY_COST: 3
+- `js/core/Engine.js` - Added energy drain when disruptor shots are fired, prevents starting burst if insufficient energy
+
+**Follow-up Fix 4 (2025-01-29):**
+- **Disruptor Cooldown Enforcement**: Ensured cooldown period is properly enforced
+  - Cooldown: 2 seconds between bursts (CONFIG.DISRUPTOR_COOLDOWN)
+  - Cooldown prevents starting new bursts until it expires
+  - Added safety check in Disruptor.update() to ensure bursts don't continue during cooldown
+  - Modified getDisruptorBurstShots() to only create shots if weapon is currently bursting
+
+**Files Modified:**
+- `js/components/weapons/Disruptor.js` - Added cooldown safety check in update()
+- `js/entities/Ship.js` - Modified getDisruptorBurstShots() to check isBursting flag
+
+**Follow-up Fix 5 (2025-01-29):**
+- **Weapon Firing Point Visual Feedback**: Added visual indicators for all energy-using weapons
+  - Disruptors: Blue circles that dim when fired/on cooldown/insufficient energy, brighten when ready
+  - Beams: Orange circles with same dim/bright behavior
+  - Pulse Beams: Green circles with same dim/bright behavior
+  - Visual states:
+    * Dim (30% opacity): When firing, on cooldown, or insufficient energy
+    * Bright (100% opacity + glow): When ready to fire with sufficient energy
+  - Applies to all energy-using weapons (Disruptor, BeamWeapon, ContinuousBeam, StreakBeam, PulseBeam)
+
+**Files Modified:**
+- `js/rendering/ShipRenderer.js` - Added drawWeaponIndicators() method with visual state feedback
+- `js/rendering/ShipRenderer.js` - Added hexToRgba() helper method
+- `js/rendering/ShipRenderer.js` - Integrated drawWeaponIndicators() into render loop
+
+**Follow-up Fix 6 (2025-01-29):**
+- **Tractor Beam Energy Drain Fix**: Fixed energy drain implementation
+  - Tractor beam drains 5 energy per second while active
+  - Fixed drainEnergy() call to use correct parameters (amount, deltaTime)
+  - Tractor beam automatically deactivates when energy runs out
+  - Energy drain was already implemented but had incorrect parameter order
+
+**Files Modified:**
+- `js/systems/TractorBeamSystem.js` - Fixed energy drain call to use correct parameters
+
+---
+
+### 2. New Game Not Starting (2025-10-28) → FIXED
 **Status:** FIXED
 **Priority:** CRITICAL
 **Description:** Game initialization stopped at "Initializing advanced systems..." because TractorBeamSystem and TransporterSystem were missing `init()` methods.

@@ -95,8 +95,13 @@ const CONFIG = {
     COLOR_TORPEDO: '#ffaa00',     // orange
 
     // Weapons - Disruptors (Trigon)
-    DISRUPTOR_SPEED: 975,         // 2x torpedo speed (increased 50% from 650)
+    // Speed must be greater than ship max speeds (DD: 429, CL: 396, CA: 363, BB: 330 with Trigon multiplier)
+    DISRUPTOR_SPEED: 1200,        // Fast enough to outrun any ship (was 975)
     DISRUPTOR_DAMAGE: 2,          // 2 damage per hit
+    DISRUPTOR_BURST_COUNT: 3,     // 3 shots per burst
+    DISRUPTOR_BURST_DURATION: 1.0, // 1 second burst duration
+    DISRUPTOR_COOLDOWN: 2.0,      // 2 seconds between bursts
+    DISRUPTOR_ENERGY_COST: 3,     // Energy cost per shot (3 shots per burst = 9 energy total)
     COLOR_DISRUPTOR: '#4488ff',   // glowing blue
 
     // Weapons - Plasma Torpedoes (Scintilian)

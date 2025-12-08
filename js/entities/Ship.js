@@ -1169,22 +1169,24 @@ class Ship extends Entity {
             this.throttleBoost.active = false; // Boost expired
         }
 
-        // Energy drain/refill based on throttle
-        // Below 50% throttle (throttleCaretPosition < 0.5) = reverse/stationary = refill energy
-        // Above 50% throttle (throttleCaretPosition > 0.5) = forward = drain energy
+        // Energy drain/refill based on ACTUAL SPEED (not throttle setting)
+        // Below 1/3 max speed: constantly recharge energy
+        // Above 2/3 max speed: constantly drain energy
+        // Between 1/3 and 2/3: energy not affected by speed
         if (this.energy) {
-            const throttlePosition = this.throttleCaretPosition !== undefined ? this.throttleCaretPosition : 0.5;
+            // Calculate normalized speed (0 to 1.0, where 1.0 = maxSpeed)
+            const normalizedSpeed = Math.abs(this.currentSpeed) / this.maxSpeed;
+            const SPEED_THRESHOLD_LOW = 1/3;  // 0.333 (below this = recharge)
+            const SPEED_THRESHOLD_HIGH = 2/3; // 0.667 (above this = drain)
             
-            if (throttlePosition > 0.5) {
-                // Forward throttle (>50%): Drain energy
+            if (normalizedSpeed < SPEED_THRESHOLD_LOW) {
+                // Below 1/3 speed: Recharge energy
+                this.energy.refillEnergy(0, deltaTime);
+            } else if (normalizedSpeed > SPEED_THRESHOLD_HIGH) {
+                // Above 2/3 speed: Drain energy
                 this.energy.drainEnergy(0, deltaTime);
-            } else if (throttlePosition < 0.5) {
-                // Reverse throttle (<50%): Refill energy (stationary/reverse doesn't drain)
-                this.energy.refillEnergy(0, deltaTime);
-            } else {
-                // Exactly 50% (stationary): Refill energy
-                this.energy.refillEnergy(0, deltaTime);
             }
+            // Between 1/3 and 2/3: No energy effect (energy remains unchanged)
         }
 
         // Accelerate/decelerate toward target speed
@@ -1508,8 +1510,9 @@ class Ship extends Entity {
         const projectiles = [];
 
         // Check all disruptors for burst shots
+        // Only create shots if weapon is currently bursting (cooldown prevents starting new bursts)
         for (const weapon of this.weapons) {
-            if (weapon instanceof Disruptor) {
+            if (weapon instanceof Disruptor && weapon.isBursting) {
                 const projectile = weapon.getNextBurstShot(this, targetX, targetY, currentTime);
                 if (projectile) {
                     projectiles.push(projectile);

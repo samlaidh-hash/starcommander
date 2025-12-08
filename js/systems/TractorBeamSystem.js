@@ -100,7 +100,8 @@ class TractorBeamSystem {
         // Drain energy constantly while active
         if (this.ship.energy) {
             const energyDrainRate = 5; // Energy per second
-            const energyDrained = this.ship.energy.drainEnergy(0, deltaTime * energyDrainRate);
+            // Drain energy: amount = rate * time, no deltaTime parameter (use amount directly)
+            const energyDrained = this.ship.energy.drainEnergy(energyDrainRate * deltaTime, 0);
             // If out of energy, tractor beam deactivates
             if (this.ship.energy.getTotalEnergy() <= 0) {
                 this.deactivate();

@@ -447,44 +447,8 @@ class Engine {
                 }
             }
 
-            // NEW THROTTLE SYSTEM - W/S move caret left/right on speed bar
-            // NOTE: Don't interfere with tactical warp (double-tap-and-hold W) or instant stop (double-tap S)
-            if (this.playerShip && this.stateManager.isPlaying()) {
-                const inputManager = this.inputManager;
-                const CARET_MOVE_SPEED = 0.02; // 2% per key press
-
-                // W key - move caret right (increase throttle toward forward)
-                // Skip if this is a double-tap (tactical warp takes priority)
-                if (data.key === 'w' && inputManager.keysPressed.get('w') && !inputManager.wKeyDoubleTapped) {
-                    this.playerShip.throttleCaretPosition = Math.min(1.0, (this.playerShip.throttleCaretPosition || 0.5) + CARET_MOVE_SPEED);
-                    // Convert caret position to throttle: right side (1.0) = 100%, center (0.5) = 0%, left (0.0) = -100%
-                    if (this.playerShip.throttleCaretPosition >= 0.5) {
-                        // Right side: 0% to 100% throttle
-                        this.playerShip.throttle = (this.playerShip.throttleCaretPosition - 0.5) * 2; // 0.5->0, 1.0->1.0
-                    } else {
-                        // Left side: -100% to 0% throttle (max -50% speed)
-                        this.playerShip.throttle = (this.playerShip.throttleCaretPosition - 0.5) * 2; // 0.0->-1.0, 0.5->0
-                    }
-                }
-
-                // S key - move caret left (decrease throttle toward reverse)
-                // Skip if this is a double-tap (instant stop takes priority)
-                if (data.key === 's' && inputManager.keysPressed.get('s')) {
-                    // Check if this was a double-tap (instant stop) - if so, skip throttle adjustment
-                    const lastSPressTime = inputManager.lastKeyPressTimes.get('s');
-                    // If lastSPressTime is 0, it means a double-tap was just detected (instant-stop triggered)
-                    if (lastSPressTime !== 0) {
-                        // Not a double-tap, adjust throttle
-                        this.playerShip.throttleCaretPosition = Math.max(0.0, (this.playerShip.throttleCaretPosition || 0.5) - CARET_MOVE_SPEED);
-                        // Convert caret position to throttle
-                        if (this.playerShip.throttleCaretPosition >= 0.5) {
-                            this.playerShip.throttle = (this.playerShip.throttleCaretPosition - 0.5) * 2;
-                        } else {
-                            this.playerShip.throttle = (this.playerShip.throttleCaretPosition - 0.5) * 2;
-                        }
-                    }
-                    // If lastSPressTime is 0, skip throttle adjustment (double-tap detected = instant-stop)
-                }
+            // NOTE: Throttle adjustment moved to handlePlayerInput() for smooth movement
+            // W/S keys now handled in update loop for continuous smooth movement
 
                 // A/D keys - turn left/right (no energy cost for normal turns)
                 if ((data.key === 'a' || data.key === 'd') && inputManager.keysPressed.get(data.key)) {
@@ -584,6 +548,16 @@ class Engine {
             for (const weapon of this.playerShip.weapons) {
                 if (weapon instanceof ContinuousBeam) {
                     weapon.startFiring(currentTime, this.playerShip, worldPos.x, worldPos.y);
+                }
+            }
+
+            // Start disruptor bursts if cooldown is ready
+            const targetAngle = MathUtils.angleBetween(this.playerShip.x, this.playerShip.y, worldPos.x, worldPos.y);
+            for (const weapon of this.playerShip.weapons) {
+                if (weapon instanceof Disruptor) {
+                    if (weapon.isInArc(targetAngle, this.playerShip.rotation) && weapon.canFire(currentTime)) {
+                        weapon.fire(this.playerShip, worldPos.x, worldPos.y, currentTime);
+                    }
                 }
             }
 
@@ -1988,6 +1962,21 @@ class Engine {
 
             const projectiles = this.playerShip.fireContinuousBeams(worldPos.x, worldPos.y, currentTime);
             
+            // Also start disruptor bursts if cooldown is ready (while button is held)
+            const targetAngle = MathUtils.angleBetween(this.playerShip.x, this.playerShip.y, worldPos.x, worldPos.y);
+            for (const weapon of this.playerShip.weapons) {
+                if (weapon instanceof Disruptor) {
+                    // Check if we have enough energy for a full burst (3 shots * 3 energy = 9 energy)
+                    const burstEnergyCost = CONFIG.DISRUPTOR_ENERGY_COST * CONFIG.DISRUPTOR_BURST_COUNT;
+                    if (weapon.isInArc(targetAngle, this.playerShip.rotation) && 
+                        weapon.canFire(currentTime) &&
+                        this.playerShip.energy && 
+                        this.playerShip.energy.getTotalEnergy() >= burstEnergyCost) {
+                        weapon.fire(this.playerShip, worldPos.x, worldPos.y, currentTime);
+                    }
+                }
+            }
+            
             // Check if any beams are actually firing (projectiles created)
             const anyBeamsFiring = projectiles && projectiles.length > 0;
             
@@ -2048,6 +2037,22 @@ class Engine {
 
                 const burstShots = entity.getDisruptorBurstShots(targetX, targetY);
                 if (burstShots && burstShots.length > 0) {
+                    // Drain energy for each shot fired
+                    if (entity.energy) {
+                        const energyCost = CONFIG.DISRUPTOR_ENERGY_COST * burstShots.length;
+                        entity.energy.drainEnergy(energyCost);
+                        
+                        // Stop firing if out of energy (for player)
+                        if (entity.isPlayer && entity.energy.getTotalEnergy() <= 0) {
+                            // Stop all disruptor bursts
+                            for (const weapon of entity.weapons) {
+                                if (weapon instanceof Disruptor) {
+                                    weapon.isBursting = false;
+                                }
+                            }
+                        }
+                    }
+                    
                     this.projectiles.push(...burstShots);
                     this.entities.push(...burstShots);
                     if (entity.isPlayer) {
@@ -2294,8 +2299,13 @@ class Engine {
                     continue; // Don't hit source
                 }
 
-                // Short grace period to prevent spawn collision (50ms for beams, 250ms for torpedoes)
-                const graceTime = (projectile.projectileType === 'beam') ? 0.05 : 0.25;
+                // Short grace period to prevent spawn collision
+                // Beams/disruptors: 50ms (fast projectiles)
+                // Torpedoes: 250ms (slower projectiles)
+                let graceTime = 0.25; // Default for torpedoes
+                if (projectile.projectileType === 'beam' || projectile.projectileType === 'disruptor') {
+                    graceTime = 0.05; // 50ms grace period for fast projectiles
+                }
                 if (projectileAge < graceTime) continue;
 
                 // Check if projectile is close to entity
@@ -2614,10 +2624,50 @@ class Engine {
 
     handlePlayerInput(deltaTime) {
         const ship = this.playerShip;
+        const inputManager = this.inputManager;
+
+        // Smooth throttle adjustment (W/S keys)
+        // NOTE: Don't interfere with tactical warp (double-tap-and-hold W) or instant stop (double-tap S)
+        if (ship && this.stateManager.isPlaying()) {
+            const CARET_MOVE_SPEED = 1.5; // Speed multiplier for smooth movement (per second)
+            
+            // W key - move caret right (increase throttle toward forward)
+            // Skip if this is a double-tap (tactical warp takes priority)
+            if (inputManager.isKeyDown('w') && !inputManager.wKeyDoubleTapped) {
+                const newPosition = Math.min(1.0, (ship.throttleCaretPosition || 0.5) + CARET_MOVE_SPEED * deltaTime);
+                ship.throttleCaretPosition = newPosition;
+                // Convert caret position to throttle: right side (1.0) = 100%, center (0.5) = 0%, left (0.0) = -100%
+                if (ship.throttleCaretPosition >= 0.5) {
+                    // Right side: 0% to 100% throttle
+                    ship.throttle = (ship.throttleCaretPosition - 0.5) * 2; // 0.5->0, 1.0->1.0
+                } else {
+                    // Left side: -100% to 0% throttle (max -50% speed)
+                    ship.throttle = (ship.throttleCaretPosition - 0.5) * 2; // 0.0->-1.0, 0.5->0
+                }
+            }
+
+            // S key - move caret left (decrease throttle toward reverse)
+            // Skip if this is a double-tap (instant stop takes priority)
+            if (inputManager.isKeyDown('s')) {
+                // Check if this was a double-tap (instant stop) - if so, skip throttle adjustment
+                const lastSPressTime = inputManager.lastKeyPressTimes.get('s');
+                // If lastSPressTime is 0, it means a double-tap was just detected (instant-stop triggered)
+                if (lastSPressTime !== 0) {
+                    // Not a double-tap, adjust throttle smoothly
+                    const newPosition = Math.max(0.0, (ship.throttleCaretPosition || 0.5) - CARET_MOVE_SPEED * deltaTime);
+                    ship.throttleCaretPosition = newPosition;
+                    // Convert caret position to throttle
+                    if (ship.throttleCaretPosition >= 0.5) {
+                        ship.throttle = (ship.throttleCaretPosition - 0.5) * 2;
+                    } else {
+                        ship.throttle = (ship.throttleCaretPosition - 0.5) * 2;
+                    }
+                }
+                // If lastSPressTime is 0, skip throttle adjustment (double-tap detected = instant-stop)
+            }
+        }
 
         // Movement (A/D for turning)
-        // NOTE: W/S throttle adjustment now handled in keydown event listener (setupEventListeners)
-        // Ship maintains speed automatically via updateThrottle() in Ship.update()
         const aPressed = this.inputManager.isKeyDown('a');
         const dPressed = this.inputManager.isKeyDown('d');
 

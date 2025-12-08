@@ -58,6 +58,15 @@ class Disruptor extends Weapon {
                 this.isBursting = false;
             }
         }
+
+        // Ensure cooldown is respected - don't allow bursting during cooldown
+        if (this.isBursting && !this.canFire(currentTime)) {
+            // Cooldown started while bursting (shouldn't happen, but safety check)
+            // Only stop if burst is complete (all shots fired)
+            if (this.shotsFiredInBurst >= this.burstCount) {
+                this.isBursting = false;
+            }
+        }
     }
 
     /**
