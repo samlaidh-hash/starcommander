@@ -1138,6 +1138,21 @@ class Engine {
                 this.audioManager.playSound('explosion-medium');
             }
         });
+
+        // Game pause/resume events (for loadout screen)
+        eventBus.on('game-paused', () => {
+            // Pause the game when loadout/briefing screen opens
+            if (this.stateManager.getState() === 'PLAYING') {
+                this.stateManager.setState('PAUSED');
+            }
+        });
+
+        eventBus.on('game-resumed', () => {
+            // Resume the game when loadout/briefing screen closes
+            if (this.stateManager.getState() === 'PAUSED') {
+                this.stateManager.setState('PLAYING');
+            }
+        });
     }
 
     createPlayerShipOptions() {
@@ -1853,6 +1868,15 @@ class Engine {
     }
 
     update(deltaTime) {
+        // Ensure game is paused when briefing/loadout screen is visible
+        const briefingScreen = document.getElementById('briefing-screen');
+        if (briefingScreen && !briefingScreen.classList.contains('hidden')) {
+            if (this.stateManager.getState() === 'PLAYING') {
+                this.stateManager.setState('PAUSED');
+            }
+            return; // Don't update when briefing screen is open
+        }
+
         if (!this.stateManager.isPlaying()) return;
 
         // Watchdog: detect infinite loops
