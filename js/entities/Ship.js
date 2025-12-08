@@ -144,9 +144,15 @@ const WEAPON_BUILDERS = {
 function cloneWeaponPosition(positionKey, explicitPosition, shipSize, scaleFactor = 1, shipImageData = null) {
     if (explicitPosition) {
         // Apply scaleFactor to explicit positions from JSON
+        // If shipImageData is provided, also scale by image scale to match ship rendering
+        let finalScale = scaleFactor;
+        if (shipImageData && shipImageData.scale) {
+            // Scale weapon positions from JSON to match ship image scaling
+            finalScale = scaleFactor * shipImageData.scale;
+        }
         return { 
-            x: explicitPosition.x * scaleFactor, 
-            y: explicitPosition.y * scaleFactor 
+            x: explicitPosition.x * finalScale, 
+            y: explicitPosition.y * finalScale 
         };
     }
     if (positionKey && WEAPON_POSITIONS[positionKey]) {

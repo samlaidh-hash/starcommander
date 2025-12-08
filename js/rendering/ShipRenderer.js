@@ -724,12 +724,10 @@ class ShipRenderer {
             // Skip weapons without position
             if (!weapon.position) continue;
 
-            // Calculate weapon position (rotate with ship)
-            const rad = MathUtils.toRadians(ship.rotation);
-            const cos = Math.cos(rad);
-            const sin = Math.sin(rad);
-            const wx = weapon.position.x * cos - weapon.position.y * sin;
-            const wy = weapon.position.x * sin + weapon.position.y * cos;
+            // Use weapon position directly - canvas is already rotated at line 32
+            // No need to manually rotate here (would cause double rotation)
+            const wx = weapon.position.x;
+            const wy = weapon.position.y;
 
             // Determine weapon state
             let isReady = false;

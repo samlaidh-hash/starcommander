@@ -550,7 +550,12 @@ class Engine {
             const targetAngle = MathUtils.angleBetween(this.playerShip.x, this.playerShip.y, worldPos.x, worldPos.y);
             for (const weapon of this.playerShip.weapons) {
                 if (weapon instanceof Disruptor) {
-                    if (weapon.isInArc(targetAngle, this.playerShip.rotation) && weapon.canFire(currentTime)) {
+                    // Check if we have enough energy for a full burst (3 shots * 3 energy = 9 energy)
+                    const burstEnergyCost = CONFIG.DISRUPTOR_ENERGY_COST * CONFIG.DISRUPTOR_BURST_COUNT;
+                    if (weapon.isInArc(targetAngle, this.playerShip.rotation) && 
+                        weapon.canFire(currentTime) &&
+                        this.playerShip.energy &&
+                        this.playerShip.energy.getTotalEnergy() >= burstEnergyCost) {
                         weapon.fire(this.playerShip, worldPos.x, worldPos.y, currentTime);
                     }
                 }

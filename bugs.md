@@ -1,9 +1,90 @@
 # Star Sea - Bug Tracking
 
 **Date:** 2025-10-04
-**Last Updated:** 2025-10-04 (Critical Fix: Weapon Alignment)
+**Last Updated:** 2025-01-29 (Multiple Critical Fixes: Mines, Disruptors, Weapon Mounts)
 
 ## Recently Fixed Bugs
+
+### ✅ Mines Failing to Detonate (2025-01-29)
+**Status:** FIXED
+**Priority:** HIGH
+**Description:** Mines were not detonating when ships came within range.
+
+**Root Cause:**
+- `CONFIG.MINE_DAMAGE` and `CONFIG.MINE_DETECTION_RADIUS` were not defined in config.js
+- Mine trigger radius was too small (15 pixels), making it difficult for ships to trigger mines
+- Mines were being created correctly but config values were undefined
+
+**Fix Applied:**
+- Added `MINE_DAMAGE: 10` and `MINE_DETECTION_RADIUS: 0.1` to config.js
+- Increased mine trigger radius from 15 to 30 pixels for better detection
+- Added fallback values in Mine.js constructor in case config values are missing
+
+**Files Modified:**
+- `js/config.js` - Added MINE_DAMAGE and MINE_DETECTION_RADIUS constants
+- `js/entities/Mine.js` - Increased triggerRadius to 30, added fallback values
+
+---
+
+### ✅ Disruptors Not Working (2025-01-29)
+**Status:** FIXED
+**Priority:** HIGH
+**Description:** Disruptor weapons were not firing properly for player ships.
+
+**Root Cause:**
+- Energy check was missing in `beam-fire-start` event handler
+- Disruptor bursts could be started without sufficient energy, causing them to fail silently
+- Energy check existed in continuous firing loop but not in initial burst start
+
+**Fix Applied:**
+- Added energy check in `beam-fire-start` event handler before starting disruptor bursts
+- Checks for sufficient energy (9 energy = 3 shots * 3 energy per shot) before firing
+- Prevents starting bursts when energy is insufficient
+
+**Files Modified:**
+- `js/core/Engine.js` - Added energy check in beam-fire-start event handler (lines 549-557)
+
+---
+
+### ✅ Firing Mounts Not Rotating in Sync with PNG Image (2025-01-29)
+**Status:** FIXED
+**Priority:** MEDIUM
+**Description:** Weapon firing point indicators were rotating incorrectly, appearing out of sync with the ship image.
+
+**Root Cause:**
+- Weapon positions were manually rotated in `drawWeaponIndicators()` using ship rotation
+- Canvas context was already rotated at line 32 in ShipRenderer.render()
+- This caused double rotation, making weapons appear in wrong positions
+
+**Fix Applied:**
+- Removed manual rotation calculation from `drawWeaponIndicators()`
+- Weapon positions are now used directly since canvas is already rotated
+- Weapons now rotate correctly with the ship image
+
+**Files Modified:**
+- `js/rendering/ShipRenderer.js` - Removed manual rotation, use weapon.position directly (lines 727-732)
+
+---
+
+### ✅ Weapon Firing Point Scaling Issue from JSON Files (2025-01-29)
+**Status:** FIXED
+**Priority:** MEDIUM
+**Description:** Weapon firing points loaded from JSON files were positioned incorrectly, suggesting ship scaling mismatch.
+
+**Root Cause:**
+- Weapon positions from JSON were scaled by `scaleFactor` but not by ship image scale
+- `shipImageData.scale` was calculated but not used in `cloneWeaponPosition()`
+- Weapon positions were in pixels relative to ship image, but needed scaling to match game coordinates
+
+**Fix Applied:**
+- Updated `cloneWeaponPosition()` to use `shipImageData.scale` when available
+- Combines `scaleFactor` from JSON with `shipImageData.scale` for proper positioning
+- Weapon positions now correctly scale to match ship rendering size
+
+**Files Modified:**
+- `js/entities/Ship.js` - Updated cloneWeaponPosition() to use shipImageData.scale (lines 144-150)
+
+---
 
 ### ✅ Consumables Loadout Now Varies by Ship Class (2025-10-28)
 **Status:** FIXED

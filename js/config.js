@@ -128,6 +128,8 @@ const CONFIG = {
     // Countermeasures
     DECOY_COUNT: 6,
     MINE_COUNT: 6,
+    MINE_DAMAGE: 10,              // Damage per mine detonation
+    MINE_DETECTION_RADIUS: 0.1,   // 10% of ship detection radius (for enemy detection)
     DEPLOYMENT_COOLDOWN: 6.0, // seconds
 
     // Targeting

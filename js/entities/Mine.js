@@ -7,9 +7,9 @@ class Mine extends Entity {
         super(x, y);
         this.type = 'mine';
         this.ownerShip = ownerShip;
-        this.damage = CONFIG.MINE_DAMAGE; // 10 damage
-        this.triggerRadius = 15;
-        this.detectionRadius = CONFIG.MINE_DETECTION_RADIUS; // 10% of ship detection radius
+        this.damage = CONFIG.MINE_DAMAGE || 10; // 10 damage (fallback if not defined)
+        this.triggerRadius = 30; // Increased from 15 to 30 pixels for better detection
+        this.detectionRadius = CONFIG.MINE_DETECTION_RADIUS || 0.1; // 10% of ship detection radius
         this.armed = false;
         this.armDelay = 0.5; // 0.5 second arm delay to prevent self-triggering
         this.creationTime = performance.now() / 1000;
