@@ -58,3 +58,4 @@ Implement JSON file loading system that:
 - Applies `scaleFactor` to position coordinates
 - Scales positions based on actual PNG image dimensions
 
+

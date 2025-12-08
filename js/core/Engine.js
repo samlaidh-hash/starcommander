@@ -2046,26 +2046,6 @@ class Engine {
                     continue; // No target, skip
                 }
 
-                // For player: initiate disruptor bursts when holding LMB (beamFiring)
-                if (entity.isPlayer && this.beamFiring && !this.warpingOut) {
-                    const currentTime = performance.now() / 1000;
-                    const targetAngle = MathUtils.angleBetween(entity.x, entity.y, targetX, targetY);
-                    
-                    // Fire disruptors that are ready and in arc
-                    if (entity.weapons) {
-                        for (const weapon of entity.weapons) {
-                            if (weapon instanceof Disruptor) {
-                                // Check if weapon is in arc and ready to fire
-                                if (weapon.isInArc(targetAngle, entity.rotation) && 
-                                    weapon.canFire(currentTime) && 
-                                    !weapon.isBursting) {
-                                    weapon.fire(entity, targetX, targetY, currentTime);
-                                }
-                            }
-                        }
-                    }
-                }
-
                 const burstShots = entity.getDisruptorBurstShots(targetX, targetY);
                 if (burstShots && burstShots.length > 0) {
                     this.projectiles.push(...burstShots);

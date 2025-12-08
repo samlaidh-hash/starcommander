@@ -104,3 +104,4 @@ class WeaponLoadoutLoader {
 // Create global instance
 window.weaponLoadoutLoader = new WeaponLoadoutLoader();
 
+
