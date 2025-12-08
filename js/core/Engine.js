@@ -2023,17 +2023,23 @@ class Engine {
             if (entity.type === 'ship' && entity.active) {
                 // Get target (player targets mouse, AI targets their current target)
                 let targetX, targetY;
+                let hasTarget = false;
                 if (entity.isPlayer) {
-                    const mousePos = this.inputManager.getMousePosition();
-                    const worldPos = this.camera.screenToWorld(mousePos.x, mousePos.y);
-                    targetX = worldPos.x;
-                    targetY = worldPos.y;
+                    // Player always has mouse target when beamFiring is true
+                    if (this.beamFiring) {
+                        const mousePos = this.inputManager.getMousePosition();
+                        const worldPos = this.camera.screenToWorld(mousePos.x, mousePos.y);
+                        targetX = worldPos.x;
+                        targetY = worldPos.y;
+                        hasTarget = true;
+                    }
                 } else if (entity.target) {
                     targetX = entity.target.x;
                     targetY = entity.target.y;
-                } else {
-                    continue; // No target, skip
+                    hasTarget = true;
                 }
+                
+                if (!hasTarget) continue; // No target, skip
 
                 const burstShots = entity.getDisruptorBurstShots(targetX, targetY);
                 if (burstShots && burstShots.length > 0) {

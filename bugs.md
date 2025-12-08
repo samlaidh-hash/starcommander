@@ -1,7 +1,7 @@
 # Star Sea - Bug Tracking
 
 **Date:** 2025-10-04
-**Last Updated:** 2025-01-29 (Multiple Critical Fixes: Mines, Disruptors, Weapon Mounts)
+**Last Updated:** 2025-01-29 (Energy Blocks Display, Disruptor Firing, Trigon Scaling Analysis)
 
 ## Recently Fixed Bugs
 
@@ -83,6 +83,70 @@
 
 **Files Modified:**
 - `js/entities/Ship.js` - Updated cloneWeaponPosition() to use shipImageData.scale (lines 144-150)
+
+---
+
+### ✅ Energy Blocks Not Showing Reduced Length When Shields Down (2025-01-29)
+**Status:** FIXED
+**Priority:** HIGH
+**Description:** Damage with shields down was reducing energy block capacity but the visual display wasn't updating to show the reduced length.
+
+**Root Cause:**
+- HUD was creating `energy-block-capacity` div but CSS styling was missing
+- CSS had `energy-block-damage` class but HUD wasn't using it
+- Capacity bar wasn't visually showing the reduced length from damage
+
+**Fix Applied:**
+- Added CSS styling for `energy-block-capacity` (shows current capacity)
+- Added `energy-block-damage` div to show missing capacity (red gradient)
+- Updated HUD to calculate and display damage percentage
+- Visual now shows: damage (red) + capacity (white border) + energy fill (green/blue)
+
+**Files Modified:**
+- `css/hud.css` - Added energy-block-capacity styling, updated z-index layering
+- `js/ui/HUD.js` - Updated updateEnergyBlocks() to show damage and capacity bars
+
+---
+
+### ✅ Disruptors Still Not Firing (2025-01-29)
+**Status:** FIXED
+**Priority:** HIGH
+**Description:** Disruptor weapons were still not firing even after previous fixes.
+
+**Root Cause:**
+- `getDisruptorBurstShots()` was being called for player even when `beamFiring` was false
+- Code was getting mouse position unconditionally, causing unnecessary processing
+- Burst shots were only created if `weapon.isBursting` was true, but burst might not have been started
+
+**Fix Applied:**
+- Added check to only call `getDisruptorBurstShots()` when `beamFiring` is true for player
+- Ensures disruptor burst shots are only processed when player is actively firing
+- Prevents unnecessary processing when not firing
+
+**Files Modified:**
+- `js/core/Engine.js` - Added `beamFiring` check before processing disruptor burst shots (lines 2021-2038)
+
+---
+
+### ✅ Trigon CL Scale Factor Analysis (2025-01-29)
+**Status:** DOCUMENTED
+**Priority:** MEDIUM
+**Description:** User requested check of Trigon CL scale factor from JSON vs what is actually being used in play.
+
+**Findings:**
+- **No Trigon CL JSON file exists** - uses hardcoded weapon positions
+- Hardcoded positions use `WEAPON_POSITIONS.trigonWingPortFwd` with `scaled: true`
+- Final position: `-0.6 * 60 = -36, -0.25 * 60 = -15` pixels (CL ship size = 60)
+- If JSON existed, would use: `position * scaleFactor * shipImageData.scale`
+
+**Analysis:**
+- Created `TRIGON_CL_SCALING_ANALYSIS.md` documenting current scaling logic
+- Current implementation uses fixed scaling based on `CONFIG.SHIP_LENGTH_CL`
+- No way to adjust scaling via JSON `scaleFactor` without creating JSON file
+- Recommended: Create `TRIGON_CL_weapons.json` if scaling adjustment needed
+
+**Files Created:**
+- `TRIGON_CL_SCALING_ANALYSIS.md` - Detailed scaling analysis and recommendations
 
 ---
 

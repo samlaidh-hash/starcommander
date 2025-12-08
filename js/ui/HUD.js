@@ -306,11 +306,18 @@ class HUD {
             const block = blockData[i];
             const blockElement = document.createElement('div');
             blockElement.className = 'energy-block';
+            
+            // Calculate damage percentage (missing capacity)
+            const damagePercent = 100 - ((block.currentLength / block.maxLength) * 100);
+            const capacityPercent = (block.currentLength / block.maxLength) * 100;
+            const energyPercent = block.energyPercent * 100;
+            
             blockElement.innerHTML = `
                 <div class="energy-block-label">Block ${i + 1}</div>
                 <div class="energy-block-bar">
-                    <div class="energy-block-fill" style="width: ${block.energyPercent * 100}%"></div>
-                    <div class="energy-block-capacity" style="width: ${(block.currentLength / block.maxLength) * 100}%"></div>
+                    <div class="energy-block-damage" style="width: ${damagePercent}%"></div>
+                    <div class="energy-block-capacity" style="width: ${capacityPercent}%"></div>
+                    <div class="energy-block-fill" style="width: ${energyPercent}%"></div>
                 </div>
                 <div class="energy-block-info">${Math.round(block.energy)}/${Math.round(block.currentLength)}</div>
             `;
@@ -1203,15 +1210,37 @@ class HUD {
             caret.style.left = `${caretPosition * 100}%`;
         }
         
-        // Color bars based on energy drain/regeneration
-        if (ship.throttle > 0.5) {
-            forwardBar.style.background = 'linear-gradient(90deg, #ff8800, #ffaa00)'; // Orange when draining
-        } else if (ship.throttle < 0.5) {
-            forwardBar.style.background = 'linear-gradient(90deg, #0a0, #0f0)'; // Green when regenerating
+        // Color bars based on energy drain/regeneration (matches Ship.js updateThrottle logic)
+        const normalizedSpeed = Math.abs(ship.currentSpeed) / ship.maxSpeed;
+        const SPEED_THRESHOLD_LOW = 1/3;  // 0.333 (below this = recharge)
+        const SPEED_THRESHOLD_HIGH = 2/3; // 0.667 (above this = drain)
+        
+        let barColor;
+        if (normalizedSpeed < SPEED_THRESHOLD_LOW) {
+            // Below 1/3 speed: Recharge energy - GREEN
+            barColor = 'linear-gradient(90deg, #0a0, #0f0)';
+        } else if (normalizedSpeed > SPEED_THRESHOLD_HIGH) {
+            // Above 2/3 speed: Drain energy - RED
+            barColor = 'linear-gradient(90deg, #f00, #a00)';
         } else {
-            forwardBar.style.background = 'linear-gradient(90deg, #0a0, #0f0)'; // Green at neutral
+            // Between 1/3 and 2/3: Neutral - ORANGE
+            barColor = 'linear-gradient(90deg, #ff8800, #ffaa00)';
         }
-        reverseBar.style.background = 'linear-gradient(90deg, #00a, #00f)'; // Blue for reverse
+        
+        // Apply color to the active bar (forward or reverse) based on current speed direction
+        if (ship.currentSpeed > 0) {
+            // Moving forward - color forward bar
+            forwardBar.style.background = barColor;
+            reverseBar.style.background = 'transparent';
+        } else if (ship.currentSpeed < 0) {
+            // Moving reverse - color reverse bar
+            reverseBar.style.background = barColor;
+            forwardBar.style.background = 'transparent';
+        } else {
+            // Stationary - show neutral color on both bars (or no color)
+            forwardBar.style.background = 'transparent';
+            reverseBar.style.background = 'transparent';
+        }
     }
 
     updateTooltip(mouseX, mouseY, hoveredShip) {
