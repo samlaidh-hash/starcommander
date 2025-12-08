@@ -1409,11 +1409,37 @@ class Ship extends Entity {
                 if (weapon.isInArc(targetAngle, this.rotation)) {
                     const projectile = weapon.fire(this, targetX, targetY, currentTime);
                     if (projectile) {
+                        // Validate projectile has valid coordinates
+                        if (isNaN(projectile.x) || isNaN(projectile.y) || 
+                            projectile.targetX === undefined || projectile.targetY === undefined ||
+                            isNaN(projectile.targetX) || isNaN(projectile.targetY)) {
+                            console.warn('⚠️ Invalid beam projectile coordinates:', {
+                                x: projectile.x, y: projectile.y,
+                                targetX: projectile.targetX, targetY: projectile.targetY,
+                                sourceShip: !!projectile.sourceShip, sourceWeapon: !!projectile.sourceWeapon
+                            });
+                            continue; // Skip invalid projectiles
+                        }
                         // Apply consumable damage multiplier (energy cells)
                         if (this.consumables) {
                             projectile.damage *= this.consumables.getDamageMultiplier();
                         }
                         projectiles.push(projectile);
+                    } else {
+                        // Weapon is firing but fire() returned null
+                        console.warn('⚠️ ContinuousBeam.fire() returned null', {
+                            isFiring: weapon.isFiring,
+                            fixedStartPoint: weapon.fixedStartPoint,
+                            canFire: weapon.canFire(currentTime, this)
+                        });
+                    }
+                } else {
+                    // Weapon is firing but not in arc
+                    if (CONFIG.DEBUG_MODE) {
+                        console.log('⚠️ ContinuousBeam firing but not in arc', {
+                            targetAngle, shipRotation: this.rotation,
+                            weaponArc: weapon.arc, arcCenter: weapon.arcCenter
+                        });
                     }
                 }
             }

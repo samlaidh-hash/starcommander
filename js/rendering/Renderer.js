@@ -56,6 +56,8 @@ class Renderer {
                     this.environmentRenderer.render(entity);
                     break;
                 case 'projectile':
+                    // Projectiles may have custom render methods (BeamProjectile, DisruptorProjectile)
+                    // renderProjectile() will check for custom render method first
                     this.renderProjectile(entity);
                     break;
                 case 'decoy':
@@ -64,7 +66,11 @@ class Renderer {
                     break;
                 default:
                     // Generic entity with render method
-                    if (typeof entity.render === 'function') {
+                    // Check if it's a projectile by checking for projectileType property
+                    if (entity.projectileType && typeof entity.render === 'function') {
+                        // It's a projectile with custom render - use it
+                        entity.render(this.ctx, this.camera);
+                    } else if (typeof entity.render === 'function') {
                         entity.render(this.ctx, this.camera);
                     } else {
                         this.renderGenericEntity(entity);

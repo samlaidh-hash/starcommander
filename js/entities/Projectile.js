@@ -260,6 +260,12 @@ class DisruptorProjectile extends Projectile {
     render(ctx, camera) {
         if (!this.active) return;
 
+        // Validate coordinates
+        if (isNaN(this.x) || isNaN(this.y) || isNaN(this.rotation)) {
+            console.warn('DisruptorProjectile: Invalid coordinates for rendering', { x: this.x, y: this.y, rotation: this.rotation });
+            return; // Don't render if coordinates are invalid
+        }
+
         // Note: Camera transform already applied, use world coords directly
         ctx.save();
         ctx.translate(this.x, this.y);

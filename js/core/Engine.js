@@ -2001,7 +2001,17 @@ class Engine {
                 }
             }
             
-            // Check if any beams are actually firing (projectiles created)
+            // Add projectiles to entities FIRST, then check if any were created
+            if (projectiles && projectiles.length > 0) {
+                // Debug: Log projectile creation
+                if (CONFIG.DEBUG_MODE) {
+                    console.log(`🔫 Created ${projectiles.length} beam projectiles:`, projectiles.map(p => `${p.projectileType}@(${Math.round(p.x)},${Math.round(p.y)}) active=${p.active}`));
+                }
+                this.projectiles.push(...projectiles);
+                this.entities.push(...projectiles);
+            }
+            
+            // Check if any beams are actually firing (projectiles created AND added to entities)
             const anyBeamsFiring = projectiles && projectiles.length > 0;
             
             // Manage sound based on whether beams are actually firing
@@ -2015,9 +2025,9 @@ class Engine {
                 this.audioManager.stopLoopingSound('fed-beam');
             }
             
-            if (projectiles && projectiles.length > 0) {
-                this.projectiles.push(...projectiles);
-                this.entities.push(...projectiles);
+            // Debug warning if sound is playing but no projectiles
+            if (!anyBeamsFiring && isSoundPlaying) {
+                console.warn('⚠️ Beam sound playing but no projectiles created! beamFiring=', this.beamFiring, 'projectiles=', projectiles, 'weapons firing:', this.playerShip.weapons.filter(w => w instanceof ContinuousBeam && w.isFiring).length);
             }
         }
         perf.beamFiring = Date.now() - beamStart;
@@ -2067,29 +2077,47 @@ class Engine {
 
                 const burstShots = entity.getDisruptorBurstShots(targetX, targetY);
                 if (burstShots && burstShots.length > 0) {
-                    // Drain energy for each shot fired
-                    if (entity.energy) {
-                        const energyCost = CONFIG.DISRUPTOR_ENERGY_COST * burstShots.length;
-                        entity.energy.drainEnergy(energyCost);
-                        
-                        // Stop firing if out of energy (for player)
-                        if (entity.isPlayer && entity.energy.getTotalEnergy() <= 0) {
-                            // Stop all disruptor bursts
-                            for (const weapon of entity.weapons) {
-                                if (weapon instanceof Disruptor) {
-                                    weapon.isBursting = false;
+                    // Validate projectiles before adding
+                    const validShots = burstShots.filter(p => {
+                        if (!p || !p.active) return false;
+                        if (isNaN(p.x) || isNaN(p.y) || isNaN(p.rotation)) {
+                            console.warn('⚠️ Invalid disruptor projectile coordinates:', { x: p.x, y: p.y, rotation: p.rotation });
+                            return false;
+                        }
+                        return true;
+                    });
+                    
+                    if (validShots.length > 0) {
+                        // Drain energy for each shot fired
+                        if (entity.energy) {
+                            const energyCost = CONFIG.DISRUPTOR_ENERGY_COST * validShots.length;
+                            entity.energy.drainEnergy(energyCost);
+                            
+                            // Stop firing if out of energy (for player)
+                            if (entity.isPlayer && entity.energy.getTotalEnergy() <= 0) {
+                                // Stop all disruptor bursts
+                                for (const weapon of entity.weapons) {
+                                    if (weapon instanceof Disruptor) {
+                                        weapon.isBursting = false;
+                                    }
                                 }
                             }
                         }
-                    }
-                    
-                    this.projectiles.push(...burstShots);
-                    this.entities.push(...burstShots);
-                    if (entity.isPlayer) {
-                        // Play disruptor sound 3 times rapidly
-                        this.audioManager.playSound('disruptor-fire');
-                        setTimeout(() => this.audioManager.playSound('disruptor-fire'), 50);
-                        setTimeout(() => this.audioManager.playSound('disruptor-fire'), 100);
+                        
+                        // Debug: Log disruptor projectile creation
+                        if (CONFIG.DEBUG_MODE) {
+                            console.log(`🔫 Created ${validShots.length} disruptor projectiles:`, validShots.map(p => `${p.projectileType}@(${Math.round(p.x)},${Math.round(p.y)}) active=${p.active}`));
+                        }
+                        this.projectiles.push(...validShots);
+                        this.entities.push(...validShots);
+                        if (entity.isPlayer) {
+                            // Play disruptor sound only when projectiles are actually created
+                            this.audioManager.playSound('disruptor-fire');
+                            setTimeout(() => this.audioManager.playSound('disruptor-fire'), 50);
+                            setTimeout(() => this.audioManager.playSound('disruptor-fire'), 100);
+                        }
+                    } else {
+                        console.warn('⚠️ Disruptor burst shots created but all invalid!', burstShots);
                     }
                 }
             }

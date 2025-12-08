@@ -64,14 +64,29 @@ class BeamProjectile extends Projectile {
     render(ctx, camera) {
         if (!this.active) return;
 
+        // Validate target coordinates
+        if (this.targetX === undefined || this.targetY === undefined || 
+            isNaN(this.targetX) || isNaN(this.targetY)) {
+            console.warn('BeamProjectile: Invalid target coordinates', { targetX: this.targetX, targetY: this.targetY });
+            return; // Don't render if target is invalid
+        }
+
         // Recalculate firing point from weapon band (moves with ship)
         let startX = this.firingPointX;
         let startY = this.firingPointY;
 
         if (this.sourceShip && this.sourceWeapon) {
             const firingPoint = this.sourceWeapon.calculateFiringPoint(this.sourceShip, this.targetX, this.targetY);
-            startX = firingPoint.x;
-            startY = firingPoint.y;
+            if (firingPoint && firingPoint.x !== undefined && firingPoint.y !== undefined) {
+                startX = firingPoint.x;
+                startY = firingPoint.y;
+            }
+        }
+
+        // Validate start coordinates
+        if (isNaN(startX) || isNaN(startY) || isNaN(this.targetX) || isNaN(this.targetY)) {
+            console.warn('BeamProjectile: Invalid coordinates for rendering', { startX, startY, targetX: this.targetX, targetY: this.targetY });
+            return; // Don't render if coordinates are invalid
         }
 
         // Note: Camera transform is already applied by Renderer, so use world coords directly

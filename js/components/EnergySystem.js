@@ -108,8 +108,16 @@ class EnergySystem {
         let remaining = damage;
         for (let i = 0; i < this.blocks.length && remaining > 0; i++) {
             const block = this.blocks[i];
+            // Skip blocks that are already at zero capacity
+            if (block.currentLength <= 0) {
+                continue; // Move to next block
+            }
             const damageToBlock = Math.min(remaining, block.currentLength);
             block.currentLength -= damageToBlock;
+            // Ensure currentLength doesn't go below 0
+            if (block.currentLength < 0) {
+                block.currentLength = 0;
+            }
             // If block length reduced, also reduce energy if it exceeds new capacity
             if (block.energy > block.currentLength) {
                 block.energy = block.currentLength;
