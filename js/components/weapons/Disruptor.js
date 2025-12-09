@@ -24,7 +24,7 @@ class Disruptor extends Weapon {
         this.shotsFiredInBurst = 0;
         this.fixedTargetX = null; // Store target position when LMB clicked
         this.fixedTargetY = null;
-        this.burstSpacing = 20; // 20 pixels spacing between bolts
+        this.burstSpacing = 60; // 60 pixels spacing between bolts along line of fire
     }
 
     canFire(currentTime) {
@@ -142,17 +142,16 @@ class Disruptor extends Weapon {
         // Calculate angle to target
         const baseAngle = MathUtils.angleBetween(baseFireX, baseFireY, this.fixedTargetX, this.fixedTargetY);
         
-        // Calculate perpendicular offset direction (90 degrees from firing angle)
-        const perpAngle = baseAngle + 90;
-        const perpVector = MathUtils.vectorFromAngle(perpAngle, 1);
+        // Calculate firing direction vector (along the line of fire)
+        const fireVector = MathUtils.vectorFromAngle(baseAngle, 1);
         
-        // Create all 3 projectiles with 20 pixel spacing
+        // Create all 3 projectiles with 40 pixel spacing along line of fire
         const projectiles = [];
         for (let i = 0; i < this.burstCount; i++) {
-            // Offset from center: -20, 0, +20 pixels (for 3 shots)
-            const offset = (i - 1) * this.burstSpacing; // -20, 0, +20
-            const offsetX = baseFireX + perpVector.x * offset;
-            const offsetY = baseFireY + perpVector.y * offset;
+            // Offset along firing line: -40, 0, +40 pixels (for 3 shots)
+            const offset = (i - 1) * this.burstSpacing; // -40, 0, +40
+            const offsetX = baseFireX + fireVector.x * offset;
+            const offsetY = baseFireY + fireVector.y * offset;
             
             // All bolts target the same point (fixed target from click)
             const angle = MathUtils.angleBetween(offsetX, offsetY, this.fixedTargetX, this.fixedTargetY);
