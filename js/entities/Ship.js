@@ -1205,7 +1205,7 @@ class Ship extends Entity {
         if (this.throttle >= 0) {
             this.targetSpeed = currentMaxSpeed * this.throttle; // Forward: 0 to maxSpeed
         } else {
-            this.targetSpeed = currentMaxReverseSpeed * Math.abs(this.throttle) * 0.5; // Reverse: 0 to -50% maxSpeed
+            this.targetSpeed = currentMaxReverseSpeed * this.throttle; // Reverse: 0 to -50% maxSpeed (throttle is negative, so result is negative)
         }
 
         // Add boost if active
