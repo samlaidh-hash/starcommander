@@ -1458,11 +1458,13 @@ class Ship extends Entity {
                         projectiles.push(projectile);
                     } else {
                         // Weapon is firing but fire() returned null
-                        console.warn('⚠️ ContinuousBeam.fire() returned null', {
-                            isFiring: weapon.isFiring,
-                            fixedStartPoint: weapon.fixedStartPoint,
-                            canFire: weapon.canFire(currentTime, this)
-                        });
+                        if (CONFIG.DEBUG_MODE) {
+                            console.warn('⚠️ ContinuousBeam.fire() returned null', {
+                                isFiring: weapon.isFiring,
+                                fixedStartPoint: weapon.fixedStartPoint,
+                                canFire: weapon.canFire(currentTime, this)
+                            });
+                        }
                     }
                 } else {
                     // Weapon is firing but not in arc

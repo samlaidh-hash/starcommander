@@ -780,11 +780,39 @@ class Engine {
         
         // Double-tap A/D: Fast rotation (3-4x normal turn rate, instant energy cost)
         eventBus.on('fast-rotate', (data) => {
-            if (!this.stateManager.isPlaying() || !this.playerShip || !this.playerShip.energy) return;
+            if (CONFIG.DEBUG_MODE) {
+                console.log('🔵 fast-rotate event received:', {
+                    isPlaying: this.stateManager.isPlaying(),
+                    hasShip: !!this.playerShip,
+                    hasEnergy: !!(this.playerShip && this.playerShip.energy),
+                    direction: data.direction
+                });
+            }
+            
+            if (!this.stateManager.isPlaying()) {
+                if (CONFIG.DEBUG_MODE) {
+                    console.warn('⚠️ Fast rotate blocked: game not playing, state=', this.stateManager.getState());
+                }
+                return;
+            }
+            if (!this.playerShip) {
+                if (CONFIG.DEBUG_MODE) {
+                    console.warn('⚠️ Fast rotate blocked: no player ship');
+                }
+                return;
+            }
+            if (!this.playerShip.energy) {
+                if (CONFIG.DEBUG_MODE) {
+                    console.warn('⚠️ Fast rotate blocked: no energy system');
+                }
+                return;
+            }
             
             // Check if ship has energy
             if (this.playerShip.energy.getTotalEnergy() <= 0) {
-                console.log('Fast rotate failed: No energy');
+                if (CONFIG.DEBUG_MODE) {
+                    console.log('Fast rotate failed: No energy');
+                }
                 return;
             }
             
@@ -798,18 +826,49 @@ class Engine {
             this.playerShip.fastRotateMultiplier = fastRotateMultiplier;
             this.playerShip.fastRotateEndTime = performance.now() / 1000 + 1.0; // 1 second duration
             
-            console.log(`Fast rotation activated! (${fastRotateMultiplier}x turn rate)`);
+            if (CONFIG.DEBUG_MODE) {
+                console.log(`✅ Fast rotation activated! (${fastRotateMultiplier}x turn rate)`);
+            }
             this.audioManager.playSound('boost');
         });
 
         // Tactical warp events (double-tap-and-hold W)
         eventBus.on('tactical-warp-start', (data) => {
-            if (!this.stateManager.isPlaying() || !this.playerShip || !this.playerShip.energy) return;
+            if (CONFIG.DEBUG_MODE) {
+                console.log('🔵 tactical-warp-start event received:', {
+                    isPlaying: this.stateManager.isPlaying(),
+                    state: this.stateManager.getState(),
+                    hasShip: !!this.playerShip,
+                    hasEnergy: !!(this.playerShip && this.playerShip.energy),
+                    faction: this.playerShip?.faction
+                });
+            }
+            
+            if (!this.stateManager.isPlaying()) {
+                if (CONFIG.DEBUG_MODE) {
+                    console.warn('⚠️ Tactical warp blocked: game not playing, state=', this.stateManager.getState());
+                }
+                return;
+            }
+            if (!this.playerShip) {
+                if (CONFIG.DEBUG_MODE) {
+                    console.warn('⚠️ Tactical warp blocked: no player ship');
+                }
+                return;
+            }
+            if (!this.playerShip.energy) {
+                if (CONFIG.DEBUG_MODE) {
+                    console.warn('⚠️ Tactical warp blocked: no energy system');
+                }
+                return;
+            }
             
             // Only allow for specific factions
             const allowedFactions = ['FEDERATION', 'SCINTILIAN', 'TRIGON', 'PIRATE', 'PLAYER'];
             if (!allowedFactions.includes(this.playerShip.faction)) {
-                console.log('Tactical warp not available for this faction');
+                if (CONFIG.DEBUG_MODE) {
+                    console.log('Tactical warp not available for this faction:', this.playerShip.faction);
+                }
                 return;
             }
 
@@ -817,16 +876,24 @@ class Engine {
             const currentTime = performance.now() / 1000;
             if (currentTime < this.playerShip.tacticalWarpCooldownEnd) {
                 const cooldownRemaining = this.playerShip.tacticalWarpCooldownEnd - currentTime;
-                console.log(`Tactical warp on cooldown: ${cooldownRemaining.toFixed(1)}s remaining`);
+                if (CONFIG.DEBUG_MODE) {
+                    console.log(`Tactical warp on cooldown: ${cooldownRemaining.toFixed(1)}s remaining`);
+                }
                 this.hud.addCriticalMessage(`Tactical Warp: ${cooldownRemaining.toFixed(1)}s cooldown`);
                 return;
             }
 
             // Activate tactical warp
             if (this.playerShip.activateTacticalWarp(currentTime)) {
-                console.log('Tactical warp activated!');
+                if (CONFIG.DEBUG_MODE) {
+                    console.log('✅ Tactical warp activated!');
+                }
                 this.audioManager.playSound('boost');
                 this.hud.addCriticalMessage('TACTICAL WARP ENGAGED');
+            } else {
+                if (CONFIG.DEBUG_MODE) {
+                    console.warn('⚠️ Tactical warp activation failed');
+                }
             }
         });
 
@@ -837,7 +904,9 @@ class Engine {
             this.playerShip.deactivateTacticalWarp(currentTime);
             
             const cooldownDuration = this.playerShip.tacticalWarpLastDuration * 5;
-            console.log(`Tactical warp ended. Duration: ${this.playerShip.tacticalWarpLastDuration.toFixed(1)}s, Cooldown: ${cooldownDuration.toFixed(1)}s`);
+            if (CONFIG.DEBUG_MODE) {
+                console.log(`Tactical warp ended. Duration: ${this.playerShip.tacticalWarpLastDuration.toFixed(1)}s, Cooldown: ${cooldownDuration.toFixed(1)}s`);
+            }
             this.hud.addCriticalMessage(`Tactical Warp: ${cooldownDuration.toFixed(1)}s cooldown`);
             this.audioManager.playSound('boost');
         });
@@ -846,7 +915,9 @@ class Engine {
             if (!this.stateManager.isPlaying() || !this.playerShip) return;
             
             const cooldownDuration = this.playerShip.tacticalWarpLastDuration * 5;
-            console.log(`Tactical warp ended (energy depleted). Cooldown: ${cooldownDuration.toFixed(1)}s`);
+            if (CONFIG.DEBUG_MODE) {
+                console.log(`Tactical warp ended (energy depleted). Cooldown: ${cooldownDuration.toFixed(1)}s`);
+            }
             this.hud.addCriticalMessage(`Tactical Warp: Energy depleted. ${cooldownDuration.toFixed(1)}s cooldown`);
         });
 
@@ -1142,14 +1213,25 @@ class Engine {
         // Game pause/resume events (for loadout screen)
         eventBus.on('game-paused', () => {
             // Pause the game when loadout/briefing screen opens
-            if (this.stateManager.getState() === 'PLAYING') {
+            const currentState = this.stateManager.getState();
+            if (currentState === 'PLAYING') {
                 this.stateManager.setState('PAUSED');
+            }
+            // Also check briefing screen visibility as backup
+            const briefingScreen = document.getElementById('briefing-screen');
+            if (briefingScreen && !briefingScreen.classList.contains('hidden')) {
+                if (currentState === 'PLAYING') {
+                    this.stateManager.setState('PAUSED');
+                }
             }
         });
 
         eventBus.on('game-resumed', () => {
-            // Resume the game when loadout/briefing screen closes
-            if (this.stateManager.getState() === 'PAUSED') {
+            // Only resume if briefing screen is actually closed
+            const briefingScreen = document.getElementById('briefing-screen');
+            const isBriefingVisible = briefingScreen && !briefingScreen.classList.contains('hidden');
+            
+            if (!isBriefingVisible && this.stateManager.getState() === 'PAUSED') {
                 this.stateManager.setState('PLAYING');
             }
         });
@@ -1870,13 +1952,19 @@ class Engine {
     update(deltaTime) {
         // Ensure game is paused when briefing/loadout screen is visible
         const briefingScreen = document.getElementById('briefing-screen');
-        if (briefingScreen && !briefingScreen.classList.contains('hidden')) {
-            if (this.stateManager.getState() === 'PLAYING') {
+        const isBriefingVisible = briefingScreen && !briefingScreen.classList.contains('hidden');
+        
+        if (isBriefingVisible) {
+            // Always pause when briefing screen is visible (unless already in menu states)
+            const currentState = this.stateManager.getState();
+            if (currentState === 'PLAYING') {
                 this.stateManager.setState('PAUSED');
             }
-            return; // Don't update when briefing screen is open
+            // Don't update game logic when briefing screen is open
+            return;
         }
 
+        // Don't update if not playing
         if (!this.stateManager.isPlaying()) return;
 
         // Watchdog: detect infinite loops
@@ -1947,6 +2035,13 @@ class Engine {
         // Update targeting system (disable during warp)
         if (!this.warpingOut) {
             const mousePos = this.inputManager.getMousePosition();
+            if (CONFIG.DEBUG_MODE && this.updateCounter % 60 === 0) {
+                console.log('🎯 Targeting system update:', {
+                    mousePos: { x: mousePos.x, y: mousePos.y },
+                    entities: this.entities.length,
+                    lockedTarget: this.targetingSystem.getLockedTarget()?.name || 'none'
+                });
+            }
             this.targetingSystem.update(mousePos.x, mousePos.y, this.entities, this.camera, deltaTime);
         }
         perf.targeting = Date.now() - perf.start - perf.input;
@@ -2027,7 +2122,9 @@ class Engine {
             
             // Debug warning if sound is playing but no projectiles
             if (!anyBeamsFiring && isSoundPlaying) {
-                console.warn('⚠️ Beam sound playing but no projectiles created! beamFiring=', this.beamFiring, 'projectiles=', projectiles, 'weapons firing:', this.playerShip.weapons.filter(w => w instanceof ContinuousBeam && w.isFiring).length);
+                if (CONFIG.DEBUG_MODE) {
+                    console.warn('⚠️ Beam sound playing but no projectiles created! beamFiring=', this.beamFiring, 'projectiles=', projectiles, 'weapons firing:', this.playerShip.weapons.filter(w => w instanceof ContinuousBeam && w.isFiring).length);
+                }
             }
         }
         perf.beamFiring = Date.now() - beamStart;
@@ -2081,7 +2178,9 @@ class Engine {
                     const validShots = burstShots.filter(p => {
                         if (!p || !p.active) return false;
                         if (isNaN(p.x) || isNaN(p.y) || isNaN(p.rotation)) {
-                            console.warn('⚠️ Invalid disruptor projectile coordinates:', { x: p.x, y: p.y, rotation: p.rotation });
+                            if (CONFIG.DEBUG_MODE) {
+                                console.warn('⚠️ Invalid disruptor projectile coordinates:', { x: p.x, y: p.y, rotation: p.rotation });
+                            }
                             return false;
                         }
                         return true;
@@ -2117,7 +2216,9 @@ class Engine {
                             setTimeout(() => this.audioManager.playSound('disruptor-fire'), 100);
                         }
                     } else {
-                        console.warn('⚠️ Disruptor burst shots created but all invalid!', burstShots);
+                        if (CONFIG.DEBUG_MODE) {
+                            console.warn('⚠️ Disruptor burst shots created but all invalid!', burstShots);
+                        }
                     }
                 }
             }
@@ -3284,8 +3385,14 @@ class Engine {
             this.hud.addCriticalMessage(`Mission Started: ${mission.title}`);
             console.log('✅ Mission start complete!');
 
-            // Ensure game state is PLAYING after mission starts
-            this.stateManager.setState('PLAYING');
+            // Ensure game state is PLAYING after mission starts (only if briefing screen is closed)
+            const briefingScreen = document.getElementById('briefing-screen');
+            const isBriefingVisible = briefingScreen && !briefingScreen.classList.contains('hidden');
+            if (!isBriefingVisible) {
+                this.stateManager.setState('PLAYING');
+            } else {
+                console.warn('⚠️ Briefing screen still visible, keeping game paused');
+            }
 
         } catch (error) {
             console.error('❌ CRITICAL ERROR in startMission:', error);

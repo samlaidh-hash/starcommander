@@ -10,6 +10,15 @@ class StateManager {
     }
 
     setState(newState) {
+        // Prevent setting PLAYING state if briefing screen is visible
+        if (newState === 'PLAYING') {
+            const briefingScreen = document.getElementById('briefing-screen');
+            if (briefingScreen && !briefingScreen.classList.contains('hidden')) {
+                console.warn('⚠️ Cannot set state to PLAYING while briefing screen is visible');
+                return; // Don't change state
+            }
+        }
+        
         this.previousState = this.currentState;
         this.currentState = newState;
         eventBus.emit('state-changed', { from: this.previousState, to: newState });

@@ -85,18 +85,34 @@ class InputManager {
 
             if (timeSinceLastPress < this.doubleTapThreshold && !wasKeyAlreadyDown) {
                 // Double-tap detected! (only if key wasn't already held)
+                if (CONFIG.DEBUG_MODE) {
+                    console.log(`🔵 Double-tap detected for key: ${key}, timeSinceLastPress: ${timeSinceLastPress}ms`);
+                }
                 if (key === 'w') {
                     // For W key: Mark as double-tapped, will activate tactical warp if held
                     this.wKeyDoubleTapped = true;
                     this.wKeyHeld = true;
+                    if (CONFIG.DEBUG_MODE) {
+                        console.log('🔵 W key double-tapped, waiting for hold to activate tactical warp');
+                    }
                     // Don't emit burst-acceleration - tactical warp takes priority
                 } else if (key === 's') {
+                    if (CONFIG.DEBUG_MODE) {
+                        console.log('🔵 S key double-tapped - emitting instant-stop');
+                    }
                     eventBus.emit('instant-stop', { direction: key });
                 } else if (key === 'a' || key === 'd') {
                     // Only trigger fast-rotate if it hasn't been triggered for this key yet
                     if (!this.fastRotateTriggered.has(key)) {
                         this.fastRotateTriggered.add(key);
+                        if (CONFIG.DEBUG_MODE) {
+                            console.log(`🔵 ${key.toUpperCase()} key double-tapped - emitting fast-rotate`);
+                        }
                         eventBus.emit('fast-rotate', { direction: key });
+                    } else {
+                        if (CONFIG.DEBUG_MODE) {
+                            console.log(`🔵 ${key.toUpperCase()} key double-tapped but already triggered`);
+                        }
                     }
                 }
                 this.lastKeyPressTimes.set(key, 0); // Reset to prevent triple-tap
@@ -118,11 +134,26 @@ class InputManager {
 
         // Check for tactical warp activation (double-tap-and-hold W)
         // This fires on keydown when W is double-tapped and being held
-        if (key === 'w' && this.wKeyDoubleTapped && this.wKeyHeld && !this.tacticalWarpActive) {
-            // Double-tap detected and W is being held - start tactical warp
-            this.tacticalWarpActive = true;
-            this.tacticalWarpStartTime = performance.now();
-            eventBus.emit('tactical-warp-start', { time: this.tacticalWarpStartTime });
+        // IMPORTANT: Check this AFTER the double-tap detection above, but also check on every keydown
+        // to catch the case where W is held after double-tap
+        if (key === 'w') {
+            // Ensure wKeyHeld is set when W is down
+            if (!this.wKeyHeld) {
+                this.wKeyHeld = true;
+            }
+            
+            // If W was double-tapped and is being held, activate tactical warp
+            if (this.wKeyDoubleTapped && this.wKeyHeld && !this.tacticalWarpActive) {
+                if (CONFIG.DEBUG_MODE) {
+                    console.log('🔵 Tactical warp activation check: doubleTapped=', this.wKeyDoubleTapped, 'held=', this.wKeyHeld, 'active=', this.tacticalWarpActive);
+                }
+                this.tacticalWarpActive = true;
+                this.tacticalWarpStartTime = performance.now();
+                if (CONFIG.DEBUG_MODE) {
+                    console.log('🔵 Emitting tactical-warp-start event');
+                }
+                eventBus.emit('tactical-warp-start', { time: this.tacticalWarpStartTime });
+            }
         }
 
         eventBus.emit('keydown', { key: key, event: e });

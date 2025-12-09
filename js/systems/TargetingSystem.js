@@ -31,8 +31,23 @@ class TargetingSystem {
     update(reticleX, reticleY, entities, camera, deltaTime) {
         const currentTime = performance.now() / 1000;
 
+        // Validate inputs
+        if (isNaN(reticleX) || isNaN(reticleY) || !camera || !entities) {
+            if (CONFIG.DEBUG_MODE) {
+                console.warn('⚠️ TargetingSystem.update: Invalid inputs', { reticleX, reticleY, camera: !!camera, entities: !!entities });
+            }
+            return;
+        }
+
         // Convert screen coordinates to world coordinates
         const worldPos = camera.screenToWorld(reticleX, reticleY);
+        
+        if (!worldPos || isNaN(worldPos.x) || isNaN(worldPos.y)) {
+            if (CONFIG.DEBUG_MODE) {
+                console.warn('⚠️ TargetingSystem.update: Invalid world position', { reticleX, reticleY, worldPos });
+            }
+            return;
+        }
 
         // Calculate reticle movement speed for stability tracking
         const reticleDist = MathUtils.distance(reticleX, reticleY, this.lastReticleX, this.lastReticleY);
@@ -43,8 +58,16 @@ class TargetingSystem {
         // Find target under reticle
         const target = this.getTargetUnderReticle(worldPos.x, worldPos.y, entities);
 
-        if (CONFIG.DEBUG_MODE && target) {
-            console.log(`🎯 Target under reticle: ${target.name || target.faction + ' ' + target.shipClass}, lockProgress: ${this.lockProgress.toFixed(2)}/${this.currentLockTime.toFixed(2)}`);
+        if (CONFIG.DEBUG_MODE) {
+            if (target) {
+                console.log(`🎯 Target under reticle: ${target.name || target.faction + ' ' + target.shipClass}, lockProgress: ${this.lockProgress.toFixed(2)}/${this.currentLockTime.toFixed(2)}`);
+            } else if (this.currentTarget) {
+                // Log when we have a target but reticle moved away
+                const dist = MathUtils.distance(worldPos.x, worldPos.y, this.currentTarget.x, this.currentTarget.y);
+                const baseRadius = this.currentTarget.radius || (this.currentTarget.getShipSize ? this.currentTarget.getShipSize() : 50) || 50;
+                const detectionRadius = baseRadius * 6;
+                console.log(`🎯 Reticle moved away from target: distance=${dist.toFixed(1)}, detectionRadius=${detectionRadius.toFixed(1)}`);
+            }
         }
 
         if (target) {
