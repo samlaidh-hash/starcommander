@@ -783,23 +783,42 @@ class ShipRenderer {
                 }
             }
 
-            // Determine visual state
-            let opacity = 1.0;
-            let useGlow = false;
+            // Determine visual state with hysteresis to prevent flickering
+            // Use previous state if state is rapidly changing
+            if (!weapon._indicatorState) {
+                weapon._indicatorState = { opacity: 0.5, useGlow: false, lastUpdate: currentTime };
+            }
+            
+            const stateAge = currentTime - weapon._indicatorState.lastUpdate;
+            const minStateDuration = 0.05; // Minimum 50ms between state changes to prevent flicker
+            
+            let targetOpacity = 1.0;
+            let targetUseGlow = false;
             
             if (isFiring || isOnCooldown || hasInsufficientEnergy) {
                 // Dim when firing, on cooldown, or insufficient energy
-                opacity = 0.3; // Dim
-                useGlow = false;
+                targetOpacity = 0.3; // Dim
+                targetUseGlow = false;
             } else if (isReady) {
                 // Bright when ready with sufficient energy
-                opacity = 1.0; // Full brightness
-                useGlow = true;
+                targetOpacity = 1.0; // Full brightness
+                targetUseGlow = true;
             } else {
                 // Default state (shouldn't happen, but safety)
-                opacity = 0.5;
-                useGlow = false;
+                targetOpacity = 0.5;
+                targetUseGlow = false;
             }
+            
+            // Only update state if enough time has passed or state is stable
+            if (stateAge >= minStateDuration || 
+                (targetOpacity === weapon._indicatorState.opacity && targetUseGlow === weapon._indicatorState.useGlow)) {
+                weapon._indicatorState.opacity = targetOpacity;
+                weapon._indicatorState.useGlow = targetUseGlow;
+                weapon._indicatorState.lastUpdate = currentTime;
+            }
+            
+            const opacity = weapon._indicatorState.opacity;
+            const useGlow = weapon._indicatorState.useGlow;
 
             // Draw weapon firing point circle
             const radius = 4;

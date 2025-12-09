@@ -63,7 +63,10 @@ class InputManager {
         }
 
         // Only set keysPressed if key wasn't already down (single press detection)
-        if (!this.keys.get(key)) {
+        // IMPORTANT: Check key state BEFORE modifying it for double-tap detection
+        const wasKeyAlreadyDown = this.keys.get(key) === true;
+        
+        if (!wasKeyAlreadyDown) {
             this.keysPressed.set(key, true);
         }
 
@@ -80,8 +83,6 @@ class InputManager {
             const currentTime = performance.now();
             const lastPressTime = this.lastKeyPressTimes.get(key) || 0;
             const timeSinceLastPress = currentTime - lastPressTime;
-            // Check if key was already held BEFORE we set it to true (line 70 sets it)
-            const wasKeyAlreadyDown = this.keys.get(key) === true;
 
             if (timeSinceLastPress < this.doubleTapThreshold && !wasKeyAlreadyDown) {
                 // Double-tap detected! (only if key wasn't already held)

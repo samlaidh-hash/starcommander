@@ -99,9 +99,12 @@ class Disruptor extends Weapon {
             }
             
             // Calculate firing position (from weapon mount point)
+            // Rotate weapon position around ship center (0, 0) by ship rotation
             const mountPoint = MathUtils.rotatePoint(
                 this.position.x,
                 this.position.y,
+                0,  // center x (ship center)
+                0,  // center y (ship center)
                 ship.rotation
             );
 
