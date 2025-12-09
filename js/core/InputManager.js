@@ -126,8 +126,11 @@ class InputManager {
                 if (key === 'w') {
                     this.wKeyHeld = true;
                     if (!wasKeyAlreadyDown) {
-                        // First press, not a double-tap
-                        this.wKeyDoubleTapped = false;
+                        // First press, not a double-tap - only reset if not already double-tapped
+                        // Don't reset wKeyDoubleTapped if it was already set (prevents reset on key repeat)
+                        if (!this.wKeyDoubleTapped) {
+                            this.wKeyDoubleTapped = false;
+                        }
                     }
                 }
             }

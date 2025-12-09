@@ -34,6 +34,7 @@ const AUDIO_CONFIG = {
         // Support systems
         'tractor-beam':   { src: 'ASSETS/AUDIO/tractor_beam.mp3', volume: 0.6 },
         'transporter':    { src: 'ASSETS/AUDIO/transporter.mp3', volume: 0.7 },
+        'trigon-boarding': { src: 'ASSETS/AUDIO/trigon-boarding.mp3', volume: 0.7 },
 
         // Cloaking (if implemented)
         'cloak-on':       { src: 'ASSETS/AUDIO/cloak-on.wav', volume: 0.7 },

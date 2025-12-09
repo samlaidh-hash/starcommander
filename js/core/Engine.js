@@ -595,6 +595,9 @@ class Engine {
                 this.torpedoCharging = true;
                 this.plasmaChargeStart = performance.now() / 1000;
                 this.plasmaChargeDamage = 0;
+            } else if (this.playerShip.faction === 'TRIGON') {
+                // Trigon transporter attacker - RMB launches boarding party
+                this.attemptTrigonTransporterAttack(data);
             } else {
                 // Standard torpedo - fire immediately on click
                 const worldPos = this.camera.screenToWorld(data.x, data.y);
@@ -1074,11 +1077,11 @@ class Engine {
                 this.audioManager.playSound('explosion-large');
             }
 
-            // Show mission failed screen AFTER explosion (2 second delay)
+            // Show mission failed screen AFTER explosion (3 second delay)
             setTimeout(() => {
                 alert('Game Over! Your ship was destroyed.');
                 this.stateManager.setState('MAIN_MENU');
-            }, 2000);
+            }, 3000);
         });
 
         // Ship-asteroid collision
@@ -3685,6 +3688,189 @@ class Engine {
         }
 
         return null;
+    }
+
+    /**
+     * Attempt Trigon transporter attacker (boarding party)
+     * RMB launches squad of Trigon Warriors to board unshielded target
+     */
+    attemptTrigonTransporterAttack(data) {
+        if (!this.playerShip || this.playerShip.faction !== 'TRIGON') return;
+
+        const currentTime = performance.now() / 1000;
+        const mousePos = this.inputManager.getMousePosition();
+        const worldPos = this.camera.screenToWorld(mousePos.x, mousePos.y);
+        
+        // Find target under reticle
+        const target = this.targetingSystem.getTargetUnderReticle(worldPos.x, worldPos.y, this.entities);
+        
+        if (!target || target.type !== 'ship' || target === this.playerShip) {
+            if (CONFIG.DEBUG_MODE) {
+                console.log('⚠️ Transporter attacker: No valid target under reticle');
+            }
+            this.hud.addCriticalMessage('NO TARGET');
+            return;
+        }
+
+        // Check if target is unshielded
+        if (target.shields && target.shields.isUp()) {
+            if (CONFIG.DEBUG_MODE) {
+                console.log('⚠️ Transporter attacker: Target shields are up');
+            }
+            this.hud.addCriticalMessage('TARGET SHIELDED');
+            return;
+        }
+
+        // Check range (short range - 200 pixels)
+        const distance = MathUtils.distance(this.playerShip.x, this.playerShip.y, target.x, target.y);
+        const maxRange = 200;
+        if (distance > maxRange) {
+            if (CONFIG.DEBUG_MODE) {
+                console.log(`⚠️ Transporter attacker: Target out of range (${distance.toFixed(0)} > ${maxRange})`);
+            }
+            this.hud.addCriticalMessage('OUT OF RANGE');
+            return;
+        }
+
+        // Play transporter sound effect
+        this.audioManager.playSound('transporter');
+
+        // Get transporter sound duration and play boarding sound 500ms after it ends
+        const transporterAudio = this.audioManager.buffers.get('transporter');
+        let transporterDuration = 2.0; // Fallback duration in seconds if not loaded
+        if (transporterAudio && transporterAudio.duration && !isNaN(transporterAudio.duration) && isFinite(transporterAudio.duration)) {
+            transporterDuration = transporterAudio.duration;
+        }
+        
+        // Play boarding sound 500ms after transporter sound ends
+        setTimeout(() => {
+            this.audioManager.playSound('trigon-boarding');
+        }, (transporterDuration * 1000) + 500);
+
+        // Calculate success chance based on target damage
+        // More damaged = higher chance of success
+        let damagePercent = 0;
+        if (target.energy) {
+            const totalMaxEnergy = target.energy.blocks.reduce((sum, block) => sum + block.maxLength, 0);
+            const totalCurrentCapacity = target.energy.blocks.reduce((sum, block) => sum + block.currentLength, 0);
+            damagePercent = totalMaxEnergy > 0 ? 1 - (totalCurrentCapacity / totalMaxEnergy) : 0;
+        }
+
+        // Base chance: 20% nothing, 30% temporary disable, 50% permanent disable at 0% damage
+        // At 100% damage: 0% nothing, 20% temporary disable, 80% permanent disable
+        const nothingChance = Math.max(0, 0.2 - (damagePercent * 0.2)); // 20% -> 0%
+        const tempDisableChance = Math.max(0.2, 0.3 - (damagePercent * 0.1)); // 30% -> 20%
+        const permDisableChance = 0.5 + (damagePercent * 0.3); // 50% -> 80%
+
+        const roll = Math.random();
+        let result = 'nothing';
+        
+        if (roll < nothingChance) {
+            result = 'nothing';
+        } else if (roll < nothingChance + tempDisableChance) {
+            result = 'temporary';
+        } else {
+            result = 'permanent';
+        }
+
+        // Apply effects
+        if (result === 'permanent') {
+            // Permanent disable - destroy the ship
+            if (CONFIG.DEBUG_MODE) {
+                console.log('✅ Transporter attacker: PERMANENT DISABLE - Ship destroyed');
+            }
+            this.hud.addCriticalMessage('BOARDING SUCCESSFUL - SHIP CAPTURED');
+            target.destroy();
+        } else if (result === 'temporary') {
+            // Temporary disable - disable ship systems for 10 seconds
+            const disableDuration = 10.0; // 10 seconds
+            target.transporterDisabledUntil = currentTime + disableDuration;
+            target.transporterDisabled = true;
+            
+            // Disable weapons and movement
+            if (target.weapons) {
+                for (const weapon of target.weapons) {
+                    weapon.disabled = true;
+                }
+            }
+            target.targetSpeed = 0;
+            target.currentSpeed *= 0.1; // Rapid deceleration
+            
+            if (CONFIG.DEBUG_MODE) {
+                console.log(`✅ Transporter attacker: TEMPORARY DISABLE - Ship disabled for ${disableDuration}s`);
+            }
+            this.hud.addCriticalMessage('BOARDING SUCCESSFUL - SHIP DISABLED');
+            
+            // Re-enable after duration
+            setTimeout(() => {
+                if (target && target.transporterDisabled) {
+                    target.transporterDisabled = false;
+                    target.transporterDisabledUntil = 0;
+                    if (target.weapons) {
+                        for (const weapon of target.weapons) {
+                            weapon.disabled = false;
+                        }
+                    }
+                    if (CONFIG.DEBUG_MODE) {
+                        console.log('✅ Transporter attacker: Ship re-enabled after temporary disable');
+                    }
+                }
+            }, disableDuration * 1000);
+        } else {
+            // Nothing - boarding party repelled
+            if (CONFIG.DEBUG_MODE) {
+                console.log('⚠️ Transporter attacker: Boarding party repelled');
+            }
+            this.hud.addCriticalMessage('BOARDING REPELLED');
+        }
+
+        // Damage Trigon ship (representing marine loss)
+        // Reduce energy by 15% of max capacity
+        if (this.playerShip.energy) {
+            const maxEnergy = this.playerShip.energy.getTotalCapacity();
+            const damageAmount = maxEnergy * 0.15; // 15% of max energy
+            this.playerShip.energy.takeDamage(damageAmount);
+            
+            if (CONFIG.DEBUG_MODE) {
+                console.log(`⚠️ Transporter attacker: Trigon ship took ${damageAmount.toFixed(1)} energy damage (marine loss)`);
+            }
+        }
+
+        // Create visual transporter beam effect
+        this.createTransporterBeamEffect(this.playerShip, target);
+    }
+
+    /**
+     * Create visual transporter beam effect between two ships
+     */
+    createTransporterBeamEffect(sourceShip, targetShip) {
+        // Create particle effect for transporter beam
+        if (this.particleSystem && sourceShip && targetShip) {
+            const dx = targetShip.x - sourceShip.x;
+            const dy = targetShip.y - sourceShip.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const steps = Math.max(5, Math.floor(distance / 30)); // Particle every 30 pixels, minimum 5
+            
+            // Create transporter beam particles along the path using existing particle methods
+            for (let i = 0; i < steps; i++) {
+                const t = i / steps;
+                const x = sourceShip.x + dx * t;
+                const y = sourceShip.y + dy * t;
+                
+                // Create small impact effects along the beam path
+                if (i % 3 === 0) { // Every 3rd particle for performance
+                    this.particleSystem.createImpact(x, y, Math.atan2(dy, dx), {
+                        particleCount: 3,
+                        color: '#00ffff',
+                        size: 0.5
+                    });
+                }
+            }
+            
+            // Create impact effects at both ends
+            this.particleSystem.createShieldImpact(sourceShip.x, sourceShip.y, { color: '#00ffff' });
+            this.particleSystem.createShieldImpact(targetShip.x, targetShip.y, { color: '#00ffff' });
+        }
     }
 
     /**

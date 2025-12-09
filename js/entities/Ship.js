@@ -1188,14 +1188,24 @@ class Ship extends Entity {
      * Called every frame from update()
      */
     updateThrottle(deltaTime) {
+        // If transporter disabled, force target speed to 0
+        if (this.transporterDisabled) {
+            this.targetSpeed = 0;
+            return; // Skip throttle calculations
+        }
+
         // Calculate target speed from throttle (-1.0 to 1.0)
         // throttle > 0: forward speed (0% to 100% max speed)
         // throttle = 0: stationary
         // throttle < 0: reverse speed (0% to -50% max speed)
+        // Use getMaxSpeed() to account for tactical warp multiplier
+        const currentMaxSpeed = this.getMaxSpeed();
+        const currentMaxReverseSpeed = currentMaxSpeed * 0.5; // Half of forward speed
+        
         if (this.throttle >= 0) {
-            this.targetSpeed = this.maxSpeed * this.throttle; // Forward: 0 to maxSpeed
+            this.targetSpeed = currentMaxSpeed * this.throttle; // Forward: 0 to maxSpeed
         } else {
-            this.targetSpeed = this.maxReverseSpeed * Math.abs(this.throttle) * 0.5; // Reverse: 0 to -50% maxSpeed
+            this.targetSpeed = currentMaxReverseSpeed * Math.abs(this.throttle) * 0.5; // Reverse: 0 to -50% maxSpeed
         }
 
         // Add boost if active
@@ -1207,23 +1217,25 @@ class Ship extends Entity {
         }
 
         // Energy drain/refill based on ACTUAL SPEED (not throttle setting)
-        // Below 1/3 max speed: constantly recharge energy
-        // Above 2/3 max speed: constantly drain energy
-        // Between 1/3 and 2/3: energy not affected by speed
+        // 0-33% max speed: constantly recharge energy
+        // 67-100% max speed: constantly drain energy
+        // 34-66%: energy not affected by speed
         if (this.energy) {
             // Calculate normalized speed (0 to 1.0, where 1.0 = maxSpeed)
-            const normalizedSpeed = Math.abs(this.currentSpeed) / this.maxSpeed;
-            const SPEED_THRESHOLD_LOW = 1/3;  // 0.333 (below this = recharge)
-            const SPEED_THRESHOLD_HIGH = 2/3; // 0.667 (above this = drain)
+            // Use getMaxSpeed() to account for tactical warp multiplier
+            const currentMaxSpeed = this.getMaxSpeed();
+            const normalizedSpeed = Math.abs(this.currentSpeed) / currentMaxSpeed;
+            const SPEED_THRESHOLD_LOW = 0.33;  // 33% (below or equal = recharge)
+            const SPEED_THRESHOLD_HIGH = 0.67; // 67% (above or equal = drain)
             
-            if (normalizedSpeed < SPEED_THRESHOLD_LOW) {
-                // Below 1/3 speed: Recharge energy
+            if (normalizedSpeed <= SPEED_THRESHOLD_LOW) {
+                // 0-33% speed: Recharge energy
                 this.energy.refillEnergy(0, deltaTime);
-            } else if (normalizedSpeed > SPEED_THRESHOLD_HIGH) {
-                // Above 2/3 speed: Drain energy
+            } else if (normalizedSpeed >= SPEED_THRESHOLD_HIGH) {
+                // 67-100% speed: Drain energy
                 this.energy.drainEnergy(0, deltaTime);
             }
-            // Between 1/3 and 2/3: No energy effect (energy remains unchanged)
+            // 34-66%: No energy effect (energy remains unchanged)
         }
 
         // Accelerate/decelerate toward target speed
@@ -1339,14 +1351,42 @@ class Ship extends Entity {
             }
         }
 
+        // Check if transporter disabled (temporary disable from boarding)
+        if (this.transporterDisabled && this.transporterDisabledUntil) {
+            if (currentTime >= this.transporterDisabledUntil) {
+                // Re-enable ship
+                this.transporterDisabled = false;
+                this.transporterDisabledUntil = 0;
+                if (this.weapons) {
+                    for (const weapon of this.weapons) {
+                        weapon.disabled = false;
+                    }
+                }
+            } else {
+                // Keep ship disabled
+                if (this.weapons) {
+                    for (const weapon of this.weapons) {
+                        weapon.disabled = true;
+                    }
+                }
+                this.targetSpeed = 0;
+                this.currentSpeed *= 0.95; // Continue deceleration
+            }
+        }
+
     }
 
     /**
-     * Check if ship can fire weapons (cloaking check, tactical warp check)
+     * Check if ship can fire weapons (cloaking check, tactical warp check, transporter disable check)
      */
     canFireWeapons() {
         // Cannot fire weapons during tactical warp
         if (this.tacticalWarpActive) {
+            return false;
+        }
+
+        // Cannot fire weapons if transporter disabled (boarding party disabled systems)
+        if (this.transporterDisabled) {
             return false;
         }
 
@@ -1567,6 +1607,7 @@ class Ship extends Entity {
 
     /**
      * Get disruptor burst shots (called every frame during burst)
+     * Now fires all shots simultaneously on LMB down
      */
     getDisruptorBurstShots(targetX, targetY) {
         if (!this.canFireWeapons()) return [];
@@ -1578,9 +1619,10 @@ class Ship extends Entity {
         // Only create shots if weapon is currently bursting (cooldown prevents starting new bursts)
         for (const weapon of this.weapons) {
             if (weapon instanceof Disruptor && weapon.isBursting) {
-                const projectile = weapon.getNextBurstShot(this, targetX, targetY, currentTime);
-                if (projectile) {
-                    projectiles.push(projectile);
+                // Get all shots simultaneously (fired on LMB down)
+                const burstShots = weapon.getAllBurstShots(this, currentTime);
+                if (burstShots && burstShots.length > 0) {
+                    projectiles.push(...burstShots);
                 }
             }
         }

@@ -1212,18 +1212,18 @@ class HUD {
         
         // Color bars based on energy drain/regeneration (matches Ship.js updateThrottle logic)
         const normalizedSpeed = Math.abs(ship.currentSpeed) / ship.maxSpeed;
-        const SPEED_THRESHOLD_LOW = 1/3;  // 0.333 (below this = recharge)
-        const SPEED_THRESHOLD_HIGH = 2/3; // 0.667 (above this = drain)
+        const SPEED_THRESHOLD_LOW = 0.33;  // 33% (below this = recharge)
+        const SPEED_THRESHOLD_HIGH = 0.67; // 67% (above this = drain)
         
         let barColor;
-        if (normalizedSpeed < SPEED_THRESHOLD_LOW) {
-            // Below 1/3 speed: Recharge energy - GREEN
+        if (normalizedSpeed <= SPEED_THRESHOLD_LOW) {
+            // 0-33% speed: Recharge energy - GREEN
             barColor = 'linear-gradient(90deg, #0a0, #0f0)';
-        } else if (normalizedSpeed > SPEED_THRESHOLD_HIGH) {
-            // Above 2/3 speed: Drain energy - RED
+        } else if (normalizedSpeed >= SPEED_THRESHOLD_HIGH) {
+            // 67-100% speed: Drain energy - RED
             barColor = 'linear-gradient(90deg, #f00, #a00)';
         } else {
-            // Between 1/3 and 2/3: Neutral - ORANGE
+            // 34-66% speed: Neutral - ORANGE
             barColor = 'linear-gradient(90deg, #ff8800, #ffaa00)';
         }
         

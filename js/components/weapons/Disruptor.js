@@ -16,12 +16,15 @@ class Disruptor extends Weapon {
         this.speed = CONFIG.DISRUPTOR_SPEED; // 800 pixels/sec (2x torpedo speed)
         this.damage = CONFIG.DISRUPTOR_DAMAGE; // 2 damage per shot
         this.burstCount = CONFIG.DISRUPTOR_BURST_COUNT; // 3 shots
-        this.burstDuration = CONFIG.DISRUPTOR_BURST_DURATION; // 1 second
+        this.burstDuration = CONFIG.DISRUPTOR_BURST_DURATION; // 1 second (not used for simultaneous firing)
         this.cooldown = CONFIG.DISRUPTOR_COOLDOWN; // 2 seconds between bursts
         this.lastFireTime = 0;
         this.isBursting = false;
         this.burstStartTime = 0;
         this.shotsFiredInBurst = 0;
+        this.fixedTargetX = null; // Store target position when LMB clicked
+        this.fixedTargetY = null;
+        this.burstSpacing = 20; // 20 pixels spacing between bolts
     }
 
     canFire(currentTime) {
@@ -33,29 +36,31 @@ class Disruptor extends Weapon {
     fire(ship, targetX, targetY, currentTime) {
         if (!this.canFire(currentTime)) return null;
 
-        // Start burst
+        // Store fixed target position (reticle position when clicked)
+        this.fixedTargetX = targetX;
+        this.fixedTargetY = targetY;
+        
+        // Start burst - all shots fire simultaneously
         this.isBursting = true;
         this.burstStartTime = currentTime;
         this.shotsFiredInBurst = 0;
         this.lastFireTime = currentTime;
 
-        return null; // Burst shots are handled in update()
+        return null; // Burst shots are handled in getDisruptorBurstShots()
     }
 
     update(deltaTime, currentTime) {
         // Call parent auto-repair
         super.update(deltaTime, currentTime);
 
-        // Handle burst firing
+        // Handle burst firing - for simultaneous firing, burst completes immediately after shots are created
         if (this.isBursting) {
-            const timeSinceBurstStart = currentTime - this.burstStartTime;
-
-            // Check if burst is complete
+            // Burst completes after all shots are fired (handled in getAllBurstShots)
+            // Reset burst state if shots have been fired
             if (this.shotsFiredInBurst >= this.burstCount) {
                 this.isBursting = false;
-            } else if (timeSinceBurstStart >= this.burstDuration) {
-                // Burst duration exceeded but not all shots fired - complete burst anyway
-                this.isBursting = false;
+                this.fixedTargetX = null;
+                this.fixedTargetY = null;
             }
         }
 
@@ -65,78 +70,114 @@ class Disruptor extends Weapon {
             // Only stop if burst is complete (all shots fired)
             if (this.shotsFiredInBurst >= this.burstCount) {
                 this.isBursting = false;
+                this.fixedTargetX = null;
+                this.fixedTargetY = null;
             }
         }
     }
 
     /**
-     * Get next shot time in current burst
-     * Returns null if no shot should be fired
+     * Get all burst shots (fired simultaneously on LMB down)
+     * Returns array of projectiles or null if burst is complete
      */
-    getNextBurstShot(ship, targetX, targetY, currentTime) {
+    getAllBurstShots(ship, currentTime) {
         if (!this.isBursting) return null;
+        
+        // Use fixed target position from when LMB was clicked
+        if (this.fixedTargetX === null || this.fixedTargetY === null) {
+            return null; // No target stored
+        }
+        
+        // Fire all shots simultaneously on first call, then mark burst as complete
+        if (this.shotsFiredInBurst > 0) {
+            // Already fired all shots, mark burst complete
+            this.isBursting = false;
+            return null;
+        }
+        
+        // Mark that we've fired all shots
+        this.shotsFiredInBurst = this.burstCount;
+        
+        // Validate weapon position
+        if (!this.position || typeof this.position.x !== 'number' || typeof this.position.y !== 'number' ||
+            isNaN(this.position.x) || isNaN(this.position.y)) {
+            console.warn('⚠️ Disruptor: Invalid weapon position:', this.position, 'weapon:', this.name);
+            this.isBursting = false;
+            return null;
+        }
+        
+        // Validate ship position
+        if (typeof ship.x !== 'number' || typeof ship.y !== 'number' ||
+            isNaN(ship.x) || isNaN(ship.y)) {
+            console.warn('⚠️ Disruptor: Invalid ship position:', { x: ship.x, y: ship.y });
+            this.isBursting = false;
+            return null;
+        }
+        
+        // Calculate firing position (from weapon mount point)
+        // Rotate weapon position around ship center (0, 0) by ship rotation
+        const mountPoint = MathUtils.rotatePoint(
+            this.position.x,
+            this.position.y,
+            0,  // center x (ship center)
+            0,  // center y (ship center)
+            ship.rotation
+        );
 
-        const timeSinceBurstStart = currentTime - this.burstStartTime;
-        const shotInterval = this.burstDuration / this.burstCount; // ~0.333 seconds between shots
+        const baseFireX = ship.x + mountPoint.x;
+        const baseFireY = ship.y + mountPoint.y;
+        
+        // Validate firing position
+        if (isNaN(baseFireX) || isNaN(baseFireY)) {
+            console.warn('⚠️ Disruptor: NaN firing position calculated:', {
+                weaponPos: this.position,
+                shipPos: { x: ship.x, y: ship.y },
+                mountPoint,
+                fireX: baseFireX, fireY: baseFireY
+            });
+            this.isBursting = false;
+            return null;
+        }
 
-        // Check if it's time for next shot
-        const expectedShotTime = this.shotsFiredInBurst * shotInterval;
-        if (timeSinceBurstStart >= expectedShotTime) {
-            this.shotsFiredInBurst++;
-
-            // Validate weapon position
-            if (!this.position || typeof this.position.x !== 'number' || typeof this.position.y !== 'number' ||
-                isNaN(this.position.x) || isNaN(this.position.y)) {
-                console.warn('⚠️ Disruptor: Invalid weapon position:', this.position, 'weapon:', this.name);
-                return null; // Can't fire without valid position
-            }
+        // Calculate angle to target
+        const baseAngle = MathUtils.angleBetween(baseFireX, baseFireY, this.fixedTargetX, this.fixedTargetY);
+        
+        // Calculate perpendicular offset direction (90 degrees from firing angle)
+        const perpAngle = baseAngle + 90;
+        const perpVector = MathUtils.vectorFromAngle(perpAngle, 1);
+        
+        // Create all 3 projectiles with 20 pixel spacing
+        const projectiles = [];
+        for (let i = 0; i < this.burstCount; i++) {
+            // Offset from center: -20, 0, +20 pixels (for 3 shots)
+            const offset = (i - 1) * this.burstSpacing; // -20, 0, +20
+            const offsetX = baseFireX + perpVector.x * offset;
+            const offsetY = baseFireY + perpVector.y * offset;
             
-            // Validate ship position
-            if (typeof ship.x !== 'number' || typeof ship.y !== 'number' ||
-                isNaN(ship.x) || isNaN(ship.y)) {
-                console.warn('⚠️ Disruptor: Invalid ship position:', { x: ship.x, y: ship.y });
-                return null; // Can't fire without valid ship position
-            }
+            // All bolts target the same point (fixed target from click)
+            const angle = MathUtils.angleBetween(offsetX, offsetY, this.fixedTargetX, this.fixedTargetY);
             
-            // Calculate firing position (from weapon mount point)
-            // Rotate weapon position around ship center (0, 0) by ship rotation
-            const mountPoint = MathUtils.rotatePoint(
-                this.position.x,
-                this.position.y,
-                0,  // center x (ship center)
-                0,  // center y (ship center)
-                ship.rotation
-            );
-
-            const fireX = ship.x + mountPoint.x;
-            const fireY = ship.y + mountPoint.y;
-            
-            // Validate firing position
-            if (isNaN(fireX) || isNaN(fireY)) {
-                console.warn('⚠️ Disruptor: NaN firing position calculated:', {
-                    weaponPos: this.position,
-                    shipPos: { x: ship.x, y: ship.y },
-                    mountPoint,
-                    fireX, fireY
-                });
-                return null; // Can't create projectile with invalid position
-            }
-
-            // Calculate angle to target
-            const angle = MathUtils.angleBetween(fireX, fireY, targetX, targetY);
-
-            // Create disruptor projectile (wave effect)
-            return new DisruptorProjectile({
-                x: fireX,
-                y: fireY,
+            projectiles.push(new DisruptorProjectile({
+                x: offsetX,
+                y: offsetY,
                 rotation: angle,
                 damage: this.damage,
                 range: this.range,
                 speed: this.speed,
                 sourceShip: ship
-            });
+            }));
         }
+        
+        return projectiles;
+    }
 
+    /**
+     * Legacy method for compatibility - now redirects to getAllBurstShots
+     * @deprecated Use getAllBurstShots instead
+     */
+    getNextBurstShot(ship, targetX, targetY, currentTime) {
+        // This method is no longer used for simultaneous firing
+        // But kept for compatibility
         return null;
     }
 
