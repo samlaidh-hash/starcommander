@@ -84,6 +84,20 @@ class Disruptor extends Weapon {
         if (timeSinceBurstStart >= expectedShotTime) {
             this.shotsFiredInBurst++;
 
+            // Validate weapon position
+            if (!this.position || typeof this.position.x !== 'number' || typeof this.position.y !== 'number' ||
+                isNaN(this.position.x) || isNaN(this.position.y)) {
+                console.warn('⚠️ Disruptor: Invalid weapon position:', this.position, 'weapon:', this.name);
+                return null; // Can't fire without valid position
+            }
+            
+            // Validate ship position
+            if (typeof ship.x !== 'number' || typeof ship.y !== 'number' ||
+                isNaN(ship.x) || isNaN(ship.y)) {
+                console.warn('⚠️ Disruptor: Invalid ship position:', { x: ship.x, y: ship.y });
+                return null; // Can't fire without valid ship position
+            }
+            
             // Calculate firing position (from weapon mount point)
             const mountPoint = MathUtils.rotatePoint(
                 this.position.x,
@@ -93,6 +107,17 @@ class Disruptor extends Weapon {
 
             const fireX = ship.x + mountPoint.x;
             const fireY = ship.y + mountPoint.y;
+            
+            // Validate firing position
+            if (isNaN(fireX) || isNaN(fireY)) {
+                console.warn('⚠️ Disruptor: NaN firing position calculated:', {
+                    weaponPos: this.position,
+                    shipPos: { x: ship.x, y: ship.y },
+                    mountPoint,
+                    fireX, fireY
+                });
+                return null; // Can't create projectile with invalid position
+            }
 
             // Calculate angle to target
             const angle = MathUtils.angleBetween(fireX, fireY, targetX, targetY);

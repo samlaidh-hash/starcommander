@@ -143,17 +143,48 @@ const WEAPON_BUILDERS = {
 
 function cloneWeaponPosition(positionKey, explicitPosition, shipSize, scaleFactor = 1, shipImageData = null) {
     if (explicitPosition) {
+        // Validate explicitPosition has valid numeric values
+        if (typeof explicitPosition.x !== 'number' || typeof explicitPosition.y !== 'number' ||
+            isNaN(explicitPosition.x) || isNaN(explicitPosition.y)) {
+            console.warn('⚠️ Invalid explicitPosition in cloneWeaponPosition:', explicitPosition);
+            return { x: 0, y: 0 }; // Fallback to origin
+        }
+        
+        // Validate scaleFactor
+        if (typeof scaleFactor !== 'number' || isNaN(scaleFactor)) {
+            console.warn('⚠️ Invalid scaleFactor in cloneWeaponPosition:', scaleFactor);
+            scaleFactor = 1; // Fallback to 1
+        }
+        
         // Apply scaleFactor to explicit positions from JSON
         // If shipImageData is provided, also scale by image scale to match ship rendering
         let finalScale = scaleFactor;
         if (shipImageData && shipImageData.scale) {
-            // Scale weapon positions from JSON to match ship image scaling
-            finalScale = scaleFactor * shipImageData.scale;
+            // Validate shipImageData.scale
+            if (typeof shipImageData.scale === 'number' && !isNaN(shipImageData.scale)) {
+                // Scale weapon positions from JSON to match ship image scaling
+                finalScale = scaleFactor * shipImageData.scale;
+            } else {
+                console.warn('⚠️ Invalid shipImageData.scale:', shipImageData.scale);
+            }
         }
-        return { 
-            x: explicitPosition.x * finalScale, 
-            y: explicitPosition.y * finalScale 
-        };
+        
+        const x = explicitPosition.x * finalScale;
+        const y = explicitPosition.y * finalScale;
+        
+        // Validate final result
+        if (isNaN(x) || isNaN(y)) {
+            console.warn('⚠️ NaN result in cloneWeaponPosition:', {
+                explicitPosition,
+                scaleFactor,
+                finalScale,
+                shipImageData,
+                x, y
+            });
+            return { x: 0, y: 0 }; // Fallback to origin
+        }
+        
+        return { x, y };
     }
     if (positionKey && WEAPON_POSITIONS[positionKey]) {
         const base = WEAPON_POSITIONS[positionKey];

@@ -59,3 +59,4 @@ Implement JSON file loading system that:
 - Scales positions based on actual PNG image dimensions
 
 
+

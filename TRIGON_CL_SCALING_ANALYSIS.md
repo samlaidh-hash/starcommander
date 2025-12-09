@@ -91,3 +91,4 @@ y: -0.25 * 60 = -15 pixels
 1. Check if Trigon CL ship image dimensions match expected scaling
 2. Create `TRIGON_CL_weapons.json` if scaling needs adjustment
 3. Verify weapon mount positions align with ship visual in-game
+
